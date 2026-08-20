@@ -187,6 +187,56 @@ h2 {
   font-size: 0.92rem;
 }
 
+.ask-doc {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.ask-doc > li {
+  margin: 0 0 0.95rem;
+}
+
+.ask-doc h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.08rem;
+}
+
+.ask-doc p,
+.ask-doc ul {
+  margin: 0.2rem 0;
+  font-size: 0.95rem;
+}
+
+.ask-doc ul {
+  padding-left: 1.2rem;
+}
+
+.ask {
+  margin-top: 2rem;
+  padding: 1rem 1.1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+
+.ask h2 {
+  margin-top: 0;
+}
+
+.ask__lead {
+  margin: 0 0 0.6rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.ask__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.ask__list li {
+  margin: 0.35rem 0;
+}
+
 @media (min-width: 768px) {
   .card-grid--cols-2 {
     --grid-cols: 2;
@@ -255,10 +305,24 @@ h2 {
     page-break-after: avoid;
   }
 
-  h2:last-of-type {
+  .ask {
     break-before: page;
     page-break-before: always;
     margin-top: 0;
+    padding: 8pt 10pt;
+  }
+
+  .ask h2 {
+    margin: 0 0 4pt;
+  }
+
+  .ask__lead,
+  .ask__list {
+    font-size: 9.5pt;
+  }
+
+  .ask__list li {
+    margin: 3pt 0;
   }
 
   .card-grid {
@@ -316,5 +380,20 @@ h2 {
 
   .foot {
     margin: 4pt 0 0;
+  }
+
+  .ask-doc > li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 0 0 8pt;
+  }
+
+  .ask-doc h2 {
+    font-size: 11pt;
+  }
+
+  .ask-doc p,
+  .ask-doc ul {
+    font-size: 9.6pt;
   }
 }
