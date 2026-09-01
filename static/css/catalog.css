@@ -1,0 +1,211 @@
+/* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
+
+.catalog-layout {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 48px;
+}
+
+.filters-form-wrap {
+  display: contents;
+}
+
+.brand-description {
+  margin-bottom: 18px;
+}
+
+.seo-landing {
+  margin-bottom: 32px;
+}
+
+.seo-landing__products {
+  padding-bottom: 48px;
+}
+
+.seo-landing__products h2 {
+  margin-bottom: 16px;
+}
+
+@media (min-width: 900px) {
+  .catalog-layout {
+    grid-template-columns: 240px 1fr;
+    gap: 32px;
+  }
+}
+
+.filters {
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--color-white);
+}
+
+.filters__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filters__title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.filters__toggle {
+  font-size: 0.85rem;
+  color: var(--color-accent-hover);
+  min-height: var(--tap);
+}
+
+.filters__body {
+  display: none;
+  margin-top: 12px;
+}
+
+.filters.is-open .filters__body {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .filters__toggle {
+    display: none;
+  }
+
+  .filters__body {
+    display: block;
+    margin-top: 16px;
+  }
+}
+
+.filter-group {
+  margin-bottom: 18px;
+}
+
+.filter-group h4 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  margin-bottom: 10px;
+}
+
+.filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 0.9rem;
+}
+
+.filter-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--color-divider);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.filter-group input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.filters__submit {
+  margin-top: 4px;
+}
+
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.catalog-toolbar__count {
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.catalog-toolbar select {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+}
+
+.catalog-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.pagination a,
+.pagination span {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+  font-size: 0.9rem;
+}
+
+.pagination a:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
+}
+
+.pagination .is-current {
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-color: var(--color-accent);
+}
+
+.brand-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding-bottom: 48px;
+}
+
+@media (min-width: 768px) {
+  .brand-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.brand-card {
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+  background: var(--color-white);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.brand-card:hover {
+  box-shadow: var(--shadow-soft);
+  border-color: #d2cbc2;
+}
+
+.brand-card__logo {
+  height: 48px;
+  width: 100%;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.brand-card__name {
+  font-weight: 600;
+}

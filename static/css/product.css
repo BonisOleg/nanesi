@@ -1,0 +1,377 @@
+/* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
+
+.product-page {
+  padding-bottom: 56px;
+}
+
+.product-main {
+  display: grid;
+  gap: 28px;
+}
+
+@media (min-width: 900px) {
+  .product-main {
+    grid-template-columns: 1fr 1fr;
+    gap: 44px;
+  }
+}
+
+.gallery__main {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-beige);
+  aspect-ratio: 1;
+}
+
+.gallery__main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery__thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gallery__thumbs button {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.gallery__thumbs button.is-active {
+  border-color: var(--color-accent);
+}
+
+.gallery__thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-info__brand {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 6px;
+}
+
+.product-info__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+.product-info__sku {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+}
+
+.product-info__rating {
+  margin-bottom: 14px;
+}
+
+.product-info__prices {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.product-info__prices .price {
+  font-size: 1.5rem;
+}
+
+.product-info__stock {
+  color: var(--color-success);
+  font-weight: 600;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+
+.product-info__stock.is-out {
+  color: var(--color-error);
+}
+
+.product-info__attrs {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 16px;
+  background: var(--color-milky);
+  border-radius: var(--radius-md);
+}
+
+.product-info__attrs div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.86rem;
+}
+
+.product-info__attrs dt {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.product-info__attrs dd {
+  margin: 0;
+  text-align: right;
+}
+
+.variant-group {
+  margin-bottom: 18px;
+}
+
+.variant-group h4 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+  margin-bottom: 10px;
+}
+
+.variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.variant-option {
+  min-height: var(--tap);
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.variant-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.variant-option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-beige);
+  font-weight: 600;
+}
+
+.variant-option.is-disabled {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.product-info__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-info__cart-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-info__wish-form {
+  display: contents;
+}
+
+.qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.qty button {
+  width: var(--tap);
+  height: var(--tap);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+}
+
+.qty input {
+  width: 40px;
+  height: var(--tap);
+  text-align: center;
+  border: none;
+  border-left: 1px solid var(--color-divider);
+  border-right: 1px solid var(--color-divider);
+}
+
+.product-tabs {
+  margin-top: 48px;
+}
+
+.product-tabs__nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-divider);
+  overflow-x: auto;
+}
+
+.product-tabs__nav button {
+  padding: 12px 18px;
+  min-height: var(--tap);
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.product-tabs__nav button.is-active {
+  color: var(--color-graphite);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.product-tabs__panel {
+  display: none;
+  padding: 22px 0;
+  color: var(--color-graphite);
+  line-height: 1.7;
+}
+
+.product-tabs__panel.is-active {
+  display: block;
+}
+
+.product-tabs__panel .inci {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
+.related {
+  margin-top: 48px;
+}
+
+/* --- Відгуки --- */
+.reviews {
+  margin-top: 48px;
+}
+
+.review-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.review-summary__score {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 600;
+}
+
+.review-list {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+.review-item {
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--color-white);
+}
+
+.review-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.review-item__author {
+  font-weight: 600;
+}
+
+.review-item__verified {
+  font-size: 0.72rem;
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.review-item__date {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+
+.review-item__photos {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.review-item__photos img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.review-form {
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  background: var(--color-white);
+}
+
+.review-form h3 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin-bottom: 14px;
+}
+
+.rating-input {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.rating-input label {
+  cursor: pointer;
+  font-size: 1.6rem;
+  color: var(--color-divider);
+}
+
+.rating-input input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rating-input input:checked ~ label,
+.rating-input label:hover,
+.rating-input label:hover ~ label {
+  color: var(--color-star);
+}
+
+.review-form input[type="file"] {
+  padding: var(--space-2) 0;
+  border: none;
+  min-height: auto;
+}

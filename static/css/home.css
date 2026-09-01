@@ -1,0 +1,244 @@
+/* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
+
+.hero {
+  padding: 32px 0 8px;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    padding: 48px 0 16px;
+  }
+}
+
+.hero__inner {
+  display: grid;
+  gap: 28px;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .hero__inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+}
+
+.hero__eyebrow {
+  display: inline-block;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-hover);
+  margin-bottom: 10px;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.hero__text {
+  color: var(--color-muted);
+  margin-bottom: 22px;
+  max-width: 460px;
+}
+
+.hero__media {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-beige);
+}
+
+.trust {
+  border-top: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
+  padding: 20px 0;
+}
+
+.trust__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+@media (min-width: 768px) {
+  .trust__list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.trust__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.trust__item strong {
+  color: var(--color-graphite);
+  font-weight: 600;
+}
+
+.trust__icon {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--color-accent);
+}
+
+.cat-circles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  .cat-circles {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.cat-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-graphite);
+}
+
+.cat-circle__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-beige);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-accent-hover);
+  transition: background var(--transition);
+}
+
+.cat-circle:hover .cat-circle__icon {
+  background: var(--color-accent);
+  color: var(--color-white);
+}
+
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .promo-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.promo-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.promo-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.promo-card p {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.promo-card__media {
+  align-self: center;
+}
+
+.promo-card__media img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+}
+
+.home-subscribe__inner {
+  display: grid;
+  gap: 28px;
+  background: var(--color-beige);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+@media (min-width: 900px) {
+  .home-subscribe__inner {
+    grid-template-columns: 1fr 1fr;
+    padding: 40px;
+  }
+}
+
+.home-subscribe__inner h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+
+.home-subscribe__inner p {
+  color: var(--color-muted);
+  margin-bottom: 16px;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subscribe-form .form-control {
+  flex: 1;
+  min-width: 180px;
+  background: var(--color-white);
+}
+
+.ig-block h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin-bottom: 6px;
+}
+
+.ig-block p {
+  color: var(--color-muted);
+  margin-bottom: 14px;
+}
+
+.ig-preview {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ig-preview span {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ig-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

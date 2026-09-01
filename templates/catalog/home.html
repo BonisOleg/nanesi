@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block main_class %}{% endblock %}
+{% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+
+{% block content %}
+  <section class="hero">
+    <div class="container hero__inner">
+      <div>
+        <span class="hero__eyebrow">{{ site_settings.site_name }} {{ site_settings.tagline }}</span>
+        <h1 class="hero__title">{{ site_settings.hero_title }}</h1>
+        <p class="hero__text">{{ site_settings.hero_subtitle }}</p>
+        <a class="btn--primary" href="{% url 'catalog:catalog' %}">{% trans "До каталогу" %}</a>
+      </div>
+      <div class="hero__media">
+        {% if site_settings.hero_image %}
+          <img src="{{ site_settings.hero_image.url }}" alt="{{ site_settings.hero_title }}" width="960" height="540">
+        {% else %}
+          <img src="{% static 'img/hero.png' %}" alt="{{ site_settings.hero_title }}" width="960" height="540">
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% if trust_badges %}
+    <section class="trust">
+      <div class="container">
+        <ul class="trust__list">
+          {% for badge in trust_badges %}
+            <li class="trust__item">
+              <span class="trust__icon" aria-hidden="true">{{ badge.icon_label|default:"—" }}</span>
+              <span><strong>{{ badge.title }}</strong>{{ badge.text }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if categories %}
+    <section class="section">
+      <div class="container">
+        <div class="section__head">
+          <h2 class="section__title">{% trans "Популярні категорії" %}</h2>
+          <a class="section__link" href="{% url 'catalog:catalog' %}">{% trans "Усі категорії" %}</a>
+        </div>
+        <div class="cat-circles">
+          {% for cat in categories %}
+            <a class="cat-circle" href="{% url 'catalog:category_detail' category_slug=cat.slug %}">
+              <span class="cat-circle__icon">{{ cat.name|slice:":2"|upper }}</span>{{ cat.name }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if hits_and_new %}
+    <section class="section">
+      <div class="container">
+        <div class="section__head">
+          <h2 class="section__title">{% trans "Хіти та новинки" %}</h2>
+          <a class="section__link" href="{% url 'catalog:catalog' %}">{% trans "Весь каталог" %}</a>
+        </div>
+        <div class="product-grid">
+          {% for product in hits_and_new %}
+            {% include "catalog/partials/_product_card.html" %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="section home-subscribe">
+    <div class="container home-subscribe__inner">
+      <div>
+        {% include "partials/_newsletter_form.html" with source="inline" %}
+      </div>
+      {% if site_settings.instagram_url %}
+        <div class="ig-block">
+          <h3>{% blocktrans with name=site_settings.site_name %}{{ name }} в Instagram{% endblocktrans %}</h3>
+          <p>{% trans "Образи, ритуали догляду та новинки брендів." %}</p>
+          <a class="btn--ghost" href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener">{% trans "Перейти в Instagram" %}</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

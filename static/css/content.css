@@ -1,0 +1,35 @@
+/* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
+
+.blog-card {
+  text-align: left;
+}
+
+.blog-card__cover {
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.blog-card__date {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  color: var(--color-text-muted);
+}
+
+.page-title {
+  margin-bottom: var(--space-5);
+}
+
+.blog-article__cover {
+  width: 100%;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-5);
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.blog-article__date {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}

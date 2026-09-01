@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block main_class %}container{% endblock %}
+{% block title %}
+  {% if category %}{{ category.name }} — {% elif brand %}{{ brand.name }} — {% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %} — {% endif %}{% trans "Каталог" %} — {{ site_settings.site_name }}
+{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}">{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
+    <a href="{% url 'catalog:home' %}">{% trans "Головна" %}</a>
+    <span>/</span>
+    {% if category %}
+      <a href="{% url 'catalog:catalog' %}">{% trans "Каталог" %}</a>
+      <span>/</span>
+      <span aria-current="page">{{ category.name }}</span>
+    {% elif brand %}
+      <a href="{% url 'catalog:brand_list' %}">{% trans "Бренди" %}</a>
+      <span>/</span>
+      <span aria-current="page">{{ brand.name }}</span>
+    {% elif query %}
+      <span aria-current="page">{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %}</span>
+    {% else %}
+      <span aria-current="page">{% trans "Каталог" %}</span>
+    {% endif %}
+  </nav>
+
+  <div class="catalog-layout">
+    <form method="get" id="catalog-filter-form" class="filters-form-wrap">
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      <aside class="filters" data-filters>
+        <div class="filters__head">
+          <h1 class="filters__title">
+            {% if category %}{{ category.name }}{% elif brand %}{{ brand.name }}{% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %}{% else %}{% trans "Фільтри" %}{% endif %}
+          </h1>
+          <button class="filters__toggle" type="button" data-filters-toggle>{% trans "Показати" %}</button>
+        </div>
+        <div class="filters__body">
+          {% if not brand %}
+            <div class="filter-group">
+              <h4>{% trans "Бренд" %}</h4>
+              {% for b in brands %}
+                <label>
+                  <input type="checkbox" name="brand" value="{{ b.slug }}" {% if b.slug in selected_brands %}checked{% endif %}>
+                  {{ b.name }}
+                </label>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if not category %}
+            <div class="filter-group">
+              <h4>{% trans "Категорія" %}</h4>
+              {% for cat in top_categories %}
+                <label>
+                  <input type="checkbox" name="category" value="{{ cat.slug }}" {% if cat.slug in selected_categories %}checked{% endif %}>
+                  {{ cat.name }}
+                </label>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% for attribute in attributes %}
+            {% with values=attribute.values.all %}
+              {% if values %}
+                <div class="filter-group">
+                  <h4>{{ attribute.name }}</h4>
+                  {% for value in values %}
+                    <label>
+                      <input type="checkbox" name="attr" value="{{ value.pk }}" {% if value.pk in selected_attr_values %}checked{% endif %}>
+                      {{ value.value }}
+                    </label>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+          {% endfor %}
+
+          <div class="filter-group">
+            <h4>{% trans "Наявність" %}</h4>
+            <label><input type="checkbox" name="stock" value="1" {% if stock_only %}checked{% endif %}> {% trans "В наявності" %}</label>
+          </div>
+          {% if sale_only %}<input type="hidden" name="sale" value="1">{% endif %}
+          <button class="btn--primary btn--block filters__submit" type="submit">{% trans "Застосувати" %}</button>
+        </div>
+      </aside>
+    </form>
+
+    <section>
+      {% if brand and brand.description %}
+        <p class="text-muted brand-description">{{ brand.description }}</p>
+      {% endif %}
+      <div class="catalog-toolbar">
+        <p class="catalog-toolbar__count" data-catalog-count>
+          {% blocktrans count counter=total_count %}Знайдено {{ counter }} товар{% plural %}Знайдено {{ counter }} товарів{% endblocktrans %}
+        </p>
+        <label>
+          <span class="sr-only">{% trans "Сортування" %}</span>
+          <select name="sort" form="catalog-filter-form" data-catalog-sort>
+            {% for value, label in sort_options %}
+              <option value="{{ value }}" {% if value == sort %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      {% if products %}
+        <div class="product-grid">
+          {% for product in products %}
+            {% include "catalog/partials/_product_card.html" %}
+          {% endfor %}
+        </div>
+        {% include "catalog/partials/_pagination.html" with page_obj=page_obj %}
+      {% else %}
+        <div class="catalog-empty">{% trans "Нічого не знайдено. Спробуйте інші фільтри." %}</div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/catalog.js' %}" defer></script>
+{% endblock %}

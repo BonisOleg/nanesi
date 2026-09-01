@@ -1,0 +1,22 @@
+{% load i18n %}
+<div class="newsletter-form" data-newsletter-form>
+  <h2>
+    {% if site_settings.promo_popup_title %}{{ site_settings.promo_popup_title }}
+    {% else %}{% blocktrans with percent=site_settings.promo_popup_discount_percent %}−{{ percent }}% на перше замовлення{% endblocktrans %}{% endif %}
+  </h2>
+  <p>
+    {% if site_settings.promo_popup_text %}{{ site_settings.promo_popup_text }}
+    {% else %}{% blocktrans with name=site_settings.site_name %}Залиште email — надішлемо промокод і новини асортименту {{ name }}.{% endblocktrans %}{% endif %}
+  </p>
+  <form class="subscribe-form" method="post" action="{% url 'content:newsletter_subscribe' %}"
+        hx-post="{% url 'content:newsletter_subscribe' %}" hx-target="closest [data-newsletter-form]" hx-swap="outerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="{{ source|default:'inline' }}">
+    <label class="sr-only" for="subscribe-email-{{ source|default:'inline' }}">{% trans "Email" %}</label>
+    <input class="form-control" id="subscribe-email-{{ source|default:'inline' }}" type="email" name="email"
+           placeholder="{% trans 'Ваш email' %}" required autocomplete="email"
+           value="{{ form.email.value|default:'' }}">
+    <button class="btn--primary" type="submit">{% trans "Підписатись" %}</button>
+  </form>
+  {% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+</div>

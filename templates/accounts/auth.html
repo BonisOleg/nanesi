@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Вхід до кабінету" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <h1 class="page-title">{% trans "Кабінет" %}</h1>
+
+  <div class="card auth-card">
+    <div class="auth-tabs">
+      <a class="auth-tabs__link{% if active_tab == 'login' %} is-active{% endif %}" href="#" data-auth-tab="login">{% trans "Вхід" %}</a>
+      <a class="auth-tabs__link{% if active_tab == 'register' %} is-active{% endif %}" href="#" data-auth-tab="register">{% trans "Реєстрація" %}</a>
+    </div>
+
+    <div class="auth-panel{% if active_tab != 'login' %} is-hidden{% endif %}" data-auth-panel="login">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form" value="login">
+        <input type="hidden" name="next" value="{{ next }}">
+        <input type="hidden" name="wishlist_ids" data-wishlist-ids-field>
+        <div class="field">
+          <label for="{{ login_form.username.id_for_label }}">{% trans "Телефон або email" %}</label>
+          {{ login_form.username }}
+          {% for error in login_form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ login_form.password.id_for_label }}">{% trans "Пароль" %}</label>
+          {{ login_form.password }}
+          {% for error in login_form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        {% for error in login_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary btn-block" type="submit">{% trans "Увійти" %}</button>
+        <p class="auth-hint"><a href="{% url 'accounts:password_reset' %}">{% trans "Забули пароль?" %}</a></p>
+      </form>
+    </div>
+
+    <div class="auth-panel{% if active_tab != 'register' %} is-hidden{% endif %}" data-auth-panel="register">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form" value="register">
+        <input type="hidden" name="next" value="{{ next }}">
+        <input type="hidden" name="wishlist_ids" data-wishlist-ids-field>
+        <div class="field">
+          <label for="{{ register_form.full_name.id_for_label }}">{% trans "Ім'я" %}</label>
+          {{ register_form.full_name }}
+          {% for error in register_form.full_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ register_form.phone.id_for_label }}">{% trans "Телефон" %}</label>
+          {{ register_form.phone }}
+          {% for error in register_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ register_form.email.id_for_label }}">Email</label>
+          {{ register_form.email }}
+          {% for error in register_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ register_form.password1.id_for_label }}">{% trans "Пароль" %}</label>
+          {{ register_form.password1 }}
+          {% for error in register_form.password1.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ register_form.password2.id_for_label }}">{% trans "Повторіть пароль" %}</label>
+          {{ register_form.password2 }}
+          {% for error in register_form.password2.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        {% for error in register_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        <button class="btn btn-primary btn-block" type="submit">{% trans "Створити акаунт" %}</button>
+        <p class="auth-hint">{% trans "Вкажіть телефон і/або email — достатньо одного." %}</p>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+staticfiles
+media
+.env
+_mockup
+_reference
+*.md
+*.docx
+*.pdf
+.cursor

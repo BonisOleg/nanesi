@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Оформлення замовлення" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  {% include "partials/_dl_events.html" %}
+  <h1 class="page-title">{% trans "Оформлення замовлення" %}</h1>
+
+  <div class="checkout-layout">
+    <form method="post" class="checkout-form" novalidate>
+      {% csrf_token %}
+
+      <div class="card checkout-section">
+        <h2>{% trans "Контактні дані" %}</h2>
+        <div class="field">
+          <label for="{{ form.full_name.id_for_label }}">{% trans "ПІБ" %}</label>
+          {{ form.full_name }}
+          {% for error in form.full_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.phone.id_for_label }}">{% trans "Телефон" %}</label>
+          {{ form.phone }}
+          {% for error in form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.email.id_for_label }}">{% trans "Email (необов'язково)" %}</label>
+          {{ form.email }}
+        </div>
+      </div>
+
+      <div class="card checkout-section">
+        <h2>{% trans "Доставка" %}</h2>
+        <div class="field">
+          <label for="{{ form.delivery_method.id_for_label }}">{% trans "Спосіб доставки" %}</label>
+          {{ form.delivery_method }}
+          {% for error in form.delivery_method.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div id="np-fields">
+          <div class="field">
+            <label for="{{ form.np_city_name.id_for_label }}">{% trans "Місто" %}</label>
+            {{ form.np_city_name }}
+            <div id="np-city-suggestions"></div>
+            {{ form.np_city_ref }}
+            {% for error in form.np_city_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field" id="np-warehouse-field">
+            <label for="{{ form.np_warehouse_name.id_for_label }}">{% trans "Відділення" %}</label>
+            {{ form.np_warehouse_name }}
+            <div id="np-warehouse-suggestions"></div>
+            {{ form.np_warehouse_ref }}
+            {% for error in form.np_warehouse_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div id="ukrposhta-fields" class="is-hidden">
+          <div class="field">
+            <label for="{{ form.ukrposhta_address.id_for_label }}">{% trans "Адреса доставки (Укрпошта)" %}</label>
+            {{ form.ukrposhta_address }}
+            {% for error in form.ukrposhta_address.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card checkout-section">
+        <h2>{% trans "Оплата" %}</h2>
+        <div class="field">
+          {{ form.payment_method }}
+          {% for error in form.payment_method.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="card checkout-section">
+        <div class="field">
+          <label for="{{ form.comment.id_for_label }}">{% trans "Коментар до замовлення" %}</label>
+          {{ form.comment }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">{% blocktrans %}Підтвердити замовлення — {{ total }} ₴{% endblocktrans %}</button>
+    </form>
+
+    <aside class="card checkout-sidebar">
+      <h2>{% trans "Ваше замовлення" %}</h2>
+      {% for line in lines %}
+        <div class="summary-row">
+          <span>{{ line.name }} × {{ line.qty }}</span>
+          <span>{{ line.line_total }} ₴</span>
+        </div>
+      {% endfor %}
+      <div class="summary-row summary-row--total">
+        <span>{% trans "Разом" %}</span><span>{{ total }} ₴</span>
+      </div>
+    </aside>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/checkout.js' %}" defer></script>
+{% endblock %}

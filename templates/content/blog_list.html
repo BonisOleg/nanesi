@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Блог" %} — {{ site_settings.site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/content.css' %}">{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
+    <a href="{% url 'catalog:home' %}">{% trans "Головна" %}</a>
+    <span>/</span>
+    <span aria-current="page">{% trans "Блог" %}</span>
+  </nav>
+  <h1 class="section__title" style="margin-bottom:24px">{% trans "Блог" %}</h1>
+
+  {% if posts %}
+    <div class="brand-list">
+      {% for post in posts %}
+        <a class="brand-card blog-card" href="{{ post.get_absolute_url }}">
+          {% if post.cover_image %}
+            <img class="blog-card__cover" src="{{ post.cover_image.url }}" alt="{{ post.title }}">
+          {% endif %}
+          <div class="brand-card__name">{{ post.title }}</div>
+          {% if post.published_at %}<p class="blog-card__date">{{ post.published_at|date:"d.m.Y" }}</p>{% endif %}
+        </a>
+      {% endfor %}
+    </div>
+    {% include "catalog/partials/_pagination.html" with page_obj=page_obj base_query_string="" %}
+  {% else %}
+    <div class="empty-state">{% trans "Публікацій ще немає." %}</div>
+  {% endif %}
+{% endblock %}

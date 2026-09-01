@@ -1,0 +1,11 @@
+{% load i18n %}
+<div class="newsletter-form newsletter-form--success" data-newsletter-success data-popup-subscribed="1">
+  <h2>{% trans "Дякуємо!" %}</h2>
+  {% if lead.promo_code %}
+    <p>{% trans "Ваш промокод на знижку:" %}</p>
+    <p class="newsletter-form__code">{{ lead.promo_code.code }}</p>
+    <p class="text-muted">{% trans "Застосуйте його в кошику під час оформлення замовлення." %}</p>
+  {% else %}
+    <p>{% trans "Ви вже підписані — промокод надіслано раніше." %}</p>
+  {% endif %}
+</div>

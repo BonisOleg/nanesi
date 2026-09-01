@@ -1,0 +1,87 @@
+{% load i18n %}
+<div id="cart-summary">
+  {% include "partials/_dl_events.html" %}
+  {% if not lines %}
+    <div class="card">
+      <p>{% trans "Кошик порожній." %}</p>
+      <a href="/" class="btn btn-outline">{% trans "До каталогу" %}</a>
+    </div>
+  {% else %}
+    <div class="cart-lines">
+      {% for line in lines %}
+        <div class="cart-line card">
+          <div class="cart-line__info">
+            <div class="cart-line__name">{{ line.name }}</div>
+            {% if line.shade or line.volume %}
+              <div class="cart-line__variant">
+                {{ line.shade }}{% if line.shade and line.volume %} / {% endif %}{{ line.volume }}
+              </div>
+            {% endif %}
+            {% if not line.in_stock %}
+              <div class="field-error">{% trans "Немає в наявності" %}</div>
+            {% endif %}
+          </div>
+
+          <form class="cart-line__qty-form" hx-post="{% url 'commerce:cart_update' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
+            {% csrf_token %}
+            <input type="number" name="qty" value="{{ line.qty }}" min="1" max="{{ line.stock_quantity }}"
+                   class="cart-line__qty-input" data-js="qty-autosubmit">
+          </form>
+
+          <div class="cart-line__total">{{ line.line_total }} ₴</div>
+
+          <form hx-post="{% url 'commerce:cart_remove' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline" aria-label="{% trans 'Видалити' %}">✕</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="card cart-summary-box">
+      {% if shipping_progress.threshold %}
+        <div class="shipping-progress">
+          {% if shipping_progress.reached %}
+            <p class="shipping-progress__note--done">{% trans "Безкоштовна доставка застосована 🎉" %}</p>
+          {% else %}
+            <p>{% blocktrans with remaining=shipping_progress.remaining %}До безкоштовної доставки: <strong>{{ remaining }} ₴</strong>{% endblocktrans %}</p>
+          {% endif %}
+          <div class="shipping-progress__track">
+            <div class="shipping-progress__fill" data-js="shipping-fill"
+                 data-fill="{% if shipping_progress.reached %}100{% else %}{% widthratio subtotal shipping_progress.threshold 100 %}{% endif %}"></div>
+          </div>
+        </div>
+      {% endif %}
+
+      <form class="promo-form" hx-post="{% url 'commerce:promo_apply' %}" hx-target="#cart-summary" hx-swap="outerHTML">
+        {% csrf_token %}
+        {% if promo_code %}
+          <div class="promo-form__applied">{% blocktrans with code=promo_code.code %}Промокод <strong>{{ code }}</strong> застосовано{% endblocktrans %}</div>
+        {% else %}
+          <input type="text" name="code" placeholder="{% trans 'Промокод' %}" class="promo-form__input">
+          <button type="submit" class="btn btn-secondary">{% trans "Застосувати" %}</button>
+        {% endif %}
+      </form>
+      {% if promo_code %}
+        <form class="promo-remove-form" hx-post="{% url 'commerce:promo_remove' %}" hx-target="#cart-summary" hx-swap="outerHTML">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline">{% trans "Прибрати промокод" %}</button>
+        </form>
+      {% endif %}
+
+      <div class="summary-row">
+        <span>{% trans "Сума товарів" %}</span><span>{{ subtotal }} ₴</span>
+      </div>
+      {% if discount_amount %}
+        <div class="summary-row summary-row--discount">
+          <span>{% trans "Знижка" %}</span><span>−{{ discount_amount }} ₴</span>
+        </div>
+      {% endif %}
+      <div class="summary-row summary-row--total">
+        <span>{% trans "Разом" %}</span><span>{{ total }} ₴</span>
+      </div>
+
+      <a href="{% url 'commerce:checkout' %}" class="btn btn-primary btn-block cart-checkout-link">{% trans "Оформити замовлення" %}</a>
+    </div>
+  {% endif %}
+</div>

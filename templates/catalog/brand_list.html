@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block main_class %}container{% endblock %}
+{% block title %}{% trans "Бренди" %} — {{ site_settings.site_name }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}">{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
+    <a href="{% url 'catalog:home' %}">{% trans "Головна" %}</a>
+    <span>/</span>
+    <span aria-current="page">{% trans "Бренди" %}</span>
+  </nav>
+  <h1 class="section__title" style="margin-bottom:24px">{% trans "Бренди" %}</h1>
+
+  {% if brands %}
+    <div class="brand-list">
+      {% for brand in brands %}
+        <a class="brand-card" href="{% url 'catalog:brand_detail' brand_slug=brand.slug %}">
+          {% if brand.logo %}
+            <img class="brand-card__logo" src="{{ brand.logo.url }}" alt="{{ brand.name }}">
+          {% endif %}
+          <div class="brand-card__name">{{ brand.name }}</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">{% trans "Бренди ще не додані." %}</div>
+  {% endif %}
+{% endblock %}

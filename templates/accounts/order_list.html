@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Мої замовлення" %} — {% trans "Кабінет" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <h1 class="page-title">{% trans "Кабінет" %}</h1>
+
+  <div class="cabinet-layout">
+    {% include "accounts/partials/_cabinet_nav.html" with active="orders" %}
+
+    <div class="cabinet-content">
+      <div class="card cabinet-section">
+        <h2>{% trans "Мої замовлення" %}</h2>
+        {% if page_obj.object_list %}
+          {% for order in page_obj %}
+            <div class="card order-card">
+              <div class="order-card__head">
+                <span class="order-card__number">№ {{ order.number }}</span>
+                <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
+              </div>
+              <div class="order-card__date">{{ order.created_at|date:"d.m.Y H:i" }} · {% blocktrans with n=order.items.count %}{{ n }} поз.{% endblocktrans %} · {{ order.total }} ₴</div>
+              <p><a href="{% url 'accounts:order_detail' order.number %}">{% trans "Деталі замовлення →" %}</a></p>
+            </div>
+          {% endfor %}
+          {% include "catalog/partials/_pagination.html" with page_obj=page_obj base_query_string="" %}
+        {% else %}
+          <div class="empty-state">
+            <p>{% trans "У вас ще немає замовлень." %}</p>
+            <a class="btn btn-primary" href="{% url 'catalog:catalog' %}">{% trans "До каталогу" %}</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

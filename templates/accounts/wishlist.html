@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Обране" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <h1 class="page-title">{% trans "Обране" %}</h1>
+
+  {% if request.user.is_authenticated %}
+    {% include "accounts/partials/_wishlist_grid.html" %}
+  {% else %}
+    <div id="guest-wishlist-grid" data-wishlist-guest>
+      <p class="text-muted">{% trans "Завантаження…" %}</p>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/account.js' %}" defer></script>
+{% endblock %}

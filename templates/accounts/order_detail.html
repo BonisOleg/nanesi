@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% blocktrans with number=order.number %}Замовлення № {{ number }}{% endblocktrans %} — {% trans "Кабінет" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <h1 class="page-title">{% trans "Кабінет" %}</h1>
+
+  <div class="cabinet-layout">
+    {% include "accounts/partials/_cabinet_nav.html" with active="orders" %}
+
+    <div class="cabinet-content">
+      <div class="card cabinet-section">
+        <div class="order-card__head">
+          <h2>{% blocktrans with number=order.number %}Замовлення № {{ number }}{% endblocktrans %}</h2>
+          <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+        <p class="order-detail__meta">
+          {{ order.created_at|date:"d.m.Y H:i" }} ·
+          {{ order.get_delivery_method_display }}
+          {% if order.np_city_name %} · {{ order.np_city_name }}, {{ order.np_warehouse_name }}{% endif %}
+        </p>
+
+        {% for item in order.items.all %}
+          <div class="order-item-row">
+            <span>{{ item.product_name }} × {{ item.qty }}</span>
+            <span>{{ item.line_total }} ₴</span>
+          </div>
+        {% endfor %}
+
+        <div class="summary-row summary-row--total">
+          <span>{% trans "Разом" %}</span><span>{{ order.total }} ₴</span>
+        </div>
+
+        <div class="order-detail__actions">
+          <form method="post" action="{% url 'accounts:order_repeat' order.number %}">
+            {% csrf_token %}
+            <button class="btn btn-primary" type="submit">{% trans "Повторити замовлення" %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

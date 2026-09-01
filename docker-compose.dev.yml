@@ -1,0 +1,7 @@
+services:
+  backend:
+    volumes:
+      - .:/app
+    environment:
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: config.settings.develop

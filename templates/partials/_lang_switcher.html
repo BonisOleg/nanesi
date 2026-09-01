@@ -1,0 +1,25 @@
+{% load i18n %}
+<div class="lang" aria-label="Мова">
+  <form class="lang__form" action="{% url 'set_language' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <input type="hidden" name="language" value="uk">
+    <button class="lang__btn" type="submit" {% if request.LANGUAGE_CODE == 'uk' %}aria-current="true"{% endif %}>UA</button>
+  </form>
+  {% if site_settings.ru_enabled %}
+    <form class="lang__form" action="{% url 'set_language' %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <input type="hidden" name="language" value="ru">
+      <button class="lang__btn" type="submit" {% if request.LANGUAGE_CODE == 'ru' %}aria-current="true"{% endif %}>RU</button>
+    </form>
+  {% endif %}
+  {% if site_settings.en_enabled %}
+    <form class="lang__form" action="{% url 'set_language' %}" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <input type="hidden" name="language" value="en">
+      <button class="lang__btn" type="submit" {% if request.LANGUAGE_CODE == 'en' %}aria-current="true"{% endif %}>EN</button>
+    </form>
+  {% endif %}
+</div>

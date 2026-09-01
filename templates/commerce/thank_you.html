@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Дякуємо за замовлення" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  {% include "partials/_dl_events.html" %}
+  <div class="card result-card">
+    <h1>{% trans "Дякуємо за замовлення!" %}</h1>
+    <p>{% blocktrans with number=order.number %}Номер замовлення: <strong>{{ number }}</strong>{% endblocktrans %}</p>
+    <p class="text-muted">
+      {% blocktrans with phone=order.phone %}Ми зателефонуємо на {{ phone }} для підтвердження. Статус можна відстежити,
+      написавши нам номер замовлення.{% endblocktrans %}
+    </p>
+    <div class="result-card__items">
+      {% for item in order.items.all %}
+        <div class="summary-row">
+          <span>{{ item.product_name }} × {{ item.qty }}</span>
+          <span>{{ item.line_total }} ₴</span>
+        </div>
+      {% endfor %}
+      <div class="summary-row summary-row--total">
+        <span>{% trans "Разом" %}</span><span>{{ order.total }} ₴</span>
+      </div>
+    </div>
+    <a href="/" class="btn btn-primary btn-block cart-checkout-link">{% trans "До каталогу" %}</a>
+  </div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block main_class %}container{% endblock %}
+{% block title %}{{ page.meta_title|default:page.title }} — {{ site_settings.site_name }}{% endblock %}
+{% block meta_description %}{% if page.meta_description %}<meta name="description" content="{{ page.meta_description }}">{% endif %}{% endblock %}
+{% block meta_robots %}{% if not page.is_indexed %}<meta name="robots" content="noindex,nofollow">{% endif %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}">{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
+    <a href="{% url 'catalog:home' %}">{% trans "Головна" %}</a>
+    <span>/</span>
+    <span aria-current="page">{{ page.title }}</span>
+  </nav>
+
+  <article class="card seo-landing">
+    <h1 class="page-title">{{ page.title }}</h1>
+    {{ page.body|safe }}
+  </article>
+
+  {% if products %}
+    <section class="seo-landing__products">
+      <h2>{% trans "Товари з цієї добірки" %}</h2>
+      <div class="product-grid">
+        {% for product in products %}
+          {% include "catalog/partials/_product_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

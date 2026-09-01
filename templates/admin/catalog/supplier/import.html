@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+  <div class="module">
+    <h2>{% translate "Імпорт прайсу постачальника" %} — {{ supplier.name }}</h2>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="form-row">
+        <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+        {{ form.file }}
+        {% if form.file.errors %}<div class="errornote">{{ form.file.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-row">
+        <label for="{{ form.name_locale.id_for_label }}">{{ form.name_locale.label }}</label>
+        {{ form.name_locale }}
+      </div>
+      <div class="submit-row">
+        <input type="submit" value="{% translate 'Імпортувати' %}" class="default">
+      </div>
+    </form>
+  </div>
+
+  {% if report %}
+  <div class="module">
+    <h2>{% translate "Результат" %}</h2>
+    <p>
+      {% translate "Створено" %}: {{ report.created }} ·
+      {% translate "Оновлено" %}: {{ report.updated }} ·
+      {% translate "Пропущено" %}: {{ report.skipped }}
+    </p>
+    {% if report.fallback_category_used %}
+      <p>{% translate "Без категорії (fallback)" %}: {{ report.fallback_category_used }}</p>
+    {% endif %}
+    {% if report.errors %}
+      <table>
+        <thead>
+          <tr>
+            <th>{% translate "Рядок" %}</th>
+            <th>SKU</th>
+            <th>{% translate "Проблема" %}</th>
+            <th>{% translate "Як виправити" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for err in report.errors|slice:":50" %}
+          <tr>
+            <td>{{ err.row }}</td>
+            <td>{{ err.sku }}</td>
+            <td>{{ err.problem }}</td>
+            <td>{{ err.hint }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

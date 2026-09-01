@@ -1,0 +1,199 @@
+/* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
+
+/* --- Вхід / реєстрація --- */
+.auth-card {
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-divider);
+  margin-bottom: var(--space-5);
+}
+
+.auth-tabs__link {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
+}
+
+.auth-tabs__link.is-active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.auth-panel.is-hidden {
+  display: none;
+}
+
+.auth-hint {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-top: var(--space-4);
+  text-align: center;
+}
+
+/* --- Кабінет: сайдбар + контент --- */
+.cabinet-layout {
+  display: flex;
+  gap: var(--space-6);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.cabinet-nav {
+  flex: 0 0 220px;
+  min-width: 200px;
+}
+
+.cabinet-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cabinet-nav__link {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+}
+
+.cabinet-nav__link:hover {
+  background: var(--color-bg-secondary);
+}
+
+.cabinet-nav__link.is-active {
+  background: var(--color-bg-secondary);
+  font-weight: 600;
+}
+
+.cabinet-nav__logout {
+  margin-top: var(--space-4);
+}
+
+.cabinet-content {
+  flex: 1;
+  min-width: 260px;
+}
+
+.cabinet-section {
+  margin-bottom: var(--space-5);
+}
+
+.cabinet-section h2 {
+  margin-top: 0;
+}
+
+/* --- Замовлення --- */
+.order-card {
+  margin-bottom: var(--space-4);
+}
+
+.order-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.order-card__number {
+  font-weight: 700;
+}
+
+.order-card__date {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.order-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--color-bg-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.order-status--paid,
+.order-status--delivered {
+  background: #E1EEE6;
+  color: var(--color-success);
+}
+
+.order-status--cancelled {
+  background: #F6DEDE;
+  color: var(--color-error);
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.order-detail__meta {
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-4);
+}
+
+.order-detail__actions {
+  margin-top: var(--space-4);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-6) 0;
+}
+
+/* --- Обране --- */
+.wishlist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 720px) {
+  .wishlist-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .wishlist-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .cabinet-layout {
+    flex-direction: column;
+  }
+
+  .cabinet-nav {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .cabinet-nav__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

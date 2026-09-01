@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Профіль" %} — {% trans "Кабінет" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <h1 class="page-title">{% trans "Кабінет" %}</h1>
+
+  <div class="cabinet-layout">
+    {% include "accounts/partials/_cabinet_nav.html" with active="profile" %}
+
+    <div class="cabinet-content">
+      <div class="card cabinet-section">
+        <h2>{% trans "Профіль" %}</h2>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="form" value="profile">
+          <div class="field">
+            <label for="{{ profile_form.first_name.id_for_label }}">{% trans "Ім'я" %}</label>
+            {{ profile_form.first_name }}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.last_name.id_for_label }}">{% trans "Прізвище" %}</label>
+            {{ profile_form.last_name }}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.phone.id_for_label }}">{% trans "Телефон" %}</label>
+            {{ profile_form.phone }}
+            {% for error in profile_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.email.id_for_label }}">Email</label>
+            {{ profile_form.email }}
+            {% for error in profile_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          </div>
+          {% for error in profile_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
+        </form>
+      </div>
+
+      <div class="card cabinet-section">
+        <h2>{% trans "Збережене відділення Нової Пошти" %}</h2>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="form" value="warehouse">
+          <div class="field">
+            <label for="{{ warehouse_form.saved_np_city_name.id_for_label }}">{% trans "Місто" %}</label>
+            {{ warehouse_form.saved_np_city_name }}
+            <div id="saved-np-city-suggestions"></div>
+            {{ warehouse_form.saved_np_city_ref }}
+          </div>
+          <div class="field">
+            <label for="{{ warehouse_form.saved_np_warehouse_name.id_for_label }}">{% trans "Відділення" %}</label>
+            {{ warehouse_form.saved_np_warehouse_name }}
+            <div id="saved-np-warehouse-suggestions"></div>
+            {{ warehouse_form.saved_np_warehouse_ref }}
+          </div>
+          <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
+        </form>
+      </div>
+
+      <div class="card cabinet-section">
+        <h2>{% trans "Останні замовлення" %}</h2>
+        {% if recent_orders %}
+          {% for order in recent_orders %}
+            <div class="order-item-row">
+              <span><a href="{% url 'accounts:order_detail' order.number %}">№ {{ order.number }}</a> — {{ order.created_at|date:"d.m.Y" }}</span>
+              <span class="order-status">{{ order.get_status_display }}</span>
+            </div>
+          {% endfor %}
+          <p><a href="{% url 'accounts:order_list' %}">{% trans "Усі замовлення →" %}</a></p>
+        {% else %}
+          <p class="text-muted">{% trans "Замовлень ще немає." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/account.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Оплата замовлення" %} — {{ site_settings.site_name }}{% endblock %}
+{% block content %}
+  <div class="card result-card">
+    <h1>{% blocktrans with number=order.number %}Оплата замовлення №{{ number }}{% endblocktrans %}</h1>
+    <p>{% blocktrans with total=order.total %}Сума до оплати: <strong>{{ total }} ₴</strong>{% endblocktrans %}</p>
+    <form method="post" action="{{ checkout.checkout_url }}">
+      <input type="hidden" name="data" value="{{ checkout.data }}">
+      <input type="hidden" name="signature" value="{{ checkout.signature }}">
+      <button type="submit" class="btn btn-primary btn-block">{% trans "Оплатити карткою" %}</button>
+    </form>
+  </div>
+{% endblock %}

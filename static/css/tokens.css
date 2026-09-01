@@ -1,0 +1,50 @@
+/* Палітра — затверджений mockup (Доповнення до ТЗ §1). Токени, без !important. */
+:root {
+  --color-milky: #F8F6F2;
+  --color-beige: #EFE9E1;
+  --color-white: #FFFFFF;
+  --color-graphite: #292725;
+  --color-muted: #77716B;
+  --color-accent: #C99B9B;
+  --color-accent-hover: #A97878;
+  --color-divider: #DED8D0;
+  --color-footer: #302B29;
+  --color-sale: #C45C5C;
+  --color-star: #D4A017;
+
+  /* Аліаси старих назв (Етап C: commerce.css/checkout.js) — щоб не переписувати кошик/checkout */
+  --color-bg: var(--color-milky);
+  --color-bg-secondary: var(--color-beige);
+  --color-card: var(--color-white);
+  --color-text: var(--color-graphite);
+  --color-text-muted: var(--color-muted);
+  --color-success: #4C7A5E;
+  --color-error: #B23A3A;
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-base: var(--font-body);
+
+  --container: 1180px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-soft: 0 8px 28px rgba(41, 39, 37, 0.06);
+
+  --header-h: 72px;
+  --tap: 44px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --transition: 0.2s ease;
+}

@@ -1,0 +1,13 @@
+{% load shop_extras i18n %}
+{% if products %}
+  <div class="wishlist-grid">
+    {% for product in products %}
+      {% include "catalog/partials/_product_card.html" with product=product %}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <p>{% trans "У обраному ще немає товарів." %}</p>
+    <a class="btn btn-primary" href="{% url 'catalog:catalog' %}">{% trans "До каталогу" %}</a>
+  </div>
+{% endif %}

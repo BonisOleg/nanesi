@@ -1,0 +1,12 @@
+{% load i18n %}
+<nav class="cabinet-nav card">
+  <ul class="cabinet-nav__list">
+    <li><a class="cabinet-nav__link{% if active == 'profile' %} is-active{% endif %}" href="{% url 'accounts:profile' %}">{% trans "Профіль" %}</a></li>
+    <li><a class="cabinet-nav__link{% if active == 'orders' %} is-active{% endif %}" href="{% url 'accounts:order_list' %}">{% trans "Мої замовлення" %}</a></li>
+    <li><a class="cabinet-nav__link{% if active == 'wishlist' %} is-active{% endif %}" href="{% url 'accounts:wishlist' %}">{% trans "Обране" %}{% if wishlist_count %} ({{ wishlist_count }}){% endif %}</a></li>
+  </ul>
+  <form class="cabinet-nav__logout" method="post" action="{% url 'accounts:logout' %}">
+    {% csrf_token %}
+    <button class="btn btn-outline btn-block" type="submit">{% trans "Вийти" %}</button>
+  </form>
+</nav>
