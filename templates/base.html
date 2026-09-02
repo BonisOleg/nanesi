@@ -12,15 +12,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% url 'theme_css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=m320">
   <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=footer-names">
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v=cart4">
-  <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=cart-link">
+  <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=m320">
   <link rel="stylesheet" href="{% static 'css/account.css' %}">
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=mnav" defer></script>
-  <script src="{% static 'js/commerce.js' %}?v=cart6" defer></script>
+  <script src="{% static 'js/commerce.js' %}?v=qty-stepper" defer></script>
   {% if site_settings.gtm_id or site_settings.ga4_id or site_settings.meta_pixel_id or site_settings.tiktok_pixel_id %}
     <script src="{% static 'js/analytics.js' %}" defer
       {% if site_settings.gtm_id %}data-gtm-id="{{ site_settings.gtm_id }}"{% endif %}

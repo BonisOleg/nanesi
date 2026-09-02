@@ -1,0 +1,23 @@
+{% load i18n %}
+{% if shipping_progress.threshold %}
+  <div class="shipping-progress{% if shipping_progress.reached %} is-reached{% endif %}">
+    {% if shipping_progress.reached %}
+      <p class="shipping-progress__note shipping-progress__note--done" aria-live="polite">
+        {% trans "Вітаємо! Вам доступна безкоштовна доставка" %}
+      </p>
+    {% else %}
+      <p class="shipping-progress__note" aria-live="polite">
+        {% blocktrans with remaining=shipping_progress.remaining_display %}До безкоштовної доставки залишилось <strong>{{ remaining }} грн</strong>{% endblocktrans %}
+      </p>
+    {% endif %}
+    <div class="shipping-progress__track"
+         role="progressbar"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-valuenow="{{ shipping_progress.percent }}"
+         aria-label="{% trans 'Прогрес до безкоштовної доставки' %}">
+      <div class="shipping-progress__fill" data-js="shipping-fill"
+           data-fill="{{ shipping_progress.percent }}"></div>
+    </div>
+  </div>
+{% endif %}

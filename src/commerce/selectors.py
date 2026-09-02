@@ -108,19 +108,49 @@ def cart_subtotal(lines: list[CartLine]) -> Decimal:
     return sum((line.line_total for line in lines), Decimal("0"))
 
 
+def format_uah_amount(value: Decimal) -> str:
+    """Цілі — «300»; дробові — «300,50»."""
+    quantized = (value or Decimal("0")).quantize(Decimal("0.01"))
+    if quantized == quantized.to_integral_value():
+        return str(int(quantized))
+    return f"{quantized:.2f}".replace(".", ",")
+
+
 @dataclass
 class FreeShippingProgress:
     threshold: Decimal | None
     remaining: Decimal
     reached: bool
+    percent: int
+    remaining_display: str
 
 
-def free_shipping_progress(subtotal: Decimal) -> FreeShippingProgress:
+def free_shipping_progress(amount: Decimal) -> FreeShippingProgress:
+    """Прогрес до порогу з SiteSettings.free_shipping_threshold.
+
+    amount — сума товарів ДО промокоду (знижка не відкочує безкоштовну доставку).
+    """
     threshold = SiteSettings.load().free_shipping_threshold
-    if not threshold:
-        return FreeShippingProgress(threshold=None, remaining=Decimal("0"), reached=False)
-    remaining = max(Decimal("0"), threshold - subtotal)
-    return FreeShippingProgress(threshold=threshold, remaining=remaining, reached=subtotal >= threshold)
+    empty = FreeShippingProgress(
+        threshold=None, remaining=Decimal("0"), reached=False,
+        percent=0, remaining_display="0",
+    )
+    if not threshold or threshold <= 0:
+        return empty
+    remaining = max(Decimal("0"), threshold - amount)
+    reached = amount >= threshold
+    if reached:
+        percent = 100
+    else:
+        percent = int((amount / threshold * 100).quantize(Decimal("1")))
+        percent = min(99, max(0, percent))
+    return FreeShippingProgress(
+        threshold=threshold,
+        remaining=remaining,
+        reached=reached,
+        percent=percent,
+        remaining_display=format_uah_amount(remaining),
+    )
 
 
 def available_delivery_methods() -> list[tuple[str, str]]:

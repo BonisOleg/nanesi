@@ -3,7 +3,7 @@
 SEC-06 (shop_security_skill): CartItem тримає лише product_variant+qty, БЕЗ ціни.
 Ціна рахується з БД при кожному рендері й при place_order() (SEC-02).
 """
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -11,6 +11,13 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from src.core.models import TimeStampedModel
+
+_MONEY_QUANT = Decimal("0.01")
+
+
+def money(value: Decimal) -> Decimal:
+    """Округлення до копійок (2 знаки) — для виводу й збереження сум."""
+    return (value or Decimal("0")).quantize(_MONEY_QUANT, rounding=ROUND_HALF_UP)
 
 
 class Cart(TimeStampedModel):
@@ -111,4 +118,4 @@ class PromoCode(TimeStampedModel):
             discount = subtotal * self.discount_value / Decimal("100")
         else:
             discount = self.discount_value
-        return min(discount, subtotal)
+        return money(min(discount, subtotal))

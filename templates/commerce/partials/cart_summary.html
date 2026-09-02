@@ -4,7 +4,7 @@
   {% if not lines %}
     <div class="card">
       <p>{% trans "Кошик порожній." %}</p>
-      <a href="/" class="btn btn-outline">{% trans "До каталогу" %}</a>
+      <a href="{% url 'catalog:catalog' %}" class="btn btn-outline">{% trans "До каталогу" %}</a>
     </div>
   {% else %}
     <div class="cart-lines">
@@ -22,11 +22,16 @@
 
           <form class="cart-line__qty-form" hx-post="{% url 'commerce:cart_update' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
             {% csrf_token %}
-            <input type="number" name="qty" value="{{ line.qty }}" min="1" max="{{ line.stock_quantity }}"
-                   class="cart-line__qty-input" data-js="qty-autosubmit">
+            <div class="cart-line__qty" data-cart-qty>
+              <button type="button" class="cart-line__qty-btn" data-qty-minus aria-label="{% trans 'Менше' %}">−</button>
+              <input type="number" name="qty" value="{{ line.qty }}" min="1" max="{{ line.stock_quantity }}"
+                     inputmode="numeric" pattern="[0-9]*"
+                     class="cart-line__qty-input" data-js="qty-autosubmit" data-qty-value>
+              <button type="button" class="cart-line__qty-btn" data-qty-plus aria-label="{% trans 'Більше' %}">+</button>
+            </div>
           </form>
 
-          <div class="cart-line__total">{{ line.line_total }} ₴</div>
+          <div class="cart-line__total">{{ line.line_total }}&nbsp;₴</div>
 
           <form hx-post="{% url 'commerce:cart_remove' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
             {% csrf_token %}
@@ -37,19 +42,7 @@
     </div>
 
     <div class="card cart-summary-box">
-      {% if shipping_progress.threshold %}
-        <div class="shipping-progress">
-          {% if shipping_progress.reached %}
-            <p class="shipping-progress__note--done">{% trans "Безкоштовна доставка застосована 🎉" %}</p>
-          {% else %}
-            <p>{% blocktrans with remaining=shipping_progress.remaining %}До безкоштовної доставки: <strong>{{ remaining }} ₴</strong>{% endblocktrans %}</p>
-          {% endif %}
-          <div class="shipping-progress__track">
-            <div class="shipping-progress__fill" data-js="shipping-fill"
-                 data-fill="{% if shipping_progress.reached %}100{% else %}{% widthratio subtotal shipping_progress.threshold 100 %}{% endif %}"></div>
-          </div>
-        </div>
-      {% endif %}
+      {% include "commerce/partials/_shipping_progress.html" %}
 
       <form class="promo-form" hx-post="{% url 'commerce:promo_apply' %}" hx-target="#cart-summary" hx-swap="outerHTML">
         {% csrf_token %}
@@ -68,18 +61,19 @@
       {% endif %}
 
       <div class="summary-row">
-        <span>{% trans "Сума товарів" %}</span><span>{{ subtotal }} ₴</span>
+        <span>{% trans "Сума товарів" %}</span><span class="summary-row__price">{{ subtotal }}&nbsp;₴</span>
       </div>
       {% if discount_amount %}
         <div class="summary-row summary-row--discount">
-          <span>{% trans "Знижка" %}</span><span>−{{ discount_amount }} ₴</span>
+          <span>{% trans "Знижка" %}</span><span class="summary-row__price">−{{ discount_amount }}&nbsp;₴</span>
         </div>
       {% endif %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span>{{ total }} ₴</span>
+        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ total }}&nbsp;₴</span>
       </div>
 
       <a href="{% url 'commerce:checkout' %}" class="btn btn-primary btn-block cart-checkout-link">{% trans "Оформити замовлення" %}</a>
+      <a href="{% url 'catalog:catalog' %}" class="btn btn-outline btn-block cart-catalog-link">{% trans "До каталогу" %}</a>
     </div>
   {% endif %}
 </div>

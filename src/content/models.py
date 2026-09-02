@@ -3,6 +3,8 @@
 Усі елементи, що змінюються в процесі роботи магазину (контакти, лого, безкоштовна
 доставка, popup) — керовані з адмінки без участі розробника (Відповіді, «Додатково»).
 """
+from decimal import Decimal
+
 from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
@@ -45,8 +47,16 @@ class SiteSettings(SingletonModel):
 
     # Безкоштовна доставка (лист Nanesi п.9) — сума керується тут, без розробника
     free_shipping_threshold = models.DecimalField(
-        "Сума безкоштовної доставки, ₴", max_digits=10, decimal_places=2,
-        null=True, blank=True,
+        "Сума безкоштовної доставки, ₴",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=Decimal("1500.00"),
+        help_text=(
+            "Поріг для прогрес-бару в кошику: «До безкоштовної доставки залишилось … грн». "
+            "Порожнє поле — бар не показується. Текст верхньої смужки оновіть окремо."
+        ),
     )
 
     # Мови (Доповнення §1): uk завжди активна; ru/en — тумблер
@@ -92,12 +102,53 @@ class SiteSettings(SingletonModel):
         help_text="Показується клієнту при виборі «Оплата за реквізитами»",
     )
 
+    # Сторінка «Дякуємо» після checkout — тексти з адмінки
+    thank_you_title = models.CharField(
+        "Дякуємо — заголовок",
+        max_length=255,
+        blank=True,
+        default="Дякуємо за замовлення!",
+    )
+    thank_you_number_label = models.CharField(
+        "Дякуємо — підпис до номера",
+        max_length=255,
+        blank=True,
+        default="Номер замовлення",
+        help_text="Перед номером, напр. «Номер замовлення». Сам номер підставляється автоматично.",
+    )
+    thank_you_body = models.TextField(
+        "Дякуємо — текст під номером",
+        blank=True,
+        default=(
+            "Ми зателефонуємо на {phone} для підтвердження. "
+            "Статус можна відстежити, написавши нам номер замовлення."
+        ),
+        help_text=(
+            "Можна змінювати слова навколо. Фрагмент {phone} не чіпайте і не перекладайте — "
+            "на його місце підставиться телефон клієнта з замовлення. "
+            "Якщо прибрати {phone}, телефон на сторінці не з’явиться."
+        ),
+    )
+
     class Meta:
         verbose_name = "Налаштування сайту"
         verbose_name_plural = "Налаштування сайту"
 
     def __str__(self) -> str:
         return self.site_name
+
+    def thank_you_title_display(self) -> str:
+        return (self.thank_you_title or "").strip() or "Дякуємо за замовлення!"
+
+    def thank_you_number_label_display(self) -> str:
+        return (self.thank_you_number_label or "").strip() or "Номер замовлення"
+
+    def thank_you_body_display(self, phone: str = "") -> str:
+        tpl = (self.thank_you_body or "").strip() or (
+            "Ми зателефонуємо на {phone} для підтвердження. "
+            "Статус можна відстежити, написавши нам номер замовлення."
+        )
+        return tpl.replace("{phone}", phone or "")
 
 
 class StaticPage(TimeStampedModel, SeoFieldsMixin):

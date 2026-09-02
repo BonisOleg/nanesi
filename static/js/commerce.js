@@ -154,6 +154,25 @@ document.addEventListener("change", function (event) {
   }
 });
 
+document.addEventListener("click", function (event) {
+  var minus = event.target.closest("[data-qty-minus]");
+  var plus = event.target.closest("[data-qty-plus]");
+  if (!minus && !plus) return;
+  var root = event.target.closest("[data-cart-qty]");
+  if (!root) return;
+  event.preventDefault();
+  var input = root.querySelector("[data-qty-value]");
+  if (!input || !input.form) return;
+  var min = parseInt(input.getAttribute("min"), 10) || 1;
+  var max = parseInt(input.getAttribute("max"), 10) || 999;
+  var val = parseInt(input.value, 10) || min;
+  if (minus) val = Math.max(min, val - 1);
+  if (plus) val = Math.min(max, val + 1);
+  if (String(val) === input.value) return;
+  input.value = String(val);
+  input.form.requestSubmit();
+});
+
 document.addEventListener("submit", function (event) {
   var form = event.target.closest("[data-cart-form]");
   if (!form) return;

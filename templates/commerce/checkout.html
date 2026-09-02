@@ -76,19 +76,21 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block">{% blocktrans %}Підтвердити замовлення — {{ total }} ₴{% endblocktrans %}</button>
+      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total }}&nbsp;₴</button>
     </form>
 
     <aside class="card checkout-sidebar">
       <h2>{% trans "Ваше замовлення" %}</h2>
+      {% include "commerce/partials/_shipping_progress.html" %}
       {% for line in lines %}
         <div class="summary-row">
           <span>{{ line.name }} × {{ line.qty }}</span>
-          <span>{{ line.line_total }} ₴</span>
+          <span class="summary-row__price">{{ line.line_total }}&nbsp;₴</span>
         </div>
       {% endfor %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span>{{ total }} ₴</span>
+        <span>{% trans "Разом" %}</span>
+        <span class="summary-row__price">{{ total }}&nbsp;₴</span>
       </div>
     </aside>
   </div>

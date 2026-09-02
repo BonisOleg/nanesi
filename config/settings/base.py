@@ -251,6 +251,8 @@ UNFOLD = {
                     {"title": "Налаштування сайту", "icon": "settings", "link": reverse_lazy("admin:content_sitesettings_change", args=[1])},
                     {"title": "Сторінки", "icon": "description", "link": reverse_lazy("admin:content_staticpage_changelist")},
                     {"title": "Блог", "icon": "article", "link": reverse_lazy("admin:content_blogpost_changelist")},
+                    {"title": "Email-ліди (підписки)", "icon": "mail", "link": reverse_lazy("admin:content_newsletterlead_changelist")},
+                    {"title": "Переваги (головна)", "icon": "verified", "link": reverse_lazy("admin:content_trustbadge_changelist")},
                 ],
             },
         ],

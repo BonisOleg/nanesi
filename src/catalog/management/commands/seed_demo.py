@@ -3,6 +3,7 @@
 Запуск: python3 manage.py seed_demo
 Ідемпотентно: update_or_create за slug/sku/path.
 """
+from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
@@ -80,9 +81,15 @@ class Command(BaseCommand):
 
     def _seed_site_settings(self) -> None:
         site = SiteSettings.load()
+        updates: list[str] = []
         if not site.instagram_url:
             site.instagram_url = "https://instagram.com/nanesi.ua"
-            site.save(update_fields=["instagram_url"])
+            updates.append("instagram_url")
+        if not site.free_shipping_threshold:
+            site.free_shipping_threshold = Decimal("1500.00")
+            updates.append("free_shipping_threshold")
+        if updates:
+            site.save(update_fields=updates)
 
     def _seed_collections(self) -> None:
         # Підбірки для головної /dobirka/ — 4 промо як у макеті

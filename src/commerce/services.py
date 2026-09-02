@@ -15,6 +15,7 @@ from src.accounts.permissions import user_can_manage_orders
 from src.catalog.models import ProductVariant
 from src.commerce.integrations import queue_order_event
 from src.commerce.models import Cart, CartItem, Order, OrderIntegrationEvent, OrderItem, OrderStatusLog, PromoCode
+from src.commerce.models_1 import money
 from src.commerce.selectors import cart_lines, cart_subtotal
 
 logger = logging.getLogger(__name__)
@@ -148,7 +149,7 @@ def place_order(request, cleaned_data: dict) -> Order:
                 },
             )
 
-    subtotal = sum((item.product_variant.current_price * item.qty for item in items), Decimal("0"))
+    subtotal = money(sum((item.product_variant.current_price * item.qty for item in items), Decimal("0")))
 
     discount_amount = Decimal("0")
     promo = None
@@ -164,11 +165,12 @@ def place_order(request, cleaned_data: dict) -> Order:
     shipping_cost = None
     from src.content.models import SiteSettings
 
+    # Поріг — від subtotal до знижки: промокод не «знімає» безкоштовну доставку.
     threshold = SiteSettings.load().free_shipping_threshold
-    if threshold and (subtotal - discount_amount) >= threshold:
+    if threshold and subtotal >= threshold:
         shipping_cost = Decimal("0")
 
-    total = subtotal - discount_amount + (shipping_cost or Decimal("0"))
+    total = money(subtotal - discount_amount + (shipping_cost or Decimal("0")))
 
     order = Order.objects.create(
         user=request.user if request.user.is_authenticated else None,

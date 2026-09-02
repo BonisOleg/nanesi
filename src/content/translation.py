@@ -11,6 +11,7 @@ class SiteSettingsTranslationOptions(TranslationOptions):
     fields = (
         "site_name", "tagline", "promo_popup_title", "promo_popup_text",
         "hero_title", "hero_subtitle", "topbar_promo_text", "work_hours", "address",
+        "thank_you_title", "thank_you_number_label", "thank_you_body",
     )
 
 

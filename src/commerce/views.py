@@ -16,19 +16,22 @@ from src.catalog.models import ProductVariant
 from src.commerce import selectors, services
 from src.commerce.forms import CheckoutForm
 from src.commerce.models import Order
+from src.commerce.models_1 import money
 from src.commerce.payments.liqpay import get_liqpay_service
+from src.content.models import SiteSettings
 from src.core import analytics
 
 
 def _cart_context(request):
     cart = selectors.get_cart(request)
     lines = selectors.cart_lines(cart)
-    subtotal = selectors.cart_subtotal(lines)
-    progress = selectors.free_shipping_progress(subtotal)
+    subtotal = money(selectors.cart_subtotal(lines))
     discount_amount = None
     if cart and cart.promo_code_id:
-        is_valid, message = cart.promo_code.is_valid_now(subtotal=subtotal)
+        is_valid, _message = cart.promo_code.is_valid_now(subtotal=subtotal)
         discount_amount = cart.promo_code.calculate_discount(subtotal) if is_valid else None
+    # Поріг безкоштовної доставки — від суми товарів ДО промокоду (п.9 UX).
+    progress = selectors.free_shipping_progress(subtotal)
     cart_items_count = sum(line.qty for line in lines)
     return {
         "cart": cart,
@@ -37,7 +40,7 @@ def _cart_context(request):
         "shipping_progress": progress,
         "promo_code": cart.promo_code if cart else None,
         "discount_amount": discount_amount,
-        "total": subtotal - (discount_amount or 0),
+        "total": money(subtotal - (discount_amount or 0)),
         "cart_items_count": cart_items_count,
     }
 
@@ -209,7 +212,14 @@ class ThankYouView(View):
                 "coupon": order.promo_code_snapshot or None,
             },
         ))
-        return render(request, "commerce/thank_you.html", {"order": order, "dl_events_json": dl_events_json})
+        site = SiteSettings.load()
+        return render(request, "commerce/thank_you.html", {
+            "order": order,
+            "dl_events_json": dl_events_json,
+            "thank_you_title": site.thank_you_title_display(),
+            "thank_you_number_label": site.thank_you_number_label_display(),
+            "thank_you_body": site.thank_you_body_display(order.phone),
+        })
 
 
 class PaymentInitView(View):

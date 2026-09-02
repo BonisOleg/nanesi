@@ -967,13 +967,17 @@ msgid "Видалити"
 msgstr "Удалить"
 
 #: templates/commerce/partials/cart_summary.html:45
-msgid "Безкоштовна доставка застосована 🎉"
-msgstr "Бесплатная доставка применена 🎉"
+msgid "Вітаємо! Вам доступна безкоштовна доставка"
+msgstr "Поздравляем! Вам доступна бесплатная доставка"
 
-#: templates/commerce/partials/cart_summary.html:47
+#: templates/commerce/partials/_shipping_progress.html
 #, python-format
-msgid "До безкоштовної доставки: <strong>%(remaining)s ₴</strong>"
-msgstr "До бесплатной доставки: <strong>%(remaining)s ₴</strong>"
+msgid "До безкоштовної доставки залишилось <strong>%(remaining)s грн</strong>"
+msgstr "До бесплатной доставки осталось <strong>%(remaining)s грн</strong>"
+
+#: templates/commerce/partials/_shipping_progress.html
+msgid "Прогрес до безкоштовної доставки"
+msgstr "Прогресс до бесплатной доставки"
 
 #: templates/commerce/partials/cart_summary.html:59
 #, python-format

@@ -27,7 +27,13 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
             "fields": ("topbar_promo_text", "hero_title", "hero_subtitle", "hero_image"),
         }),
         ("Кольори (акцент бренду)", {"fields": ("accent_color", "accent_hover_color")}),
-        ("Доставка", {"fields": ("free_shipping_threshold",)}),
+        ("Доставка", {
+            "fields": ("free_shipping_threshold",),
+            "description": (
+                "Сума для прогрес-бару в кошику. Змінюється тут — без участі розробника. "
+                "Текст верхньої смужки («Безкоштовна доставка від …») оновіть у блоці вище."
+            ),
+        }),
         ("Мови", {"fields": ("ru_enabled", "en_enabled")}),
         ("Popup зі знижкою", {
             "fields": (
@@ -35,6 +41,14 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
                 "promo_popup_title",
                 "promo_popup_text",
                 "promo_popup_discount_percent",
+            ),
+        }),
+        ("Сторінка «Дякуємо»", {
+            "fields": ("thank_you_title", "thank_you_number_label", "thank_you_body"),
+            "description": (
+                "Тексти після оформлення замовлення. "
+                "У полі «текст під номером» залишайте {phone} як є (латиницею в фігурних дужках) — "
+                "це автоматично заміниться на телефон покупця. Решту речення можна редагувати."
             ),
         }),
         ("Доставка і оплата", {
@@ -112,15 +126,23 @@ class TrustBadgeAdmin(TabbedTranslationAdmin, ModelAdmin):
 
 @admin.register(NewsletterLead)
 class NewsletterLeadAdmin(ModelAdmin):
-    """Лише перегляд/експорт лідів — створюються сайтом, не руками (popup/інлайн)."""
+    """Лише перегляд лідів — створюються сайтом, не руками (popup/інлайн)."""
 
     list_display = ("email", "source", "promo_code", "created_at")
     list_filter = ("source",)
     search_fields = ("email",)
     readonly_fields = ("email", "source", "promo_code", "created_at", "updated_at")
+    ordering = ("-created_at",)
 
     def has_add_permission(self, request) -> bool:
         return False
 
     def has_change_permission(self, request, obj=None) -> bool:
+        # False → Django ховає модель (has_view = has_change за замовчуванням).
         return False
+
+    def has_view_permission(self, request, obj=None) -> bool:
+        return request.user.is_staff
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return request.user.is_superuser
