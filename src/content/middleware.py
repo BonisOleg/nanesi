@@ -1,12 +1,8 @@
-"""Вимкнення ru/en з адмінки без участі розробника (Доповнення §1 «Мови»).
-
-LocaleMiddleware сам не знає про SiteSettings.ru_enabled/en_enabled — тут
-перевіряємо вже визначену мову запиту і, якщо вона вимкнена, повертаємо той
-самий шлях під основною (uk) мовою.
-"""
+"""Вимкнення ru/en з адмінки + захист від зламаних /ru/en/ URL."""
 from django.conf import settings
 from django.shortcuts import redirect
-from django.urls import translate_url
+
+from src.core.views_i18n import collapse_double_prefix, localize_path
 
 
 class DisabledLanguageRedirectMiddleware:
@@ -14,10 +10,13 @@ class DisabledLanguageRedirectMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        collapsed = collapse_double_prefix(request.get_full_path())
+        if collapsed != request.get_full_path():
+            return redirect(collapsed)
+
         lang = getattr(request, "LANGUAGE_CODE", None)
         if lang and lang != settings.LANGUAGE_CODE and not self._is_enabled(lang):
-            new_path = translate_url(request.get_full_path(), settings.LANGUAGE_CODE)
-            return redirect(new_path)
+            return redirect(localize_path(request.get_full_path(), settings.LANGUAGE_CODE))
         return self.get_response(request)
 
     @staticmethod

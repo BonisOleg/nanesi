@@ -1,5 +1,5 @@
 {% load i18n %}
-<div id="cart-summary">
+<div id="cart-summary" data-cart-items-count="{{ cart_items_count|default:0 }}">
   {% include "partials/_dl_events.html" %}
   {% if not lines %}
     <div class="card">
@@ -11,11 +11,9 @@
       {% for line in lines %}
         <div class="cart-line card">
           <div class="cart-line__info">
-            <div class="cart-line__name">{{ line.name }}</div>
-            {% if line.shade or line.volume %}
-              <div class="cart-line__variant">
-                {{ line.shade }}{% if line.shade and line.volume %} / {% endif %}{{ line.volume }}
-              </div>
+            <a class="cart-line__name" href="{{ line.url }}">{{ line.name }}</a>
+            {% if line.variant_label %}
+              <div class="cart-line__variant">{{ line.variant_label }}</div>
             {% endif %}
             {% if not line.in_stock %}
               <div class="field-error">{% trans "Немає в наявності" %}</div>

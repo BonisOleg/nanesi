@@ -3,7 +3,7 @@
 {% block main_class %}container product-page{% endblock %}
 {% block title %}{{ product.name }} — {{ site_settings.site_name }}{% endblock %}
 {% block meta_description %}{% if product.short_description %}<meta name="description" content="{{ product.short_description|truncatewords:30 }}">{% endif %}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=review-file">{% endblock %}
 
 {% block content %}
   {% include "partials/_dl_events.html" %}
@@ -63,52 +63,81 @@
         </p>
       {% endif %}
 
-      <dl class="product-info__attrs">
-        <div><dt>{% trans "Категорія" %}</dt><dd>{{ product.category.name }}</dd></div>
-        {% if current_variant.volume %}<div><dt>{% trans "Об'єм" %}</dt><dd>{{ current_variant.volume }}</dd></div>{% endif %}
-        {% for pav in product.product_attribute_values.all %}
-          <div><dt>{{ pav.attribute_value.attribute.name }}</dt><dd>{{ pav.attribute_value.value }}</dd></div>
-        {% endfor %}
-      </dl>
-
+      {# Buy-box одразу під ціною (Nanesi правки п.5): варіант → qty → кошик → обране #}
       {% if variants|length > 1 %}
         <div class="variant-group">
-          <h4>{% trans "Варіант" %}</h4>
+          <h4>{% if current_variant.shade %}{% trans "Відтінок" %}{% else %}{% trans "Варіант" %}{% endif %}</h4>
           <div class="variant-options">
             {% for variant in variants %}
-              <a class="variant-option{% if variant.pk == current_variant.pk %} is-active{% endif %}{% if not variant.in_stock %} is-disabled{% endif %}"
+              <a class="variant-option{% if variant.has_swatch %} variant-option--shade{% endif %}{% if variant.pk == current_variant.pk %} is-active{% endif %}{% if not variant.in_stock %} is-disabled{% endif %}"
                  href="?variant={{ variant.pk }}">
-                {{ variant.shade|default:variant.volume|default:variant.sku }}
+                {% include "catalog/partials/_shade_swatch.html" with variant=variant %}
+                <span>{{ variant.shade|default:variant.volume|default:variant.sku }}</span>
               </a>
             {% endfor %}
           </div>
         </div>
+      {% elif current_variant.volume %}
+        <p class="product-info__volume">{% blocktrans with volume=current_variant.volume %}Об'єм: {{ volume }}{% endblocktrans %}</p>
       {% endif %}
 
       {% if current_variant %}
         <div class="product-info__actions">
-          <form method="post" action="{% url 'commerce:cart_add' variant_id=current_variant.pk %}" class="product-info__cart-form">
+          <form method="post" action="{% url 'commerce:cart_add' variant_id=current_variant.pk %}" class="product-info__cart-form" data-cart-form data-cart-product="{{ product.pk }}" data-cart-variant="{{ current_variant.pk }}">
             {% csrf_token %}
             <div class="qty">
               <button type="button" data-qty-minus aria-label="{% trans 'Менше' %}">−</button>
               <input type="number" name="qty" value="1" min="1" max="{{ current_variant.stock_quantity }}" data-qty-value>
               <button type="button" data-qty-plus aria-label="{% trans 'Більше' %}">+</button>
             </div>
-            <button class="btn--primary" type="submit" {% if not current_variant.in_stock %}disabled{% endif %}>{% trans "До кошика" %}</button>
+            <button class="btn--primary{% if current_variant.pk in cart_variant_ids %} is-in-cart{% endif %}" type="submit"
+                    {% if not current_variant.in_stock %}disabled{% endif %}
+                    data-cart-product="{{ product.pk }}"
+                    data-cart-variant="{{ current_variant.pk }}"
+                    data-label-out="{% trans 'До кошика' %}"
+                    data-label-in="{% trans 'В кошику' %}"
+                    data-label-done="{% trans 'Додано' %}">{% if current_variant.pk in cart_variant_ids %}{% trans "В кошику" %}{% else %}{% trans "До кошика" %}{% endif %}</button>
           </form>
           {% if request.user.is_authenticated %}
-            <form method="post" action="{% url 'accounts:wishlist_toggle' product.pk %}" class="product-info__wish-form">
+            <form method="post" action="{% url 'accounts:wishlist_toggle' product.pk %}" class="product-info__wish-form" data-wish-form>
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
-              <button class="btn--ghost{% if product.pk in wishlist_ids %} is-active{% endif %}" type="submit">
-                {% if product.pk in wishlist_ids %}{% trans "В обраному" %}{% else %}{% trans "В обране" %}{% endif %}
+              <button class="btn--ghost{% if product.pk in wishlist_ids %} is-active{% endif %}" type="submit"
+                      data-wish="{{ product.pk }}"
+                      data-label-on="{% trans 'В обраному' %}"
+                      data-label-off="{% trans 'В обране' %}">
+                <span data-wish-label>{% if product.pk in wishlist_ids %}{% trans "В обраному" %}{% else %}{% trans "В обране" %}{% endif %}</span>
               </button>
             </form>
           {% else %}
-            <button class="btn--ghost" type="button" data-wish="{{ product.pk }}">{% trans "В обране" %}</button>
+            <button class="btn--ghost" type="button"
+                    data-wish="{{ product.pk }}"
+                    data-label-on="{% trans 'В обраному' %}"
+                    data-label-off="{% trans 'В обране' %}">
+              <span data-wish-label>{% trans "В обране" %}</span>
+            </button>
           {% endif %}
         </div>
       {% endif %}
+
+      <dl class="product-info__attrs">
+        <div>
+          <dt>{% trans "Категорія" %}</dt>
+          <dd>{{ product.category.name }}</dd>
+        </div>
+        {% for group in pdp_attrs %}
+          <div>
+            <dt>{{ group.name }}</dt>
+            <dd>
+              <ul class="product-info__chips">
+                {% for value in group.values %}
+                  <li>{{ value.value }}</li>
+                {% endfor %}
+              </ul>
+            </dd>
+          </div>
+        {% endfor %}
+      </dl>
     </div>
   </div>
 
@@ -137,30 +166,6 @@
     <div class="section__head">
       <h2 class="section__title">{% trans "Відгуки" %}{% if reviews_count %} ({{ reviews_count }}){% endif %}</h2>
     </div>
-    {% if reviews %}
-      <div class="review-list">
-        {% for review in reviews %}
-          <article class="review-item">
-            <div class="review-item__head">
-              <div>
-                <span class="review-item__author">{{ review.display_name }}</span>
-                {% if review.is_verified_purchase %}<span class="review-item__verified">✓ {% trans "Підтверджена покупка" %}</span>{% endif %}
-              </div>
-              <span class="review-item__date">{{ review.created_at|date:"d.m.Y" }}</span>
-            </div>
-            <div class="rating"><span class="rating__stars" aria-hidden="true">{{ review.rating|stars }}</span></div>
-            <p>{{ review.text }}</p>
-            {% if review.images.all %}
-              <div class="review-item__photos">
-                {% for img in review.images.all %}<img src="{{ img.image.url }}" alt="{% trans 'Фото відгуку' %}">{% endfor %}
-              </div>
-            {% endif %}
-          </article>
-        {% endfor %}
-      </div>
-    {% else %}
-      <p class="text-muted">{% trans "Ще немає відгуків на цей товар." %}</p>
-    {% endif %}
 
     <form method="post" action="{% url 'catalog:review_create' product.slug %}" enctype="multipart/form-data" class="review-form" novalidate>
       <h3>{% trans "Залишити відгук" %}</h3>
@@ -199,7 +204,47 @@
 
       <button class="btn--primary" type="submit">{% trans "Надіслати відгук" %}</button>
     </form>
+
+    {% if reviews %}
+      <div class="review-list">
+        {% for review in reviews %}
+          <article class="review-item">
+            <div class="review-item__head">
+              <div>
+                <span class="review-item__author">{{ review.display_name }}</span>
+                {% if review.is_verified_purchase %}<span class="review-item__verified">✓ {% trans "Підтверджена покупка" %}</span>{% endif %}
+              </div>
+              <span class="review-item__date">{{ review.created_at|date:"d.m.Y" }}</span>
+            </div>
+            <div class="rating"><span class="rating__stars" aria-hidden="true">{{ review.rating|stars }}</span></div>
+            <p>{{ review.text }}</p>
+            {% if review.images.all %}
+              <div class="review-item__photos">
+                {% for img in review.images.all %}<img src="{{ img.image.url }}" alt="{% trans 'Фото відгуку' %}">{% endfor %}
+              </div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+      {% include "catalog/partials/_pagination.html" with page_obj=reviews_page base_query_string=reviews_query_string page_param="reviews_page" page_fragment="reviews" %}
+    {% else %}
+      <p class="text-muted">{% trans "Ще немає відгуків на цей товар." %}</p>
+    {% endif %}
   </section>
+
+
+  {% if bought_together_products %}
+    <section class="related related--together">
+      <div class="section__head">
+        <h2 class="section__title">{% trans "З цим купують" %}</h2>
+      </div>
+      <div class="product-grid">
+        {% for product in bought_together_products %}
+          {% include "catalog/partials/_product_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 
   {% if related_products %}
     <section class="related">

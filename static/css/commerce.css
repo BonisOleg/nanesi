@@ -16,6 +16,13 @@
 
 .cart-line__name {
   font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cart-line__name:hover,
+.cart-line__name:focus-visible {
+  color: var(--color-accent);
 }
 
 .cart-line__variant {

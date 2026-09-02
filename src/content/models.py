@@ -178,8 +178,10 @@ class TrustBadge(TimeStampedModel):
     """Блок «Переваги» на головній — тексти з адмінки; порожній список не показуємо."""
 
     icon_label = models.CharField(
-        "Позначка (2 символи)", max_length=4, blank=True,
-        help_text="Наприклад: 01, Sr — показується у колі/бейджі",
+        "Ключ іконки",
+        max_length=32,
+        blank=True,
+        help_text="leaf / truck / award / refresh / headset — SVG у блоці переваг",
     )
     title = models.CharField("Заголовок", max_length=255)
     text = models.CharField("Текст", max_length=255, blank=True)

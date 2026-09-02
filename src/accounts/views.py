@@ -160,6 +160,6 @@ def wishlist_render_view(request):
 def wishlist_toggle_view(request, product_id: int):
     get_object_or_404(Product, pk=product_id, is_active=True)
     active = services.toggle_wishlist(request.user, product_id)
-    if request.headers.get("X-Requested-With") == "fetch":
+    if request.headers.get("X-Requested-With") == "fetch" or "application/json" in (request.headers.get("Accept") or ""):
         return JsonResponse({"active": active, "count": request.user.wishlist_items.count()})
     return redirect(request.META.get("HTTP_REFERER") or "accounts:wishlist")

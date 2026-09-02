@@ -20,12 +20,33 @@
     }
   }
 
+  function paintWishButton(btn, active) {
+    btn.classList.toggle("is-active", active);
+    var svg = btn.querySelector("svg");
+    if (svg) svg.setAttribute("fill", active ? "currentColor" : "none");
+    var on = btn.getAttribute("data-label-on");
+    var off = btn.getAttribute("data-label-off");
+    var label = btn.querySelector("[data-wish-label]");
+    if (label && on && off) label.textContent = active ? on : off;
+  }
+
+  function paintWishById(id, active) {
+    document.querySelectorAll("[data-wish=\"" + id + "\"]").forEach(function (btn) {
+      paintWishButton(btn, active);
+    });
+  }
+
+  function setBadgeCount(count) {
+    var badge = document.querySelector("[data-wishlist-count]");
+    if (!badge) return;
+    badge.textContent = String(count);
+    badge.classList.toggle("is-hidden", count === 0);
+  }
+
   function updateBadge() {
     var badge = document.querySelector("[data-wishlist-count]");
     if (!badge || badge.dataset.serverManaged === "1") return;
-    var count = readWishlist().length;
-    badge.textContent = String(count);
-    badge.classList.toggle("is-hidden", count === 0);
+    setBadgeCount(readWishlist().length);
   }
 
   function cleanupAfterLogin() {
@@ -41,30 +62,116 @@
     var ids = readWishlist().map(String);
     document.querySelectorAll("[data-wish]").forEach(function (btn) {
       var id = btn.getAttribute("data-wish");
-      btn.classList.toggle("is-active", ids.indexOf(id) !== -1);
+      paintWishButton(btn, ids.indexOf(id) !== -1);
     });
   }
 
-  function initWishlist() {
+  function initGuestWishlist() {
     var badge = document.querySelector("[data-wishlist-count]");
     if (badge && badge.dataset.serverManaged === "1") return;
     syncButtonsState();
     updateBadge();
     document.addEventListener("click", function (e) {
       var btn = e.target.closest("[data-wish]");
-      if (!btn) return;
+      if (!btn || btn.closest("[data-wish-form]")) return;
       e.preventDefault();
       var id = String(btn.getAttribute("data-wish"));
       var ids = readWishlist().map(String);
       var idx = ids.indexOf(id);
-      if (idx === -1) {
-        ids.push(id);
-      } else {
-        ids.splice(idx, 1);
-      }
+      var active = idx === -1;
+      if (active) ids.push(id);
+      else ids.splice(idx, 1);
       writeWishlist(ids);
-      syncButtonsState();
+      paintWishById(id, active);
       updateBadge();
+    });
+  }
+
+  function initAuthWishlist() {
+    var badge = document.querySelector("[data-wishlist-count]");
+    if (!badge || badge.dataset.serverManaged !== "1") return;
+    document.addEventListener("submit", function (e) {
+      var form = e.target.closest("[data-wish-form]");
+      if (!form) return;
+      e.preventDefault();
+      if (form.dataset.wishBusy === "1") return;
+      var token = form.querySelector("[name=csrfmiddlewaretoken]");
+      var btn = form.querySelector("[data-wish]");
+      if (!token || !btn) return;
+      form.dataset.wishBusy = "1";
+      btn.disabled = true;
+      fetch(form.action, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "fetch",
+          "X-CSRFToken": token.value,
+        },
+        body: new FormData(form),
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error("wish");
+          return res.json();
+        })
+        .then(function (data) {
+          paintWishById(btn.getAttribute("data-wish"), Boolean(data.active));
+          setBadgeCount(data.count);
+        })
+        .catch(function () {
+          form.submit();
+        })
+        .finally(function () {
+          form.dataset.wishBusy = "";
+          btn.disabled = false;
+        });
+    });
+  }
+
+  function initWishlist() {
+    initGuestWishlist();
+    initAuthWishlist();
+  }
+
+  function initCatalogMenu() {
+    var toggle = document.querySelector("[data-catalog-toggle]");
+    var panel = document.querySelector("[data-catalog-panel]");
+    if (!toggle || !panel || toggle.dataset.catalogBound === "1") return;
+    toggle.dataset.catalogBound = "1";
+
+    function isOpen() {
+      return !panel.hasAttribute("hidden");
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") closeMenu();
+    }
+
+    function openMenu() {
+      if (isOpen()) return;
+      panel.removeAttribute("hidden");
+      toggle.setAttribute("aria-expanded", "true");
+      document.addEventListener("keydown", onKey);
+    }
+
+    function closeMenu() {
+      if (!isOpen()) return;
+      panel.setAttribute("hidden", "");
+      toggle.setAttribute("aria-expanded", "false");
+      document.removeEventListener("keydown", onKey);
+    }
+
+    toggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isOpen()) closeMenu();
+      else openMenu();
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!isOpen()) return;
+      if (toggle.contains(e.target) || panel.contains(e.target)) return;
+      closeMenu();
     });
   }
 
@@ -72,7 +179,8 @@
     var panel = document.querySelector("[data-mobile-panel]");
     var openBtn = document.querySelector("[data-open-menu]");
     var closeBtn = document.querySelector("[data-close-menu]");
-    if (!panel || !openBtn) return;
+    if (!panel || !openBtn || openBtn.dataset.menuBound === "1") return;
+    openBtn.dataset.menuBound = "1";
 
     function open() {
       panel.classList.add("is-open");
@@ -87,11 +195,38 @@
     if (closeBtn) closeBtn.addEventListener("click", close);
     var backdrop = panel.querySelector("[data-mobile-backdrop]");
     if (backdrop) backdrop.addEventListener("click", close);
+
+    panel.querySelectorAll("[data-mobile-acc-toggle]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var group = btn.closest("[data-mobile-acc]");
+        if (!group) return;
+        var willOpen = !group.classList.contains("is-open");
+        panel.querySelectorAll("[data-mobile-acc].is-open").forEach(function (other) {
+          if (other === group) return;
+          other.classList.remove("is-open");
+          var otherBtn = other.querySelector("[data-mobile-acc-toggle]");
+          var otherPanel = other.querySelector(".mobile-panel__children");
+          if (otherBtn) otherBtn.setAttribute("aria-expanded", "false");
+          if (otherPanel) otherPanel.hidden = true;
+        });
+        group.classList.toggle("is-open", willOpen);
+        btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        var children = group.querySelector(".mobile-panel__children");
+        if (children) children.hidden = !willOpen;
+      });
+    });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function boot() {
     initMobileMenu();
+    initCatalogMenu();
     initWishlist();
     cleanupAfterLogin();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();

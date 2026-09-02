@@ -40,6 +40,12 @@ class PageDetailView(DetailView):
             self._landing = landing
             return landing
 
+    def get_template_names(self):
+        page = getattr(self, "object", None)
+        if page is not None and getattr(page, "slug", None) == "kontakty":
+            return ["content/contacts.html"]
+        return [self.template_name]
+
     def render_to_response(self, context, **response_kwargs):
         landing = getattr(self, "_landing", None)
         if landing is not None:

@@ -16,7 +16,9 @@ INSTALLED_APPS = [
     "unfold",
     "unfold.contrib.filters",
     "unfold.contrib.forms",
-    # 2. Django contrib
+    # 2. modeltranslation — до admin.autodiscover (TabbedTranslationAdmin)
+    "modeltranslation",
+    # 3. Django contrib
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -24,8 +26,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sitemaps",
-    # 3. modeltranslation — перед власними apps
-    "modeltranslation",
     # 4. Сторонні пакети
     "tinymce",
     "django_htmx",
@@ -221,6 +221,8 @@ UNFOLD = {
                     {"title": "Товари", "icon": "inventory_2", "link": reverse_lazy("admin:catalog_product_changelist")},
                     {"title": "Категорії", "icon": "category", "link": reverse_lazy("admin:catalog_category_changelist")},
                     {"title": "Бренди", "icon": "sell", "link": reverse_lazy("admin:catalog_brand_changelist")},
+                    {"title": "Атрибути", "icon": "tune", "link": reverse_lazy("admin:catalog_attribute_changelist")},
+                    {"title": "Значення атрибутів", "icon": "label", "link": reverse_lazy("admin:catalog_attributevalue_changelist")},
                     {"title": "Постачальники", "icon": "local_shipping", "link": reverse_lazy("admin:catalog_supplier_changelist")},
                     {"title": "Підбірки", "icon": "collections_bookmark", "link": reverse_lazy("admin:catalog_collection_changelist")},
                     {"title": "Відгуки", "icon": "reviews", "link": reverse_lazy("admin:catalog_review_changelist")},

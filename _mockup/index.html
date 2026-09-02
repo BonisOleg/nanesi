@@ -39,7 +39,7 @@
       <a class="logo" href="index.html" aria-label="NANESI Beauty Store">
         <img src="img/logo.png" alt="NANESI Beauty Store" width="180" height="90">
       </a>
-      <a class="btn-catalog" href="catalog.html">
+      <a class="btn-catalog" href="catalog.html" data-catalog-toggle aria-expanded="false" aria-controls="catalog-mega" aria-haspopup="true">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         Каталог
       </a>
@@ -68,11 +68,57 @@
         <ul class="cat-nav__list">
           <li><a href="catalog.html?cat=face-creams">Догляд за обличчям</a></li>
           <li><a href="catalog.html?cat=makeup">Макіяж</a></li>
-          <li><a href="catalog.html?cat=spf">Сонцезахист</a></li>
           <li><a href="catalog.html?cat=shampoo">Догляд за волоссям</a></li>
+          <li><a href="catalog.html">Догляд за тілом</a></li>
+          <li><a href="catalog.html?cat=spf">Сонцезахист SPF</a></li>
+          <li><a href="catalog.html">Набори та мініатюри</a></li>
+          <li><a href="catalog.html">K-Beauty</a></li>
           <li><a href="catalog.html">Бренди</a></li>
           <li><a class="is-sale" href="catalog.html?sale=1">Акції</a></li>
         </ul>
+      </div>
+    </nav>
+    <nav class="catalog-mega" id="catalog-mega" data-catalog-panel hidden aria-label="Каталог">
+      <div class="container catalog-mega__inner">
+        <a class="catalog-mega__all" href="catalog.html">Усі товари</a>
+        <div class="catalog-mega__grid">
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=face-creams">Догляд за обличчям</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=face-creams">Креми для обличчя</a></li>
+              <li><a href="catalog.html?cat=serums">Сироватки / ампули</a></li>
+              <li><a href="catalog.html">Очищення</a></li>
+              <li><a href="catalog.html">Маски</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=makeup">Макіяж</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=makeup">Тональні засоби / Кушони</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=shampoo">Догляд за волоссям</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=shampoo">Шампуні</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">Догляд за тілом</a>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=spf">Сонцезахист SPF</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=spf">Для обличчя</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">Набори та мініатюри</a>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">K-Beauty</a>
+          </div>
+        </div>
       </div>
     </nav>
   </header>
@@ -84,10 +130,19 @@
       <h3>Каталог</h3>
       <a href="catalog.html">Усі товари</a>
       <a href="catalog.html?cat=face-creams">Догляд за обличчям</a>
-      <a href="catalog.html?cat=serums">Сироватки</a>
-      <a href="catalog.html?cat=spf">Сонцезахист</a>
-      <a href="catalog.html?cat=shampoo">Волосся</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=face-creams">Креми для обличчя</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=serums">Сироватки / ампули</a>
+      <a class="mobile-panel__sub" href="catalog.html">Очищення</a>
+      <a class="mobile-panel__sub" href="catalog.html">Маски</a>
       <a href="catalog.html?cat=makeup">Макіяж</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=makeup">Тональні засоби / Кушони</a>
+      <a href="catalog.html?cat=shampoo">Догляд за волоссям</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=shampoo">Шампуні</a>
+      <a href="catalog.html">Догляд за тілом</a>
+      <a href="catalog.html?cat=spf">Сонцезахист SPF</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=spf">Для обличчя</a>
+      <a href="catalog.html">Набори та мініатюри</a>
+      <a href="catalog.html">K-Beauty</a>
       <a href="catalog.html?sale=1">Акції</a>
     </div>
   </div>
@@ -110,11 +165,36 @@
     <section class="trust">
       <div class="container">
         <ul class="trust__list">
-          <li class="trust__item"><span class="trust__icon" aria-hidden="true">01</span><span><strong>Гарантія якості</strong>Перевірені бренди</span></li>
-          <li class="trust__item"><span class="trust__icon" aria-hidden="true">02</span><span><strong>Доставка від 1500 ₴</strong>Нова Пошта / Укрпошта</span></li>
-          <li class="trust__item"><span class="trust__icon" aria-hidden="true">03</span><span><strong>Офіційні постачальники</strong>Cosmetics Factory та ін.</span></li>
-          <li class="trust__item"><span class="trust__icon" aria-hidden="true">04</span><span><strong>14 днів на повернення</strong>Зручний обмін</span></li>
-          <li class="trust__item"><span class="trust__icon" aria-hidden="true">05</span><span><strong>Підтримка</strong>Допомога з підбором</span></li>
+          <li class="trust__item">
+            <span class="trust__icon" aria-hidden="true">
+              <svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M5 19c8-1 12-7 13-14-7 1-13 5-14 13z"/><path d="M8.5 15.5C11 13 14 10 18 8"/></svg>
+            </span>
+            <span class="trust__copy"><strong>Оригінальна продукція</strong><span class="trust__text">100% гарантія якості</span></span>
+          </li>
+          <li class="trust__item">
+            <span class="trust__icon" aria-hidden="true">
+              <svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M1 8h11v8H1z"/><path d="M12 11h4l3 3v2h-7z"/><circle cx="5.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M1 11h4"/></svg>
+            </span>
+            <span class="trust__copy"><strong>Безкоштовна доставка</strong><span class="trust__text">від 1500 грн</span></span>
+          </li>
+          <li class="trust__item">
+            <span class="trust__icon" aria-hidden="true">
+              <svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"/></svg>
+            </span>
+            <span class="trust__copy"><strong>Офіційні постачальники</strong><span class="trust__text">напряму з Кореї</span></span>
+          </li>
+          <li class="trust__item">
+            <span class="trust__icon" aria-hidden="true">
+              <svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M3.5 12a8.5 8.5 0 0 1 14.2-6.3L20 8"/><path d="M20.5 3.5V8h-4.5"/><path d="M20.5 12a8.5 8.5 0 0 1-14.2 6.3L4 16"/><path d="M3.5 20.5V16H8"/></svg>
+            </span>
+            <span class="trust__copy"><strong>14 днів на повернення</strong><span class="trust__text">та обмін</span></span>
+          </li>
+          <li class="trust__item">
+            <span class="trust__icon" aria-hidden="true">
+              <svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13v3.5A1.5 1.5 0 0 0 5.5 18H7v-5H5.5A1.5 1.5 0 0 0 4 14.5"/><path d="M20 13v3.5a1.5 1.5 0 0 1-1.5 1.5H16v-5h1.5A1.5 1.5 0 0 1 20 14.5"/><path d="M17 18.5v.5a3 3 0 0 1-3 3h-1"/></svg>
+            </span>
+            <span class="trust__copy"><strong>Підтримка 24/7</strong><span class="trust__text">ми завжди поруч</span></span>
+          </li>
         </ul>
       </div>
     </section>
@@ -126,14 +206,14 @@
           <a class="section__link" href="catalog.html">Усі категорії</a>
         </div>
         <div class="cat-circles">
-          <a class="cat-circle" href="catalog.html?cat=serums"><span class="cat-circle__icon">Sr</span>Сироватки</a>
-          <a class="cat-circle" href="catalog.html?cat=face-creams"><span class="cat-circle__icon">Cr</span>Креми</a>
-          <a class="cat-circle" href="catalog.html?cat=spf"><span class="cat-circle__icon">Sp</span>SPF</a>
-          <a class="cat-circle" href="catalog.html?cat=makeup"><span class="cat-circle__icon">Mk</span>Макіяж</a>
-          <a class="cat-circle" href="catalog.html?cat=shampoo"><span class="cat-circle__icon">Hr</span>Волосся</a>
-          <a class="cat-circle" href="catalog.html"><span class="cat-circle__icon">Cl</span>Очищення</a>
-          <a class="cat-circle" href="catalog.html"><span class="cat-circle__icon">Ms</span>Маски</a>
-          <a class="cat-circle" href="catalog.html?sale=1"><span class="cat-circle__icon">%</span>Акції</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/doglyad-za-oblychchyam.png" alt="" width="84" height="84" loading="lazy"></span>Догляд за обличчям</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/makiyazh.png" alt="" width="84" height="84" loading="lazy"></span>Макіяж</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/doglyad-za-tilom.png" alt="" width="84" height="84" loading="lazy"></span>Догляд за тілом</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/doglyad-za-volossyam.png" alt="" width="84" height="84" loading="lazy"></span>Догляд за волоссям</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/soncezahyst-spf.png" alt="" width="84" height="84" loading="lazy"></span>Сонцезахист SPF</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/nabory-ta-miniatyury.png" alt="" width="84" height="84" loading="lazy"></span>Набори та мініатюри</a>
+          <a class="cat-circle" href="catalog.html"><span class="cat-circle__media"><img src="../static/img/categories/k-beauty.png" alt="" width="84" height="84" loading="lazy"></span>K-Beauty</a>
+          <a class="cat-circle" href="catalog.html?sale=1"><span class="cat-circle__media"><img src="../static/img/categories/sale.png" alt="" width="84" height="84" loading="lazy"></span>Акції</a>
         </div>
       </div>
     </section>

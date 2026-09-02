@@ -1,47 +1,74 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db.models import Avg, Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from src.catalog import selectors
 from src.catalog.forms import ReviewForm
-from src.catalog.models import Brand, Category, Product
+from src.catalog.models import Brand, Category, Product, ProductAttributeValue
 from src.catalog.services import reviews as review_services
 from src.content.models import TrustBadge
 from src.core import analytics
+
+REVIEWS_PER_PAGE = 5
+
+
+def _query_string_without(request, *drop_keys: str) -> str:
+    params = request.GET.copy()
+    for key in drop_keys:
+        params.pop(key, None)
+    return params.urlencode()
+
+
+def _paginate_reviews(request, product: Product) -> dict:
+    """Схвалені відгуки: avg/count по всіх, список — по 5 на сторінку (?reviews_page=)."""
+    qs = (
+        product.reviews.filter(is_approved=True)
+        .select_related("user")
+        .prefetch_related("images")
+        .order_by("-created_at")
+    )
+    stats = qs.aggregate(avg=Avg("rating"), cnt=Count("id"))
+    paginator = Paginator(qs, REVIEWS_PER_PAGE)
+    page_obj = paginator.get_page(request.GET.get("reviews_page"))
+    return {
+        "reviews": page_obj.object_list,
+        "reviews_page": page_obj,
+        "reviews_count": stats["cnt"] or 0,
+        "rating_avg": stats["avg"],
+        "reviews_query_string": _query_string_without(request, "reviews_page"),
+    }
 
 
 def home(request):
     sections = selectors.home_sections()
     context = {
         "categories": sections["categories"],
-        "hits_and_new": sections["hits_and_new"],
-        "trust_badges": TrustBadge.objects.filter(is_active=True),
+        "promo_collections": sections.get("promo_collections", []),
+        "collection_product_sections": sections.get("collection_product_sections", []),
+        "trust_badges": TrustBadge.objects.filter(is_active=True).order_by("sort_order", "pk"),
     }
     return render(request, "catalog/home.html", context)
-
-
-def _parse_filters(request):
-    return {
-        "brand_slugs": request.GET.getlist("brand"),
-        "category_slugs": request.GET.getlist("category"),
-        "attribute_value_ids": [v for v in request.GET.getlist("attr") if v.isdigit()],
-        "stock_only": ("stock" in request.GET) if request.GET else True,
-        "sale_only": request.GET.get("sale") == "1",
-        "query": request.GET.get("q", "").strip(),
-    }
 
 
 def catalog_list(request, category_slug=None, brand_slug=None):
     category = None
     brand = None
     if category_slug:
-        category = get_object_or_404(Category, slug=category_slug, is_active=True)
+        children_qs = Category.objects.filter(is_active=True).order_by("sort_order", "name")
+        category = get_object_or_404(
+            Category.objects.select_related("parent").prefetch_related(
+                Prefetch("children", queryset=children_qs)
+            ),
+            slug=category_slug,
+            is_active=True,
+        )
     if brand_slug:
         brand = get_object_or_404(Brand, slug=brand_slug, is_active=True)
 
-    filters = _parse_filters(request)
+    filters = selectors.parse_catalog_filters(request)
     if brand is not None:
         filters["brand_slugs"] = [brand.slug]
 
@@ -50,10 +77,13 @@ def catalog_list(request, category_slug=None, brand_slug=None):
         category=category,
         brand_slugs=filters["brand_slugs"] or None,
         category_slugs=filters["category_slugs"] or None,
-        attribute_value_ids=filters["attribute_value_ids"] or None,
+        attr_filters=filters["attr_filters"] or None,
+        volume_slugs=filters["volume_slugs"] or None,
         stock_only=filters["stock_only"],
         sale_only=filters["sale_only"],
         query=filters["query"] or None,
+        price_min=filters["price_min"],
+        price_max=filters["price_max"],
     )
     sort = request.GET.get("sort", "popular")
     qs = selectors.apply_sort(qs, sort)
@@ -63,6 +93,11 @@ def catalog_list(request, category_slug=None, brand_slug=None):
 
     base_query = request.GET.copy()
     base_query.pop("page", None)
+
+    selected_attrs = {key: set(vals) for key, vals in filters["attr_filters"].items()}
+    filter_groups = selectors.filter_groups_for_catalog()
+    for group in filter_groups:
+        group["selected_slugs"] = selected_attrs.get(group["attribute"].code, set())
 
     context = {
         "base_query_string": base_query.urlencode(),
@@ -74,14 +109,18 @@ def catalog_list(request, category_slug=None, brand_slug=None):
         "sort_options": selectors.SORT_OPTIONS,
         "top_categories": selectors.top_level_categories(),
         "brands": selectors.active_brands(),
-        "attributes": selectors.filterable_attributes(),
+        "filter_groups": filter_groups,
+        "volume_options": selectors.volume_options_for_catalog(),
         "selected_brands": set(filters["brand_slugs"]),
         "selected_categories": set(filters["category_slugs"]),
-        "selected_attr_values": {int(v) for v in filters["attribute_value_ids"]},
+        "selected_volumes": set(filters["volume_slugs"]),
         "stock_only": filters["stock_only"],
         "sale_only": filters["sale_only"],
         "query": filters["query"],
+        "price_min": filters["price_min"] or "",
+        "price_max": filters["price_max"] or "",
         "total_count": paginator.count,
+        "filters_reset_url": selectors.filters_reset_url(request.path, filters["query"]),
     }
     return render(request, "catalog/product_list.html", context)
 
@@ -91,10 +130,41 @@ def brand_list(request):
     return render(request, "catalog/brand_list.html", context)
 
 
+def collection_detail(request, slug):
+    collection = selectors.collection_by_slug(slug)
+    if collection is None:
+        from django.http import Http404
+        raise Http404
+    qs = selectors.products_for_collection(collection)
+    sort = request.GET.get("sort", "popular")
+    qs = selectors.apply_sort(qs, sort)
+    paginator = Paginator(qs, 24)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    context = {
+        "collection": collection,
+        "products": page_obj,
+        "page_obj": page_obj,
+        "sort": sort,
+        "sort_options": selectors.SORT_OPTIONS,
+        "total_count": paginator.count,
+        "base_query_string": "",
+    }
+    return render(request, "catalog/collection_detail.html", context)
+
+
 def product_detail(request, slug):
     product = get_object_or_404(
         Product.objects.select_related("brand", "category").prefetch_related(
             "images", "variants", "reviews__images",
+            Prefetch(
+                "product_attribute_values",
+                queryset=ProductAttributeValue.objects.select_related(
+                    "attribute_value__attribute",
+                ).order_by(
+                    "attribute_value__attribute__sort_order",
+                    "attribute_value__sort_order",
+                ),
+            ),
         ),
         slug=slug, is_active=True,
     )
@@ -107,22 +177,19 @@ def product_detail(request, slug):
     if current_variant is None:
         current_variant = product.default_variant or (variants[0] if variants else None)
 
-    reviews = product.reviews.filter(is_approved=True).order_by("-created_at")
-    reviews_count = reviews.count()
-    rating_avg = (
-        sum(r.rating for r in reviews) / reviews_count if reviews_count else None
-    )
+    reviews_ctx = _paginate_reviews(request, product)
     related = selectors.related_products(product)
+    together = selectors.bought_together(product)
 
     context = {
         "product": product,
         "variants": variants,
         "current_variant": current_variant,
-        "reviews": reviews,
-        "reviews_count": reviews_count,
-        "rating_avg": rating_avg,
+        **reviews_ctx,
         "related_products": related,
+        "bought_together_products": together,
         "review_form": ReviewForm(is_authenticated=request.user.is_authenticated),
+        "pdp_attrs": selectors.pdp_attribute_groups(product),
     }
     if current_variant:
         context["dl_events_json"] = analytics.events_json(analytics.build_event(
@@ -160,16 +227,13 @@ def review_create(request, slug):
         return redirect(f"{product.get_absolute_url()}#reviews")
 
     variants = list(product.variants.filter(is_active=True))
-    reviews = product.reviews.filter(is_approved=True).order_by("-created_at")
-    reviews_count = reviews.count()
     context = {
         "product": product,
         "variants": variants,
         "current_variant": product.default_variant or (variants[0] if variants else None),
-        "reviews": reviews,
-        "reviews_count": reviews_count,
-        "rating_avg": sum(r.rating for r in reviews) / reviews_count if reviews_count else None,
+        **_paginate_reviews(request, product),
         "related_products": selectors.related_products(product),
+        "bought_together_products": selectors.bought_together(product),
         "review_form": form,
     }
     return render(request, "catalog/product_detail.html", context)

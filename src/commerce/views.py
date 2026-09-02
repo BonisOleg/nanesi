@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -29,6 +29,7 @@ def _cart_context(request):
     if cart and cart.promo_code_id:
         is_valid, message = cart.promo_code.is_valid_now(subtotal=subtotal)
         discount_amount = cart.promo_code.calculate_discount(subtotal) if is_valid else None
+    cart_items_count = sum(line.qty for line in lines)
     return {
         "cart": cart,
         "lines": lines,
@@ -37,6 +38,7 @@ def _cart_context(request):
         "promo_code": cart.promo_code if cart else None,
         "discount_amount": discount_amount,
         "total": subtotal - (discount_amount or 0),
+        "cart_items_count": cart_items_count,
     }
 
 
@@ -49,13 +51,29 @@ class CartView(View):
         return render(request, "commerce/cart.html", context)
 
 
+def _wants_json(request) -> bool:
+    accept = request.headers.get("Accept") or ""
+    return (
+        request.headers.get("X-Requested-With") == "fetch"
+        or "application/json" in accept
+        or request.POST.get("ajax") == "1"
+    )
+
+
+def _cart_qty_total(cart) -> int:
+    return sum(cart.items.values_list("qty", flat=True))
+
+
 @require_POST
 def cart_add(request, variant_id: int):
     qty = int(request.POST.get("qty") or 1)
+    cart = None
+    product_id = None
     try:
-        services.add_item(request, variant_id, qty=qty)
+        cart = services.add_item(request, variant_id, qty=qty)
         variant = ProductVariant.objects.select_related("product__brand", "product__category").filter(pk=variant_id).first()
         if variant:
+            product_id = variant.product_id
             analytics.queue_event(request, analytics.build_event(
                 "add_to_cart",
                 value=variant.current_price * qty,
@@ -66,7 +84,17 @@ def cart_add(request, variant_id: int):
                 )],
             ))
     except services.CartError as exc:
+        if _wants_json(request):
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400)
         messages.error(request, str(exc))
+    if _wants_json(request):
+        count = _cart_qty_total(cart) if cart is not None else 0
+        return JsonResponse({
+            "ok": True,
+            "count": count,
+            "variant_id": variant_id,
+            "product_id": product_id,
+        })
     if request.headers.get("HX-Request"):
         context = analytics.attach_pending_events(_cart_context(request), request)
         return render(request, "commerce/partials/cart_summary.html", context)

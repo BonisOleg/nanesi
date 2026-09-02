@@ -1,12 +1,16 @@
 from django.contrib import admin
-from tinymce.widgets import TinyMCE
+from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin
 
+from src.core.admin import TinyMCEAdminMixin
+
+from . import translation  # noqa: F401 — MT registry до TabbedTranslationAdmin
 from .models import SeoLandingPage
 
 
 @admin.register(SeoLandingPage)
-class SeoLandingPageAdmin(ModelAdmin):
+class SeoLandingPageAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("body",)
     list_display = ("title", "path", "is_active", "is_indexed", "updated_at")
     list_filter = ("is_active", "is_indexed")
     search_fields = ("title", "path")
@@ -18,8 +22,3 @@ class SeoLandingPageAdmin(ModelAdmin):
         ("Текст", {"fields": ("body",)}),
         ("Добірка товарів", {"fields": ("products",)}),
     )
-
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        if db_field.name == "body":
-            kwargs["widget"] = TinyMCE()
-        return super().formfield_for_dbfield(db_field, request, **kwargs)

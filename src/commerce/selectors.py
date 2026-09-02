@@ -1,10 +1,41 @@
 """Тільки читання (ecommerce_business_logic_skill, шар selectors). Ціна — завжди
 жива з ProductVariant, ніколи з кешу кошика (SEC-02/06)."""
+from __future__ import annotations
+
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 
 from src.commerce.models import Cart, Order
 from src.content.models import SiteSettings
+
+_VOLUME_TOKEN_RE = re.compile(
+    r"(?P<num>\d+(?:[.,]\d+)?)\s*(?P<unit>ml|мл|g|г)\b",
+    re.IGNORECASE,
+)
+_UNIT_ALIASES = {
+    "ml": ("ml", "мл"),
+    "мл": ("ml", "мл"),
+    "g": ("g", "г"),
+    "г": ("g", "г"),
+}
+
+
+def _volume_already_in_name(name: str, volume: str) -> bool:
+    """True, якщо об'єм уже в назві (напр. «… 60 ml» + поле «60 мл»)."""
+    vol = (volume or "").strip()
+    if not vol or not name:
+        return False
+    match = _VOLUME_TOKEN_RE.search(vol)
+    if not match:
+        return vol.lower() in name.lower()
+    num = match.group("num")
+    unit = match.group("unit").lower()
+    name_l = name.lower()
+    for alias in _UNIT_ALIASES.get(unit, (unit,)):
+        if re.search(rf"{re.escape(num)}\s*{re.escape(alias)}\b", name_l):
+            return True
+    return False
 
 
 def get_cart(request) -> Cart | None:
@@ -23,7 +54,9 @@ def get_cart(request) -> Cart | None:
 class CartLine:
     item_id: int
     variant_id: int
+    product_id: int
     name: str
+    url: str
     sku: str
     shade: str
     volume: str
@@ -33,6 +66,16 @@ class CartLine:
     in_stock: bool
     stock_quantity: int
 
+    @property
+    def variant_label(self) -> str:
+        """Підпис під назвою: без дубля об'єму, якщо він уже в назві товару."""
+        parts: list[str] = []
+        if self.shade:
+            parts.append(self.shade)
+        if self.volume and not _volume_already_in_name(self.name, self.volume):
+            parts.append(self.volume)
+        return " / ".join(parts)
+
 
 def cart_lines(cart: Cart | None) -> list[CartLine]:
     if cart is None:
@@ -41,11 +84,14 @@ def cart_lines(cart: Cart | None) -> list[CartLine]:
     items = cart.items.select_related("product_variant", "product_variant__product").order_by("added_at")
     for item in items:
         variant = item.product_variant
+        product = variant.product
         unit_price = variant.current_price
         lines.append(CartLine(
             item_id=item.pk,
             variant_id=variant.pk,
-            name=variant.product.name,
+            product_id=product.pk,
+            name=product.name,
+            url=f"{product.get_absolute_url()}?variant={variant.pk}",
             sku=variant.sku,
             shade=variant.shade,
             volume=variant.volume,

@@ -1,18 +1,23 @@
 /* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
 
 .product-page {
-  padding-bottom: 56px;
+  padding-bottom: 48px;
 }
 
 .product-main {
   display: grid;
-  gap: 28px;
+  gap: 24px;
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  padding: 16px;
 }
 
 @media (min-width: 900px) {
   .product-main {
-    grid-template-columns: 1fr 1fr;
-    gap: 44px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 36px;
+    padding: 28px;
   }
 }
 
@@ -103,6 +108,16 @@
   color: var(--color-error);
 }
 
+.product-info__volume {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.product-info__actions {
+  margin-bottom: 22px;
+}
+
 .product-info__attrs {
   display: grid;
   gap: 10px;
@@ -115,18 +130,75 @@
 .product-info__attrs div {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
   font-size: 0.86rem;
+  min-width: 0;
 }
 
 .product-info__attrs dt {
   color: var(--color-muted);
-  flex-shrink: 0;
+  flex: 0 1 42%;
+  min-width: 0;
+  padding-top: 5px;
 }
 
 .product-info__attrs dd {
   margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
   text-align: right;
+}
+
+.product-info__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-info__chips li {
+  list-style: none;
+  max-width: 100%;
+  padding: 4px 10px;
+  background: var(--color-white);
+  border: 1px solid var(--color-divider);
+  border-radius: 999px;
+  color: var(--color-graphite);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
+@media (max-width: 599px) {
+  .product-info__attrs {
+    padding: 14px;
+  }
+
+  .product-info__attrs div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .product-info__attrs dt {
+    flex: none;
+    padding-top: 0;
+  }
+
+  .product-info__attrs dd {
+    text-align: left;
+  }
+
+  .product-info__chips {
+    justify-content: flex-start;
+  }
 }
 
 .variant-group {
@@ -152,10 +224,22 @@
   padding: 0 16px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-sm);
   font-size: 0.88rem;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.variant-option--shade {
+  padding-left: 10px;
+}
+
+.variant-option .shade-swatch {
+  width: 22px;
+  height: 22px;
 }
 
 .variant-option input {
@@ -164,6 +248,7 @@
   pointer-events: none;
 }
 
+.variant-option.is-active,
 .variant-option:has(input:checked) {
   border-color: var(--color-accent);
   background: var(--color-beige);
@@ -173,6 +258,17 @@
 .variant-option.is-disabled {
   opacity: 0.45;
   text-decoration: line-through;
+}
+
+@media (max-width: 599px) {
+  .variant-options {
+    gap: 6px;
+  }
+
+  .variant-option {
+    padding: 0 14px;
+    font-size: 0.84rem;
+  }
 }
 
 .product-info__actions {
@@ -285,7 +381,8 @@
 .review-list {
   display: grid;
   gap: 18px;
-  margin-bottom: 32px;
+  margin-top: 32px;
+  margin-bottom: 24px;
 }
 
 .review-item {
@@ -338,6 +435,7 @@
   border-radius: var(--radius-md);
   padding: 20px;
   background: var(--color-white);
+  margin-bottom: 8px;
 }
 
 .review-form h3 {
@@ -348,6 +446,8 @@
 
 .rating-input {
   display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
   gap: 6px;
   margin-bottom: 14px;
 }
@@ -361,9 +461,13 @@
 .rating-input input {
   position: absolute;
   opacity: 0;
+  width: 0;
+  height: 0;
   pointer-events: none;
 }
 
+/* DOM: 5→1 + row-reverse → візуально зліва направо 1→5; ~ заповнює обрану оцінку зліва.
+   Без скидання checked при :hover — інакше input:checked ~ label перебиває label:hover на тій самій зірці. */
 .rating-input input:checked ~ label,
 .rating-input label:hover,
 .rating-input label:hover ~ label {
@@ -374,4 +478,30 @@
   padding: var(--space-2) 0;
   border: none;
   min-height: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Мобільний: кнопка і «Файл не вибрано» в колонку — без обрізання «…» */
+@media (max-width: 599px) {
+  .review-form input[type="file"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .review-form input[type="file"]::file-selector-button,
+  .review-form input[type="file"]::-webkit-file-upload-button {
+    display: block;
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
 }

@@ -13,7 +13,7 @@
 
   function badgeHtml(badge) {
     if (badge === "sale") return '<span class="badge badge--sale product-card__badge">Акція</span>';
-    if (badge === "new") return '<span class="badge badge--new product-card__badge">New</span>';
+    if (badge === "new") return '<span class="badge badge--new product-card__badge">Новинка</span>';
     if (badge === "hit") return '<span class="badge badge--new product-card__badge">Хіт</span>';
     return "";
   }
@@ -77,6 +77,44 @@
     panel.querySelector("[data-mobile-backdrop]")?.addEventListener("click", close);
   }
 
+  function initCatalogMenu() {
+    const toggle = document.querySelector("[data-catalog-toggle]");
+    const panel = document.querySelector("[data-catalog-panel]");
+    if (!toggle || !panel) return;
+
+    const isOpen = () => !panel.hasAttribute("hidden");
+    const onKey = (e) => {
+      if (e.key === "Escape") closeMenu();
+    };
+
+    function openMenu() {
+      if (isOpen()) return;
+      panel.removeAttribute("hidden");
+      toggle.setAttribute("aria-expanded", "true");
+      document.addEventListener("keydown", onKey);
+    }
+
+    function closeMenu() {
+      if (!isOpen()) return;
+      panel.setAttribute("hidden", "");
+      toggle.setAttribute("aria-expanded", "false");
+      document.removeEventListener("keydown", onKey);
+    }
+
+    toggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isOpen()) closeMenu();
+      else openMenu();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!isOpen()) return;
+      if (toggle.contains(e.target) || panel.contains(e.target)) return;
+      closeMenu();
+    });
+  }
+
   function initWish() {
     document.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-wish]");
@@ -92,11 +130,13 @@
     productCard,
     renderProducts,
     initMobileMenu,
+    initCatalogMenu,
     initWish,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
     initMobileMenu();
+    initCatalogMenu();
     initWish();
   });
 })();

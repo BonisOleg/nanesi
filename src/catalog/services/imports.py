@@ -1,7 +1,7 @@
 """Ручний імпорт прайсу постачальника з адмінки (supplier_admin_file_import_skill).
 
 Інваріант ціни (Доповнення §1): при ОНОВЛЕННІ існуючого SKU роздрібна ціна
-(retail_price) НЕ перезаписується файлом — лише stock_quantity. Роздрібна ціна
+(retail_price) НЕ перезаписується файлом — stock_quantity + cost_price (колонка Ціна = закупівля). Роздрібна ціна
 задається вручну і оновлюється лише через окремий markup-механізм (Етап C).
 Атрибути/фото цим імпортом НЕ пишуться (Правило 9 скіла) — окремий етап.
 """
@@ -128,9 +128,19 @@ def _persist_row(supplier: Supplier, row: dict, name_locale: str, report: Import
     variant = ProductVariant.objects.select_related("product").filter(sku=sku).first()
 
     if variant is not None:
+        update_fields: list[str] = []
         if stock_raw:
             variant.stock_quantity = _parse_stock(stock_raw)
-            variant.save(update_fields=["stock_quantity", "updated_at"])
+            update_fields.append("stock_quantity")
+        # Колонка price у прайсі постачальника = закупівля (cost), НЕ РРЦ.
+        if price_raw:
+            cost = _parse_decimal(price_raw)
+            if cost is not None:
+                variant.cost_price = cost
+                update_fields.append("cost_price")
+        if update_fields:
+            update_fields.append("updated_at")
+            variant.save(update_fields=update_fields)
         product = variant.product
         product.supplier = supplier
         if name:
@@ -178,7 +188,8 @@ def _persist_row(supplier: Supplier, row: dict, name_locale: str, report: Import
     ProductVariant.objects.create(
         product=product,
         sku=sku,
-        retail_price=price,
+        cost_price=price,
+        retail_price=price,  # стартова РРЦ = закупка; далі тільки markup/ручне
         stock_quantity=_parse_stock(stock_raw) if stock_raw else 0,
     )
     report.created += 1

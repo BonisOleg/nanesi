@@ -19,8 +19,18 @@ STATIC_PAGES = [
             "від суми, яку виставляєте в Налаштуваннях сайту.</p>"
             "<p>Оплата: післяплата, банківський переказ; онлайн-оплата — після "
             "підключення LiqPay.</p>"
-            "<p>Обмін та повернення: зверніться до служби підтримки протягом "
-            "14 днів (умови уточнюються Замовником).</p>"
+        ),
+    },
+    {
+        "slug": "obmin-ta-povernennya",
+        "title": "Обмін та повернення",
+        "body": (
+            "<p>Ви можете обміняти або повернути товар належної якості протягом "
+            "14 днів з моменту отримання замовлення.</p>"
+            "<p>Товар має бути в оригінальній упаковці, без слідів використання, "
+            "зі збереженими пломбами та ярликами (якщо передбачені).</p>"
+            "<p>Для оформлення обміну чи повернення зверніться до служби підтримки "
+            "із номером замовлення. Умови можуть уточнюватися Замовником в адмінці.</p>"
         ),
     },
     {
@@ -39,24 +49,43 @@ STATIC_PAGES = [
             "і зворотного зв’язку. Повний текст політики — від Замовника.</p>"
         ),
     },
+    {
+        "slug": "kontakty",
+        "title": "Контакти",
+        "body": (
+            "<p>Зв’яжіться з нами зручним способом — відповімо в робочі години.</p>"
+            "<p>Актуальні телефон, email і графік також у блоці контактів нижче "
+            "(керуються в налаштуваннях сайту).</p>"
+        ),
+    },
 ]
 
-# parent_slug=None → корінь; children — вкладені
+# parent_slug=None → корінь; children — вкладені.
+# Порядок коренів — як у прикладі шапки: обличчя → макіяж → тіло → волосся.
+# show_in_header=True — лише 4 позиції в нижній смузі (+ Бренди / Акції в шаблоні).
 CATEGORIES = [
-    {"slug": "doglyad-za-oblychchyam", "name": "Догляд за обличчям", "parent": None, "sort": 10},
+    {"slug": "doglyad-za-oblychchyam", "name": "Догляд за обличчям", "parent": None, "sort": 10, "show_in_header": True},
     {"slug": "kremy-dlya-oblychchya", "name": "Креми для обличчя", "parent": "doglyad-za-oblychchyam", "sort": 11},
     {"slug": "syrovatky-ampuly", "name": "Сироватки / ампули", "parent": "doglyad-za-oblychchyam", "sort": 12},
-    {"slug": "soncezahyst-spf", "name": "Сонцезахист SPF", "parent": None, "sort": 20},
-    {"slug": "spf-dlya-oblychchya", "name": "Для обличчя", "parent": "soncezahyst-spf", "sort": 21},
-    {"slug": "doglyad-za-volossyam", "name": "Догляд за волоссям", "parent": None, "sort": 30},
-    {"slug": "shampuni", "name": "Шампуні", "parent": "doglyad-za-volossyam", "sort": 31},
-    {"slug": "makiyazh", "name": "Макіяж", "parent": None, "sort": 40},
-    {"slug": "tonalni-kushony", "name": "Тональні засоби / Кушони", "parent": "makiyazh", "sort": 41},
+    {"slug": "ochyshchennya", "name": "Очищення", "parent": "doglyad-za-oblychchyam", "sort": 13},
+    {"slug": "masky", "name": "Маски", "parent": "doglyad-za-oblychchyam", "sort": 14},
+    {"slug": "makiyazh", "name": "Макіяж", "parent": None, "sort": 20, "show_in_header": True},
+    {"slug": "tonalni-kushony", "name": "Тональні засоби / Кушони", "parent": "makiyazh", "sort": 21},
+    {"slug": "pomady", "name": "Помади", "parent": "makiyazh", "sort": 22},
+    {"slug": "rumyana", "name": "Рум'яна", "parent": "makiyazh", "sort": 23},
+    {"slug": "doglyad-za-tilom", "name": "Догляд за тілом", "parent": None, "sort": 30, "show_in_header": True},
+    {"slug": "doglyad-za-volossyam", "name": "Догляд за волоссям", "parent": None, "sort": 40, "show_in_header": True},
+    {"slug": "shampuni", "name": "Шампуні", "parent": "doglyad-za-volossyam", "sort": 41},
+    {"slug": "soncezahyst-spf", "name": "Сонцезахист SPF", "parent": None, "sort": 50},
+    {"slug": "spf-dlya-oblychchya", "name": "Для обличчя", "parent": "soncezahyst-spf", "sort": 51},
+    {"slug": "nabory-ta-miniatyury", "name": "Набори та мініатюри", "parent": None, "sort": 60},
+    {"slug": "k-beauty", "name": "K-Beauty", "parent": None, "sort": 70},
 ]
 
 BRANDS = [
-    {"slug": "whocares", "name": "whocares"},
+    {"slug": "whocares", "name": "WhoCares"},
     {"slug": "purito-seoul", "name": "Purito Seoul"},
+    {"slug": "k-beauty", "name": "K-Beauty"},
 ]
 
 SUPPLIER_NAME = "Cosmetics Factory"
@@ -66,7 +95,7 @@ PRODUCTS = [
         "slug": "whocares-vegan-pdrn-cream-50-ml",
         "name": (
             "Зволожувальний крем для обличчя із веганськими полінуклеотидами "
-            "whocares Vegan PDRN Cream 50 ml"
+            "whocares Vegan PDRN Cream"
         ),
         "brand": "whocares",
         "category": "kremy-dlya-oblychchya",
@@ -110,7 +139,7 @@ PRODUCTS = [
         "slug": "purito-wonder-releaf-centella-serum-60-ml",
         "name": (
             "Сироватка з екстрактом центелли без ароматизаторів Purito Seoul "
-            "Wonder Releaf Centella Serum Unscented 60 ml"
+            "Wonder Releaf Centella Serum Unscented"
         ),
         "brand": "purito-seoul",
         "category": "syrovatky-ampuly",
@@ -153,7 +182,7 @@ PRODUCTS = [
         "slug": "purito-daily-soft-touch-sunscreen-spf50",
         "name": (
             "Сонцезахисний крем з керамідами Purito Seoul Daily Soft Touch "
-            "Sunscreen SPF50+ PA++++ 60 ml"
+            "Sunscreen SPF50+ PA++++"
         ),
         "brand": "purito-seoul",
         "category": "spf-dlya-oblychchya",
@@ -194,7 +223,7 @@ PRODUCTS = [
     },
     {
         "slug": "whocares-balancing-shampoo-300-ml",
-        "name": "Шампунь безсульфатний whocares Balancing Shampoo 300 ml",
+        "name": "Шампунь безсульфатний whocares Balancing Shampoo",
         "brand": "whocares",
         "category": "shampuni",
         "short_description": (
@@ -234,10 +263,7 @@ PRODUCTS = [
     },
     {
         "slug": "purito-centella-bb-cushion-13",
-        "name": (
-            "Кушон з екстрактом центелли Purito Seoul Wonder Releaf Centella "
-            "BB Cushion №13 Neutral Ivory"
-        ),
+        "name": "Кушон з екстрактом центелли Purito Seoul Wonder Releaf Centella BB Cushion",
         "brand": "purito-seoul",
         "category": "tonalni-kushony",
         "short_description": (
@@ -245,7 +271,8 @@ PRODUCTS = [
             "недосконалості, зберігаючи природний вигляд."
         ),
         "description": (
-            "Формула містить центеллу, зволожувальні компоненти та SPF30 PA+++."
+            "Формула містить центеллу, зволожувальні компоненти та SPF30 PA+++. "
+            "Відтінки №13 / №21 / №23 — як окремі SKU однієї картки (лист Nanesi п.12)."
         ),
         "usage_instructions": (
             "Набрати невелику кількість засобу пухівкою та нанести на обличчя "
@@ -267,11 +294,34 @@ PRODUCTS = [
                 "sku": "8809563103355",
                 "barcode": "8809563103355",
                 "shade": "№13 Neutral Ivory",
+                "shade_hex": "#F0DCC8",
                 "volume": "15 г + рефіл 15 г",
                 "cost_price": Decimal("978.00"),
                 "retail_price": Decimal("1350.00"),
                 "sale_price": None,
                 "stock_quantity": 15,
+            },
+            {
+                "sku": "8809563103362",
+                "barcode": "8809563103362",
+                "shade": "№21 Light Beige",
+                "shade_hex": "#E4C4A8",
+                "volume": "15 г + рефіл 15 г",
+                "cost_price": Decimal("978.00"),
+                "retail_price": Decimal("1350.00"),
+                "sale_price": None,
+                "stock_quantity": 8,
+            },
+            {
+                "sku": "8809563103379",
+                "barcode": "8809563103379",
+                "shade": "№23 Natural Beige",
+                "shade_hex": "#D4A882",
+                "volume": "15 г + рефіл 15 г",
+                "cost_price": Decimal("978.00"),
+                "retail_price": Decimal("1350.00"),
+                "sale_price": None,
+                "stock_quantity": 0,
             },
         ],
     },
@@ -288,7 +338,34 @@ SEO_LANDING = {
 }
 
 TRUST_BADGES = [
-    {"icon_label": "01", "title": "Оригінали", "text": "Лише офіційні постачання", "sort_order": 1},
-    {"icon_label": "02", "title": "Доставка", "text": "Нова Пошта та Укрпошта", "sort_order": 2},
-    {"icon_label": "03", "title": "Підбір", "text": "Допомога з формулами", "sort_order": 3},
+    {
+        "icon_label": "leaf",
+        "title": "Оригінальна продукція",
+        "text": "100% гарантія якості",
+        "sort_order": 1,
+    },
+    {
+        "icon_label": "truck",
+        "title": "Безкоштовна доставка",
+        "text": "від 1500 грн",
+        "sort_order": 2,
+    },
+    {
+        "icon_label": "award",
+        "title": "Офіційні постачальники",
+        "text": "напряму з Кореї",
+        "sort_order": 3,
+    },
+    {
+        "icon_label": "refresh",
+        "title": "14 днів на повернення",
+        "text": "та обмін",
+        "sort_order": 4,
+    },
+    {
+        "icon_label": "headset",
+        "title": "Підтримка 24/7",
+        "text": "ми завжди поруч",
+        "sort_order": 5,
+    },
 ]

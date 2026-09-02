@@ -1,0 +1,13 @@
+{% if badge.icon_label == "leaf" %}
+<svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M5 19c8-1 12-7 13-14-7 1-13 5-14 13z"/><path d="M8.5 15.5C11 13 14 10 18 8"/></svg>
+{% elif badge.icon_label == "truck" %}
+<svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M1 8h11v8H1z"/><path d="M12 11h4l3 3v2h-7z"/><circle cx="5.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/><path d="M1 11h4"/></svg>
+{% elif badge.icon_label == "award" %}
+<svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"/></svg>
+{% elif badge.icon_label == "refresh" %}
+<svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M3.5 12a8.5 8.5 0 0 1 14.2-6.3L20 8"/><path d="M20.5 3.5V8h-4.5"/><path d="M20.5 12a8.5 8.5 0 0 1-14.2 6.3L4 16"/><path d="M3.5 20.5V16H8"/></svg>
+{% elif badge.icon_label == "headset" %}
+<svg class="trust__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="22" height="22"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><path d="M4 13v3.5A1.5 1.5 0 0 0 5.5 18H7v-5H5.5A1.5 1.5 0 0 0 4 14.5"/><path d="M20 13v3.5a1.5 1.5 0 0 1-1.5 1.5H16v-5h1.5A1.5 1.5 0 0 1 20 14.5"/><path d="M17 18.5v.5a3 3 0 0 1-3 3h-1"/></svg>
+{% else %}
+<span class="trust__fallback">{{ badge.icon_label|default:"—" }}</span>
+{% endif %}

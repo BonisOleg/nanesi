@@ -15,11 +15,13 @@
   {% if brands %}
     <div class="brand-list">
       {% for brand in brands %}
-        <a class="brand-card" href="{% url 'catalog:brand_detail' brand_slug=brand.slug %}">
+        <a class="brand-card" href="{% url 'catalog:brand_detail' brand_slug=brand.slug %}" aria-label="{{ brand.name }}">
           {% if brand.logo %}
-            <img class="brand-card__logo" src="{{ brand.logo.url }}" alt="{{ brand.name }}">
+            <img class="brand-card__logo" src="{{ brand.logo.url }}" alt="" aria-hidden="true">
           {% endif %}
-          <div class="brand-card__name">{{ brand.name }}</div>
+          {% if brand.show_name or not brand.logo %}
+            <div class="brand-card__name">{{ brand.name }}</div>
+          {% endif %}
         </a>
       {% endfor %}
     </div>

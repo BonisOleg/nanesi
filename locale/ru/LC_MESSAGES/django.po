@@ -633,13 +633,17 @@ msgstr "Закрыть"
 msgid "Усі товари"
 msgstr "Все товары"
 
+#: templates/base.html
+msgid "Усі в категорії"
+msgstr "Все в категории"
+
 #: templates/base.html:140
 msgid "Покупцям"
 msgstr "Покупателям"
 
-#: templates/base.html:144
-msgid "Повернення"
-msgstr "Возврат"
+#: templates/base.html
+msgid "Обмін та повернення"
+msgstr "Обмен и возврат"
 
 #: templates/base.html:149
 msgid "Компанія"
@@ -649,9 +653,9 @@ msgstr "Компания"
 msgid "Оферта"
 msgstr "Оферта"
 
-#: templates/base.html:153
-msgid "Політика"
-msgstr "Политика"
+#: templates/base.html
+msgid "Політика конфіденційності"
+msgstr "Политика конфиденциальности"
 
 #: templates/base.html:157
 msgid "Контакти"
@@ -668,6 +672,9 @@ msgstr "Скидка за подписку"
 #: templates/seo/landing_detail.html:10
 msgid "Хлібні крихти"
 msgstr "Хлебные крошки"
+
+msgid "Підкатегорії"
+msgstr "Подкатегории"
 
 #: templates/catalog/brand_list.html:9
 #: templates/catalog/product_detail.html:11
@@ -790,8 +797,26 @@ msgid "Більше"
 msgstr "Больше"
 
 #: templates/catalog/product_detail.html:97
+#: templates/catalog/partials/_card_cart.html
 msgid "До кошика"
 msgstr "В корзину"
+
+#: templates/catalog/product_detail.html
+msgid "Додано"
+msgstr "Добавлено"
+
+#: templates/catalog/product_detail.html
+#: templates/catalog/partials/_card_cart.html
+msgid "В кошику"
+msgstr "В корзине"
+
+#: templates/catalog/partials/_card_cart.html
+msgid "Оберіть варіант"
+msgstr "Выберите вариант"
+
+#: templates/catalog/partials/_card_cart.html
+msgid "Немає"
+msgstr "Нет"
 
 #: templates/catalog/product_detail.html:104
 msgid "В обраному"
@@ -851,6 +876,14 @@ msgstr "Фильтры"
 #: templates/catalog/product_list.html:36
 msgid "Показати"
 msgstr "Показать"
+
+#: templates/catalog/product_list.html
+msgid "Показати ще"
+msgstr "Показать ещё"
+
+#: templates/catalog/product_list.html
+msgid "Згорнути"
+msgstr "Свернуть"
 
 #: templates/catalog/product_list.html:41
 msgid "Бренд"

@@ -3,12 +3,15 @@
 Product = вітринна картка; ProductVariant = одиниця кошика/складу (відтінок/об'єм,
 власний SKU/залишок/ціна) — лист Nanesi п.12: кушон №13/21/23 = 1 product + 3 variants.
 """
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 
 from src.core.models import SeoFieldsMixin, TimeStampedModel
+
+SHADE_HEX_RE = r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$"
+SHADE_PREVIEW_LIMIT = 5
 
 
 class Category(TimeStampedModel, SeoFieldsMixin):
@@ -21,6 +24,11 @@ class Category(TimeStampedModel, SeoFieldsMixin):
     description = models.TextField("Опис", blank=True)
     image = models.ImageField("Зображення", upload_to="catalog/categories/", null=True, blank=True)
     is_active = models.BooleanField("Активна", default=True)
+    show_in_header = models.BooleanField(
+        "Показувати в шапці",
+        default=False,
+        help_text="Нижня смуга навігації (3–4 корені). Повний список — у кнопці «Каталог».",
+    )
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:
@@ -44,6 +52,11 @@ class Brand(TimeStampedModel, SeoFieldsMixin):
     name = models.CharField("Назва", max_length=255, unique=True)
     slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
     logo = models.ImageField("Логотип", upload_to="catalog/brands/", null=True, blank=True)
+    show_name = models.BooleanField(
+        "Показувати назву на вітрині",
+        default=True,
+        help_text="Зніми галочку, якщо логотип уже містить назву бренду (щоб не дублювати текст).",
+    )
     description = models.TextField("Опис", blank=True)
     is_active = models.BooleanField("Активний", default=True)
 
@@ -149,6 +162,23 @@ class Product(TimeStampedModel, SeoFieldsMixin):
         return self.variants.filter(is_active=True).order_by("sort_order", "pk").first()
 
     @property
+    def storefront_variants(self) -> list["ProductVariant"]:
+        """Активні SKU з prefetch (`variants.all()`), без зайвого SQL на картці."""
+        variants = [item for item in self.variants.all() if item.is_active]
+        variants.sort(key=lambda item: (item.sort_order, item.pk))
+        return variants
+
+    @property
+    def shade_preview(self) -> dict:
+        """Активні відтінки зі свотчем (hex або фото) — для карток каталогу."""
+        items = [
+            variant for variant in self.variants.all()
+            if variant.is_active and variant.shade and variant.has_swatch
+        ]
+        extra = max(0, len(items) - SHADE_PREVIEW_LIMIT)
+        return {"items": items[:SHADE_PREVIEW_LIMIT], "extra": extra}
+
+    @property
     def is_on_sale(self) -> bool:
         variant = self.default_variant
         return bool(variant and variant.sale_price is not None)
@@ -162,6 +192,19 @@ class ProductVariant(TimeStampedModel):
     barcode = models.CharField("Штрихкод (EAN)", max_length=64, blank=True)
 
     shade = models.CharField("Відтінок", max_length=255, blank=True)
+    shade_hex = models.CharField(
+        "Колір відтінку (HEX)",
+        max_length=7,
+        blank=True,
+        validators=[RegexValidator(SHADE_HEX_RE, "Формат #RGB або #RRGGBB")],
+        help_text="Наприклад #E4C4A8. Якщо завантажене фото свотча — на вітрині показується фото.",
+    )
+    shade_image = models.ImageField(
+        "Фото відтінку (свотч)",
+        upload_to="catalog/shades/",
+        blank=True,
+        help_text="Для перламутру, глітеру, duo-chrome — коли HEX не передає колір.",
+    )
     volume = models.CharField("Об'єм / варіант", max_length=100, blank=True)
 
     cost_price = models.DecimalField(
@@ -197,6 +240,23 @@ class ProductVariant(TimeStampedModel):
     def __str__(self) -> str:
         label = " / ".join(filter(None, [self.shade, self.volume]))
         return f"{self.product.name} ({label or self.sku})"
+
+    def save(self, *args, **kwargs):
+        hex_value = (self.shade_hex or "").strip().upper()
+        if hex_value and not hex_value.startswith("#"):
+            hex_value = f"#{hex_value}"
+        self.shade_hex = hex_value
+        super().save(*args, **kwargs)
+
+    @property
+    def option_label(self) -> str:
+        return " / ".join(filter(None, [self.shade, self.volume])) or self.sku
+
+    @property
+    def has_swatch(self) -> bool:
+        if self.shade_image:
+            return True
+        return bool(self.shade_hex)
 
     @property
     def in_stock(self) -> bool:

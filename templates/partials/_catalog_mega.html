@@ -1,0 +1,24 @@
+{% load i18n %}
+<nav class="catalog-mega" id="catalog-mega" data-catalog-panel hidden aria-label="{% trans 'Каталог' %}">
+  <div class="container catalog-mega__inner">
+    <a class="catalog-mega__all" href="{% url 'catalog:catalog' %}">{% trans "Усі товари" %}</a>
+    <div class="catalog-mega__grid">
+      {% for cat in nav_categories %}
+        <div class="catalog-mega__col">
+          <a class="catalog-mega__parent" href="{% url 'catalog:category_detail' category_slug=cat.slug %}">{{ cat.name }}</a>
+          {% with children=cat.children.all %}
+            {% if children %}
+              <ul class="catalog-mega__list">
+                {% for child in children %}
+                  <li>
+                    <a href="{% url 'catalog:category_detail' category_slug=child.slug %}">{{ child.name }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          {% endwith %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</nav>

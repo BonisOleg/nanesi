@@ -34,7 +34,7 @@
       <a class="logo" href="index.html" aria-label="NANESI Beauty Store">
         <img src="img/logo.png" alt="NANESI Beauty Store" width="180" height="90">
       </a>
-      <a class="btn-catalog" href="catalog.html">Каталог</a>
+      <a class="btn-catalog" href="catalog.html" data-catalog-toggle aria-expanded="false" aria-controls="catalog-mega" aria-haspopup="true">Каталог</a>
       <form class="header-search" action="catalog.html" method="get" role="search">
         <div class="header-search__input-wrap">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -52,10 +52,56 @@
         <ul class="cat-nav__list">
           <li><a href="catalog.html?cat=face-creams">Догляд за обличчям</a></li>
           <li><a href="catalog.html?cat=makeup">Макіяж</a></li>
-          <li><a href="catalog.html?cat=spf">Сонцезахист</a></li>
           <li><a href="catalog.html?cat=shampoo">Догляд за волоссям</a></li>
+          <li><a href="catalog.html">Догляд за тілом</a></li>
+          <li><a href="catalog.html?cat=spf">Сонцезахист SPF</a></li>
+          <li><a href="catalog.html">Набори та мініатюри</a></li>
+          <li><a href="catalog.html">K-Beauty</a></li>
           <li><a class="is-sale" href="catalog.html?sale=1">Акції</a></li>
         </ul>
+      </div>
+    </nav>
+    <nav class="catalog-mega" id="catalog-mega" data-catalog-panel hidden aria-label="Каталог">
+      <div class="container catalog-mega__inner">
+        <a class="catalog-mega__all" href="catalog.html">Усі товари</a>
+        <div class="catalog-mega__grid">
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=face-creams">Догляд за обличчям</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=face-creams">Креми для обличчя</a></li>
+              <li><a href="catalog.html?cat=serums">Сироватки / ампули</a></li>
+              <li><a href="catalog.html">Очищення</a></li>
+              <li><a href="catalog.html">Маски</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=makeup">Макіяж</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=makeup">Тональні засоби / Кушони</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=shampoo">Догляд за волоссям</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=shampoo">Шампуні</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">Догляд за тілом</a>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html?cat=spf">Сонцезахист SPF</a>
+            <ul class="catalog-mega__list">
+              <li><a href="catalog.html?cat=spf">Для обличчя</a></li>
+            </ul>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">Набори та мініатюри</a>
+          </div>
+          <div class="catalog-mega__col">
+            <a class="catalog-mega__parent" href="catalog.html">K-Beauty</a>
+          </div>
+        </div>
       </div>
     </nav>
   </header>
@@ -67,9 +113,16 @@
       <h3>Каталог</h3>
       <a href="catalog.html">Усі товари</a>
       <a href="catalog.html?cat=face-creams">Догляд за обличчям</a>
-      <a href="catalog.html?cat=spf">Сонцезахист</a>
-      <a href="catalog.html?cat=shampoo">Волосся</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=face-creams">Креми для обличчя</a>
+      <a class="mobile-panel__sub" href="catalog.html?cat=serums">Сироватки / ампули</a>
+      <a class="mobile-panel__sub" href="catalog.html">Очищення</a>
+      <a class="mobile-panel__sub" href="catalog.html">Маски</a>
       <a href="catalog.html?cat=makeup">Макіяж</a>
+      <a href="catalog.html?cat=shampoo">Догляд за волоссям</a>
+      <a href="catalog.html">Догляд за тілом</a>
+      <a href="catalog.html?cat=spf">Сонцезахист SPF</a>
+      <a href="catalog.html">Набори та мініатюри</a>
+      <a href="catalog.html">K-Beauty</a>
     </div>
   </div>
 

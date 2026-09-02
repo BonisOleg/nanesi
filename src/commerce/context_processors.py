@@ -1,8 +1,12 @@
-"""Кількість товарів у кошику — для бейджа в шапці на КОЖНІЙ сторінці сайту."""
+"""Кількість і id товарів у кошику — для бейджа й стану «в кошику» на вітрині."""
 from src.commerce import selectors
 
 
 def cart_badge(request):
     cart = selectors.get_cart(request)
-    count = sum(line.qty for line in selectors.cart_lines(cart)) if cart else 0
-    return {"cart_items_count": count}
+    lines = selectors.cart_lines(cart) if cart else []
+    return {
+        "cart_items_count": sum(line.qty for line in lines),
+        "cart_product_ids": {line.product_id for line in lines},
+        "cart_variant_ids": {line.variant_id for line in lines},
+    }

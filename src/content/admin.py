@@ -2,20 +2,24 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
-from tinymce.widgets import TinyMCE
+from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin
 
+from src.core.admin import TinyMCEAdminMixin
+
+from . import translation  # noqa: F401 — MT registry до TabbedTranslationAdmin
 from .models import BlogPost, NewsletterLead, SiteSettings, StaticPage, TrustBadge
 
 
 @admin.register(SiteSettings)
-class SiteSettingsAdmin(ModelAdmin):
-    """Singleton (admin_skill канон): get_or_create(pk=1), без add/delete.
+class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    """Singleton (admin_skill): get_or_create(pk=1), без add/delete.
 
-    accent_color/accent_hover_color — звичайний текстовий HEX (не type="color"):
-    натив-пікер завжди повертає значення (навіть #000000), тож поле ніколи не
-    залишиться порожнім для fallback на дефолт із мокапу (/theme.css)."""
+    accent_color/accent_hover_color — текстовий HEX (не type=color): натив-пікер
+    завжди повертає значення, тож поле не лишиться порожнім для fallback /theme.css.
+    """
 
+    tinymce_fields = ("hero_subtitle", "promo_popup_text", "bank_transfer_details")
     fieldsets = (
         ("Бренд", {"fields": ("site_name", "tagline", "logo")}),
         ("Контакти", {"fields": ("phone", "email", "instagram_url", "work_hours", "address")}),
@@ -26,7 +30,12 @@ class SiteSettingsAdmin(ModelAdmin):
         ("Доставка", {"fields": ("free_shipping_threshold",)}),
         ("Мови", {"fields": ("ru_enabled", "en_enabled")}),
         ("Popup зі знижкою", {
-            "fields": ("promo_popup_enabled", "promo_popup_title", "promo_popup_text", "promo_popup_discount_percent"),
+            "fields": (
+                "promo_popup_enabled",
+                "promo_popup_title",
+                "promo_popup_text",
+                "promo_popup_discount_percent",
+            ),
         }),
         ("Доставка і оплата", {
             "fields": (
@@ -52,17 +61,9 @@ class SiteSettingsAdmin(ModelAdmin):
         return HttpResponseRedirect(reverse("admin:content_sitesettings_change", args=[obj.pk]))
 
 
-class TinyMCEAdminMixin:
-    tinymce_fields: tuple[str, ...] = ("body",)
-
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        if db_field.name in self.tinymce_fields:
-            kwargs["widget"] = TinyMCE()
-        return super().formfield_for_dbfield(db_field, request, **kwargs)
-
-
 @admin.register(StaticPage)
-class StaticPageAdmin(TinyMCEAdminMixin, ModelAdmin):
+class StaticPageAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("body",)
     list_display = ("title", "slug", "is_published", "updated_at")
     list_filter = ("is_published",)
     search_fields = ("title",)
@@ -75,14 +76,20 @@ class StaticPageAdmin(TinyMCEAdminMixin, ModelAdmin):
 
 
 @admin.register(BlogPost)
-class BlogPostAdmin(TinyMCEAdminMixin, ModelAdmin):
+class BlogPostAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("body",)
     list_display = ("title", "get_cover_preview", "is_published", "published_at")
     list_filter = ("is_published",)
     search_fields = ("title",)
     prepopulated_fields = {"slug": ("title",)}
     readonly_fields = ("get_cover_preview",)
     fieldsets = (
-        (None, {"fields": ("title", "slug", "cover_image", "get_cover_preview", "is_published", "published_at")}),
+        (None, {
+            "fields": (
+                "title", "slug", "cover_image", "get_cover_preview",
+                "is_published", "published_at",
+            ),
+        }),
         ("Текст", {"fields": ("body",)}),
         ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
     )
@@ -96,10 +103,11 @@ class BlogPostAdmin(TinyMCEAdminMixin, ModelAdmin):
 
 
 @admin.register(TrustBadge)
-class TrustBadgeAdmin(ModelAdmin):
+class TrustBadgeAdmin(TabbedTranslationAdmin, ModelAdmin):
     list_display = ("title", "icon_label", "is_active", "sort_order")
-    list_editable = ("sort_order",)
+    list_editable = ("icon_label", "sort_order", "is_active")
     list_filter = ("is_active",)
+    search_fields = ("title", "icon_label")
 
 
 @admin.register(NewsletterLead)

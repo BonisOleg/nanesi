@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.urls import include, path
 
 from src.content.views import theme_css
+from src.core.views_i18n import set_language
 from src.seo.sitemaps import sitemaps
 from src.seo.views import robots_txt
 
@@ -16,12 +17,13 @@ def healthz(_request):
 
 
 # Без префікса мови (uk без /uk/) — здоров'я, адмінка, AJAX-довідники НП, медіа/статика,
-# перемикач мов (django.conf.urls.i18n) і технічні файли для пошукових ботів.
+# перемикач мов і технічні файли для пошукових ботів.
 urlpatterns = [
     path("healthz/", healthz, name="healthz"),
     path(settings.ADMIN_URL, admin.site.urls),
     path("shipping/", include("src.shipping.urls")),
-    path("i18n/", include("django.conf.urls.i18n")),
+    # Власний set_language — захист від /ru/ru (стандартний Django translate_url ламається).
+    path("i18n/setlang/", set_language, name="set_language"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     path("theme.css", theme_css, name="theme_css"),

@@ -14,6 +14,11 @@ class Attribute(models.Model):
     code = models.SlugField("Код", max_length=100, unique=True)
     name = models.CharField("Назва", max_length=255)
     is_filterable = models.BooleanField("Показувати у фільтрах", default=True)
+    show_on_pdp = models.BooleanField(
+        "Показувати на картці товару",
+        default=True,
+        help_text="Зніми галочку, щоб атрибут лишався лише у фільтрах каталогу.",
+    )
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:
@@ -29,6 +34,11 @@ class AttributeValue(models.Model):
     attribute = models.ForeignKey(Attribute, verbose_name="Атрибут", on_delete=models.CASCADE, related_name="values")
     value = models.CharField("Значення", max_length=255)
     slug = models.SlugField("URL", max_length=255, blank=True)
+    is_umbrella = models.BooleanField(
+        "Покриває всі значення групи",
+        default=False,
+        help_text="Якщо товар має це значення (напр. «Усі типи»), інші значення тієї ж групи на картці ховаються.",
+    )
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:
@@ -75,6 +85,12 @@ class Collection(TimeStampedModel):
     name = models.CharField("Назва", max_length=255)
     slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
     kind = models.CharField("Тип", max_length=20, choices=Kind.choices, default=Kind.CUSTOM)
+    image = models.ImageField(
+        "Зображення (промо на головній)",
+        upload_to="catalog/collections/",
+        null=True,
+        blank=True,
+    )
     products = models.ManyToManyField("catalog.Product", verbose_name="Товари", blank=True, related_name="collections")
     is_active = models.BooleanField("Активна", default=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)

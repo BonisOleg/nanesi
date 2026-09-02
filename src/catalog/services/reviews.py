@@ -3,9 +3,12 @@
 «Підтверджена покупка» виставляється автоматично, якщо у користувача є
 не скасоване замовлення з цим товаром.
 """
+import bleach
 from django.db import transaction
 
 from src.catalog.models import Product, Review, ReviewImage
+
+_ALLOWED_TAGS: list[str] = []  # відгук — лише текст, без HTML
 
 
 def has_verified_purchase(user, product: Product) -> bool:
@@ -27,7 +30,7 @@ def create_review(*, product: Product, user, author_name: str, rating: int, text
         user=user if user and user.is_authenticated else None,
         author_name="" if user and user.is_authenticated else author_name,
         rating=rating,
-        text=text,
+        text=bleach.clean(text or "", tags=_ALLOWED_TAGS, strip=True),
         is_verified_purchase=has_verified_purchase(user, product),
         is_approved=False,
     )

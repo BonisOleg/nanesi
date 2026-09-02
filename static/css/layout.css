@@ -82,26 +82,28 @@
 
 .site-header__row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-height: var(--header-h);
   padding: 10px 0;
 }
 
 .logo {
   display: block;
-  width: min(148px, 38vw);
+  width: min(108px, 30vw);
   flex-shrink: 0;
   line-height: 0;
+  justify-self: center;
+  grid-column: 2;
 }
 
 .logo img {
   width: 100%;
   height: auto;
-  max-height: 52px;
+  max-height: 36px;
   object-fit: contain;
-  object-position: left center;
+  object-position: center;
 }
 
 .logo--text {
@@ -111,10 +113,30 @@
   color: var(--color-graphite);
 }
 
+.btn-menu {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  flex-shrink: 0;
+  align-self: center;
+  justify-self: start;
+  grid-column: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-graphite);
+  -webkit-tap-highlight-color: transparent;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
   gap: 4px;
+  justify-self: end;
+  grid-column: 3;
 }
 
 .header-actions__link {
@@ -175,25 +197,31 @@
 
 .btn-catalog {
   display: none;
-  min-height: 42px;
+  min-height: var(--tap);
   padding: 0 16px;
+  border: none;
   background: var(--color-accent);
   color: var(--color-white);
   border-radius: var(--radius-sm);
+  font: inherit;
   font-weight: 500;
   gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn-catalog:hover {
+.btn-catalog:hover,
+.btn-catalog[aria-expanded="true"] {
   background: var(--color-accent-hover);
 }
 
-.btn-menu {
-  width: var(--tap);
-  height: var(--tap);
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-sm);
+.btn-menu svg {
+  width: 36px;
+  height: 36px;
+  display: block;
 }
 
 @media (min-width: 900px) {
@@ -204,6 +232,23 @@
 
   .btn-menu {
     display: none;
+  }
+
+  .logo {
+    width: min(128px, 34vw);
+    justify-self: start;
+    grid-column: auto;
+    margin-inline-end: 12px;
+  }
+
+  .logo img {
+    max-height: 44px;
+    object-position: left center;
+  }
+
+  .header-actions {
+    justify-self: end;
+    grid-column: auto;
   }
 
   .btn-catalog {
@@ -288,24 +333,95 @@
   transform: translateX(0);
 }
 
-.mobile-panel__close {
+.mobile-panel__top {
   display: flex;
-  margin-bottom: 12px;
-  min-height: var(--tap);
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
-.mobile-panel__sheet h3 {
+.mobile-panel__top h3 {
   font-family: var(--font-display);
   font-size: 1.25rem;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
-.mobile-panel__sheet a {
+.mobile-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--tap);
+  height: var(--tap);
+  min-height: var(--tap);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-panel__close:hover,
+.mobile-panel__close:focus-visible {
+  background: var(--color-bg);
+}
+
+.mobile-panel__link,
+.mobile-panel__parent,
+.mobile-panel__sub {
   display: flex;
   align-items: center;
+  width: 100%;
   min-height: var(--tap);
+  border: 0;
   border-bottom: 1px solid var(--color-divider);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-panel__parent {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+}
+
+.mobile-panel__chevron {
+  flex: 0 0 auto;
+  width: 0.55em;
+  height: 0.55em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.mobile-panel__group.is-open .mobile-panel__chevron {
+  transform: rotate(225deg);
+}
+
+.mobile-panel__children {
+  display: none;
+}
+
+.mobile-panel__group.is-open .mobile-panel__children {
+  display: block;
+}
+
+.mobile-panel__sub {
+  padding-left: 18px;
+  color: var(--color-muted);
+  font-size: 0.92rem;
 }
 
 .site-footer {
@@ -336,8 +452,17 @@
 }
 
 .footer-brand__logo {
+  display: block;
   width: 150px;
+  height: auto;
+  max-height: 64px;
   margin-bottom: 12px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Якщо в адмінці темне лого на світлому фоні — інвертуємо лише його */
+.footer-brand__logo[src*="/media/"] {
   filter: brightness(0) invert(1);
   opacity: 0.92;
 }
@@ -360,6 +485,14 @@
   display: grid;
   gap: 8px;
   font-size: 0.9rem;
+}
+
+.footer-col a {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  -webkit-hyphens: auto;
+  hyphens: auto;
 }
 
 .footer-bottom {

@@ -1,0 +1,7 @@
+{% if variant.shade_image %}
+  <img class="shade-swatch" src="{{ variant.shade_image.url }}" alt="" width="24" height="24">
+{% elif variant.shade_hex %}
+  <svg class="shade-swatch" viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" focusable="false">
+    <circle cx="12" cy="12" r="11" fill="{{ variant.shade_hex }}"></circle>
+  </svg>
+{% endif %}

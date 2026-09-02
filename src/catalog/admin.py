@@ -2,8 +2,12 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
+from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin, TabularInline
 
+from src.core.admin import TinyMCEAdminMixin
+
+from . import translation  # noqa: F401 — реєстрація MT до TabbedTranslationAdmin.__init__
 from .forms import SupplierImportForm
 from .models import (
     Attribute,
@@ -22,21 +26,35 @@ from .models import (
 
 
 @admin.register(Category)
-class CategoryAdmin(ModelAdmin):
-    list_display = ("name", "parent", "is_active", "sort_order")
-    list_filter = ("is_active", "parent")
+class CategoryAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("description",)
+    list_display = ("name", "parent", "is_active", "show_in_header", "sort_order")
+    list_editable = ("show_in_header", "sort_order")
+    list_filter = ("is_active", "show_in_header", "parent")
     search_fields = ("name",)
     autocomplete_fields = ["parent"]
     prepopulated_fields = {"slug": ("name",)}
+    list_display_links = ("name",)
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "parent", "description", "image")}),
+        ("Вітрина", {"fields": ("is_active", "show_in_header", "sort_order")}),
+        ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
+    )
 
 
 @admin.register(Brand)
-class BrandAdmin(ModelAdmin):
-    list_display = ("name", "get_logo_preview", "is_active")
-    list_filter = ("is_active",)
+class BrandAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("description",)
+    list_display = ("name", "get_logo_preview", "show_name", "is_active")
+    list_filter = ("is_active", "show_name")
+    list_editable = ("show_name",)
     search_fields = ("name",)
     readonly_fields = ("get_logo_preview",)
     prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "logo", "get_logo_preview", "show_name", "description", "is_active")}),
+        ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
+    )
 
     def get_logo_preview(self, obj: Brand):
         if obj.logo:
@@ -64,7 +82,7 @@ class ProductVariantInline(TabularInline):
     model = ProductVariant
     extra = 1
     fields = (
-        "sku", "barcode", "shade", "volume",
+        "sku", "barcode", "shade", "shade_hex", "shade_image", "volume",
         "cost_price", "retail_price", "sale_price",
         "stock_quantity", "is_active", "sort_order",
     )
@@ -82,7 +100,7 @@ class ProductAttributeValueInline(TabularInline):
 class ProductVariantAdmin(ModelAdmin):
     """Реєстрація потрібна для autocomplete_fields у Wishlist; у меню не виводиться."""
 
-    list_display = ("sku", "product", "shade", "volume", "retail_price", "stock_quantity", "is_active")
+    list_display = ("sku", "product", "shade", "shade_hex", "volume", "retail_price", "stock_quantity", "is_active")
     search_fields = ("sku", "barcode", "product__name")
     autocomplete_fields = ["product"]
     actions = ["apply_recommended_price"]
@@ -103,7 +121,15 @@ class ProductVariantAdmin(ModelAdmin):
 
 
 @admin.register(Product)
-class ProductAdmin(ModelAdmin):
+class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    """modeltranslation вкладки uk/ru/en + TinyMCE на текстових описах (admin_skill)."""
+
+    tinymce_fields = (
+        "short_description",
+        "description",
+        "usage_instructions",
+        "actives",
+    )
     list_display = (
         "name", "brand", "category", "get_price_display",
         "get_stock_display", "is_active", "is_hit", "is_new",
@@ -146,23 +172,35 @@ class ProductAdmin(ModelAdmin):
 
 @admin.register(Attribute)
 class AttributeAdmin(ModelAdmin):
-    list_display = ("name", "code", "is_filterable", "sort_order")
+    list_display = ("name", "code", "is_filterable", "show_on_pdp", "sort_order")
+    list_editable = ("is_filterable", "show_on_pdp", "sort_order")
+    list_filter = ("is_filterable", "show_on_pdp")
     search_fields = ("name", "code")
 
 
 @admin.register(AttributeValue)
-class AttributeValueAdmin(ModelAdmin):
-    list_display = ("value", "attribute", "sort_order")
-    list_filter = ("attribute",)
+class AttributeValueAdmin(TabbedTranslationAdmin, ModelAdmin):
+    list_display = ("value", "attribute", "is_umbrella", "sort_order")
+    list_editable = ("is_umbrella", "sort_order")
+    list_filter = ("attribute", "is_umbrella")
     search_fields = ("value",)
 
 
 @admin.register(Collection)
-class CollectionAdmin(ModelAdmin):
-    list_display = ("name", "kind", "is_active", "sort_order")
+class CollectionAdmin(TabbedTranslationAdmin, ModelAdmin):
+    list_display = ("name", "kind", "is_active", "sort_order", "get_image_preview")
     list_filter = ("kind", "is_active")
     filter_horizontal = ("products",)
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("get_image_preview",)
+    fields = ("name", "slug", "kind", "image", "get_image_preview", "products", "is_active", "sort_order")
+
+    def get_image_preview(self, obj: Collection):
+        if obj.pk and obj.image:
+            return format_html('<img src="{}" style="height:48px">', obj.image.url)
+        return "—"
+
+    get_image_preview.short_description = "Прев'ю"
 
 
 class ReviewImageInline(TabularInline):
