@@ -15,3 +15,6 @@ _reference
 *.docx
 *.pdf
 .cursor
+deploy/data
+malyar_do
+malyar_do.pub

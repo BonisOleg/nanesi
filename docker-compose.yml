@@ -6,10 +6,12 @@ services:
     ports:
       - "80:80"
     volumes:
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
     depends_on:
-      - backend
+      # service_started (не healthy): ERR-52 — інакше recreate web лишає сайт без proxy
+      backend:
+        condition: service_started
 
   backend:
     build:
@@ -18,7 +20,7 @@ services:
     command: >-
       sh -c "python3 manage.py migrate --noinput
       && python3 manage.py collectstatic --noinput
-      && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+      && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 120"
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
     volumes:
@@ -29,6 +31,18 @@ services:
         condition: service_healthy
     expose:
       - "8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   db:
     image: postgres:16-alpine

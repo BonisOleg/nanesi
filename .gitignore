@@ -17,3 +17,9 @@ media/*
 .idea/
 
 /postgres_data/
+
+# SSH keys for DigitalOcean droplet
+/malyar_do
+
+# Local dump for Droplet sync (dumpdata + media tar)
+/deploy/data/
