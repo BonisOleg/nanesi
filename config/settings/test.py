@@ -13,3 +13,11 @@ DATABASES = {
         "NAME": ":memory:",
     }
 }
+
+# Без Manifest — інакше {% static %} у тестах падає без collectstatic
+STORAGES = {
+    **STORAGES,  # noqa: F405
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}

@@ -1,62 +1,190 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static admin_urls %}
+
+{% block breadcrumbs %}
+<div class="px-4 lg:px-12">
+  <div class="container mb-6 mx-auto -my-3 lg:mb-12">
+    <ul class="flex flex-wrap">
+      {% url 'admin:index' as link %}
+      {% trans 'Home' as name %}
+      {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=name %}
+
+      {% url 'admin:app_list' app_label=opts.app_label as link %}
+      {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=opts.app_config.verbose_name %}
+
+      {% url opts|admin_urlname:'changelist' as link %}
+      {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=opts.verbose_name_plural|capfirst %}
+
+      {% url opts|admin_urlname:'change' supplier.pk as link %}
+      {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=supplier %}
+
+      {% translate "Імпорт прайсу" as import_name %}
+      {% include 'unfold/helpers/breadcrumb_item.html' with link='' name=import_name %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  /* Ховери: у зібраному Unfold CSS немає hover:bg-primary-* */
+  #content-main.supplier-import .si-btn-primary:hover {
+    filter: brightness(1.12);
+  }
+  #content-main.supplier-import .si-btn-secondary:hover {
+    background-color: rgb(249 250 251);
+  }
+  html.dark #content-main.supplier-import .si-btn-secondary:hover {
+    background-color: rgb(255 255 255 / 0.06);
+    color: rgb(229 231 235);
+  }
+
+  /* File input: ховаємо нативну білу кнопку */
+  #content-main.supplier-import .si-file {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  #content-main.supplier-import .si-file__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  #content-main.supplier-import .si-file__name {
+    font-size: 0.875rem;
+    color: rgb(107 114 128);
+  }
+  html.dark #content-main.supplier-import .si-file__name {
+    color: rgb(156 163 175);
+  }
+
+  /* Селект: підстраховка, якщо Tailwind dark: не встиг */
+  html.dark #content-main.supplier-import select {
+    background-color: rgb(17 24 39);
+    border-color: rgb(55 65 81);
+    color: rgb(229 231 235);
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div id="content-main">
-  <div class="module">
-    <h2>{% translate "Імпорт прайсу постачальника" %} — {{ supplier.name }}</h2>
+<div id="content-main" class="supplier-import">
+  <div class="border border-gray-200 mb-8 rounded-md p-4 shadow-sm lg:p-6 dark:border-gray-800 dark:bg-white/[.02]">
+    <h2 class="font-semibold mb-2 text-font-important-light dark:text-font-important-dark">
+      {% translate "Імпорт прайсу постачальника" %} — {{ supplier.name }}
+    </h2>
+    <p class="mb-5 text-sm text-font-subtle-light dark:text-font-subtle-dark">
+      {% translate "Колонка «Ціна» = закупівельна ціна (cost). Роздрібна ціна існуючих SKU імпортом не змінюється." %}
+    </p>
+
+    <div class="bg-gray-100 border border-transparent mb-6 rounded-md p-4 dark:bg-white/[.04] dark:border-gray-800">
+      <p class="font-medium mb-1 text-font-important-light dark:text-font-important-dark">
+        {% translate "Завантажити приклад файлу" %}
+      </p>
+      <p class="mb-4 text-sm text-font-subtle-light dark:text-font-subtle-dark">
+        {% translate "Тестові товари (uk). Колонки: Артикул, Назва, Ціна, Залишок, Категорія, Бренд, Опис." %}
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a
+          class="si-btn-primary bg-primary-600 border border-transparent font-medium inline-block px-3 py-2 rounded-md text-white transition"
+          href="{% static 'examples/supplier/pryklad-praisu.csv' %}"
+          download="pryklad-praisu.csv"
+        >{% translate "Приклад CSV" %}</a>
+        <a
+          class="si-btn-secondary border border-gray-200 font-medium inline-block px-3 py-2 rounded-md text-font-important-light transition dark:border-gray-700 dark:text-font-important-dark"
+          href="{% static 'examples/supplier/pryklad-praisu.xlsx' %}"
+          download="pryklad-praisu.xlsx"
+        >{% translate "Приклад XLSX" %}</a>
+      </div>
+    </div>
+
     <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
       {{ form.non_field_errors }}
-      <div class="form-row">
-        <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
-        {{ form.file }}
-        {% if form.file.errors %}<div class="errornote">{{ form.file.errors.0 }}</div>{% endif %}
+
+      <div class="mb-4">
+        <span class="block font-medium mb-2 text-font-important-light text-sm dark:text-font-important-dark">
+          {{ form.file.label }}
+        </span>
+        <div class="si-file">
+          <label class="si-btn-secondary border border-gray-200 cursor-pointer font-medium inline-block px-3 py-2 rounded-md text-font-important-light transition dark:border-gray-700 dark:text-font-important-dark" for="{{ form.file.id_for_label }}">
+            {% translate "Вибрати файл" %}
+          </label>
+          {{ form.file }}
+          <span class="si-file__name" data-si-file-name>{% translate "Файл не вибрано" %}</span>
+        </div>
+        {% if form.file.errors %}<div class="errornote mt-2">{{ form.file.errors.0 }}</div>{% endif %}
       </div>
-      <div class="form-row">
-        <label for="{{ form.name_locale.id_for_label }}">{{ form.name_locale.label }}</label>
+
+      <div class="mb-6">
+        <label class="block font-medium mb-2 text-font-important-light text-sm dark:text-font-important-dark" for="{{ form.name_locale.id_for_label }}">
+          {{ form.name_locale.label }}
+        </label>
         {{ form.name_locale }}
       </div>
-      <div class="submit-row">
-        <input type="submit" value="{% translate 'Імпортувати' %}" class="default">
-      </div>
+
+      <button
+        type="submit"
+        class="si-btn-primary bg-primary-600 border border-transparent font-medium px-3 py-2 rounded-md text-white transition w-full lg:w-auto"
+      >{% translate "Імпортувати" %}</button>
     </form>
   </div>
 
   {% if report %}
-  <div class="module">
-    <h2>{% translate "Результат" %}</h2>
-    <p>
+  <div class="border border-gray-200 rounded-md p-4 shadow-sm lg:p-6 dark:border-gray-800 dark:bg-white/[.02]">
+    <h2 class="font-semibold mb-3 text-font-important-light dark:text-font-important-dark">{% translate "Результат" %}</h2>
+    <p class="mb-2 text-font-default-light dark:text-font-default-dark">
       {% translate "Створено" %}: {{ report.created }} ·
       {% translate "Оновлено" %}: {{ report.updated }} ·
       {% translate "Пропущено" %}: {{ report.skipped }}
     </p>
     {% if report.fallback_category_used %}
-      <p>{% translate "Без категорії (fallback)" %}: {{ report.fallback_category_used }}</p>
+      <p class="mb-2 text-font-subtle-light dark:text-font-subtle-dark">{% translate "Без категорії (fallback)" %}: {{ report.fallback_category_used }}</p>
     {% endif %}
     {% if report.errors %}
-      <table>
-        <thead>
-          <tr>
-            <th>{% translate "Рядок" %}</th>
-            <th>SKU</th>
-            <th>{% translate "Проблема" %}</th>
-            <th>{% translate "Як виправити" %}</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for err in report.errors|slice:":50" %}
-          <tr>
-            <td>{{ err.row }}</td>
-            <td>{{ err.sku }}</td>
-            <td>{{ err.problem }}</td>
-            <td>{{ err.hint }}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>{% translate "Рядок" %}</th>
+              <th>SKU</th>
+              <th>{% translate "Проблема" %}</th>
+              <th>{% translate "Як виправити" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for err in report.errors|slice:":50" %}
+            <tr>
+              <td>{{ err.row }}</td>
+              <td>{{ err.sku }}</td>
+              <td>{{ err.problem }}</td>
+              <td>{{ err.hint }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% endif %}
   </div>
   {% endif %}
 </div>
+<script>
+(function () {
+  var input = document.getElementById("{{ form.file.id_for_label }}");
+  var nameEl = document.querySelector("[data-si-file-name]");
+  if (!input || !nameEl) return;
+  var empty = nameEl.textContent;
+  input.addEventListener("change", function () {
+    nameEl.textContent = (input.files && input.files[0]) ? input.files[0].name : empty;
+  });
+})();
+</script>
 {% endblock %}

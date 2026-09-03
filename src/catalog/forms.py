@@ -76,6 +76,18 @@ class SupplierImportForm(forms.Form):
         initial="uk",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from unfold.widgets import UnfoldAdminSelectWidget
+
+        self.fields["name_locale"].widget = UnfoldAdminSelectWidget()
+        self.fields["file"].widget.attrs.update(
+            {
+                "class": "si-file__input",
+                "accept": ".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv",
+            }
+        )
+
     def clean_file(self):
         uploaded = self.cleaned_data["file"]
         name = (uploaded.name or "").lower()

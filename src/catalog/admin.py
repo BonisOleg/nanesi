@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.http import HttpResponseRedirect
-from django.urls import path, reverse
+from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin, TabularInline
+from unfold.decorators import action
 
 from src.core.admin import TinyMCEAdminMixin
 
@@ -98,11 +100,14 @@ class ProductAttributeValueInline(TabularInline):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(ModelAdmin):
-    """Реєстрація потрібна для autocomplete_fields у Wishlist; у меню не виводиться."""
-
-    list_display = ("sku", "product", "shade", "shade_hex", "volume", "retail_price", "stock_quantity", "is_active")
+    list_display = (
+        "sku", "product", "shade", "volume",
+        "cost_price", "retail_price", "sale_price", "stock_quantity", "is_active",
+    )
+    list_filter = ("is_active", "product__brand", "product__category")
     search_fields = ("sku", "barcode", "product__name")
     autocomplete_fields = ["product"]
+    list_select_related = ("product", "product__brand")
     actions = ["apply_recommended_price"]
 
     @admin.action(description="Розрахувати рекомендовану ціну (за правилом націнки)")
@@ -140,6 +145,7 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     filter_horizontal = ("additional_categories",)
     prepopulated_fields = {"slug": ("name",)}
     inlines = [ProductVariantInline, ProductAttributeValueInline, ProductImageInline]
+    actions = ["apply_recommended_price_to_variants"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "brand", "category", "additional_categories", "supplier")}),
         ("Опис", {"fields": ("short_description", "description", "usage_instructions", "actives", "inci")}),
@@ -147,15 +153,32 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
     )
 
+    @admin.action(description="Розрахувати рекомендовану ціну (за правилом націнки)")
+    def apply_recommended_price_to_variants(self, request, queryset):
+        from src.pricing.services import PricingError, apply_markup_to_variant
+
+        applied, failed = 0, 0
+        variants = ProductVariant.objects.filter(product__in=queryset).select_related("product")
+        for variant in variants:
+            try:
+                apply_markup_to_variant(variant)
+                applied += 1
+            except PricingError as exc:
+                failed += 1
+                self.message_user(request, f"{variant.sku}: {exc}", level="warning")
+        self.message_user(request, f"Ціну оновлено: {applied}, пропущено: {failed}")
+
     def get_price_display(self, obj: Product):
         variant = obj.default_variant
         if not variant:
             return "—"
         if variant.sale_price is not None:
             return format_html(
-                '<s>{}</s> <strong>{} ₴</strong>', f"{variant.retail_price} ₴", variant.sale_price,
+                '<s>{}&nbsp;грн</s> <strong>{}&nbsp;грн</strong>',
+                variant.retail_price,
+                variant.sale_price,
             )
-        return f"{variant.retail_price} ₴"
+        return format_html('{}&nbsp;грн', variant.retail_price)
 
     get_price_display.short_description = "Ціна"
 
@@ -227,30 +250,26 @@ class ReviewAdmin(ModelAdmin):
 
 @admin.register(Supplier)
 class SupplierAdmin(ModelAdmin):
-    """Кнопка «Імпорт прайсу» на change-формі (supplier_admin_file_import_skill)."""
+    """Імпорт прайсу: Unfold-кнопка на картці постачальника і в рядку списку."""
 
     list_display = ("name", "contact_person", "phone", "is_active")
     search_fields = ("name",)
-    change_form_template = "admin/catalog/supplier/change_form.html"
+    actions_detail = ("import_price",)
+    actions_row = ("import_price",)
 
-    def get_urls(self):
-        custom = [
-            path(
-                "<int:supplier_id>/import/",
-                self.admin_site.admin_view(self.import_view),
-                name="catalog_supplier_import",
-            ),
-        ]
-        return custom + super().get_urls()
-
-    def import_view(self, request, supplier_id: int):
+    @action(
+        description=_("Імпорт прайсу"),
+        url_path="import",
+        permissions=["change"],
+    )
+    def import_price(self, request, object_id):
         from django.contrib import messages
         from django.shortcuts import get_object_or_404, render
 
         from .services.imports import ImportError as SupplierImportError
         from .services.imports import import_supplier_file
 
-        supplier = get_object_or_404(Supplier, pk=supplier_id)
+        supplier = get_object_or_404(Supplier, pk=object_id)
         report = None
 
         if request.method == "POST":
@@ -279,5 +298,10 @@ class SupplierAdmin(ModelAdmin):
             "form": form,
             "report": report,
             "opts": self.model._meta,
+            "original": supplier,
+            "has_view_permission": self.has_view_permission(request, supplier),
+            "has_change_permission": self.has_change_permission(request, supplier),
+            "has_add_permission": self.has_add_permission(request),
+            "has_delete_permission": self.has_delete_permission(request, supplier),
         }
         return render(request, "admin/catalog/supplier/import.html", context)
