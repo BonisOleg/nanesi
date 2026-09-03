@@ -42,16 +42,13 @@ deploy/          # Dockerfile + nginx конфіг
 _mockup/         # погоджений frontend-макет (не редагується цим етапом)
 ```
 
-## Деплой на тестовий Droplet (HTTP + IP, без git)
+## Деплой на тестовий Droplet (HTTP + IP)
 
-Канон: `django-droplet-http-first`. Remote з’явиться пізніше — зараз код через rsync.
+Канон: `django-droplet-http-first`. Репо: https://github.com/BonisOleg/nanesi
 
-1. **Mac → сервер (код)** після появи IP і SSH:
-   ```bash
-   ./deploy/docker/rsync-up.sh root@DROPLET_IP
-   # або SSH Host alias: ./deploy/docker/rsync-up.sh malyar
-   ```
-2. **На сервері:**
+**Перший залив (коли є IP):** на сервері `git clone` у `/var/www/malyar` **або** з Mac `./deploy/docker/rsync-up.sh root@IP`.
+
+1. **На сервері:**
    ```bash
    cd /var/www/malyar
    cp .env.docker.example .env && nano .env   # SECRET_KEY, POSTGRES_PASSWORD, реальний IP замість DROPLET_IP
@@ -59,13 +56,13 @@ _mockup/         # погоджений frontend-макет (не редагує
    bash deploy/docker/deploy.sh
    curl -sI -H "Host: <IP>" http://127.0.0.1/ | head -5
    ```
-3. **Тестові дані (локальна БД + media):**
+2. **Тестові дані (локальна БД + media):**
    ```bash
    ./deploy/docker/sync-data.sh push root@DROPLET_IP:/var/www/malyar --yes
    ```
    Dump уже містить users — `createsuperuser` лише якщо потрібен новий адмін **після** import.
 
-Коли буде GitHub: `git clone` у `/var/www/malyar` замість rsync; оновлення — `git pull` + `bash deploy/docker/deploy.sh` (push ≠ live).
+Оновлення: `git pull` на Droplet + `bash deploy/docker/deploy.sh` (push ≠ live).
 
 ## Етапи реалізації
 
