@@ -219,6 +219,7 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": "Товари", "icon": "inventory_2", "link": reverse_lazy("admin:catalog_product_changelist")},
+                    {"title": "Варіанти (SKU)", "icon": "qr_code_2", "link": reverse_lazy("admin:catalog_productvariant_changelist")},
                     {"title": "Категорії", "icon": "category", "link": reverse_lazy("admin:catalog_category_changelist")},
                     {"title": "Бренди", "icon": "sell", "link": reverse_lazy("admin:catalog_brand_changelist")},
                     {"title": "Атрибути", "icon": "tune", "link": reverse_lazy("admin:catalog_attribute_changelist")},
@@ -249,6 +250,7 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": "Налаштування сайту", "icon": "settings", "link": reverse_lazy("admin:content_sitesettings_change", args=[1])},
+                    {"title": "Банери головної", "icon": "view_carousel", "link": reverse_lazy("admin:content_herobanner_changelist")},
                     {"title": "Сторінки", "icon": "description", "link": reverse_lazy("admin:content_staticpage_changelist")},
                     {"title": "Блог", "icon": "article", "link": reverse_lazy("admin:content_blogpost_changelist")},
                     {"title": "Email-ліди (підписки)", "icon": "mail", "link": reverse_lazy("admin:content_newsletterlead_changelist")},

@@ -21,7 +21,11 @@ def money(value: Decimal) -> Decimal:
 
 
 class Cart(TimeStampedModel):
-    """`updated_at` — база для майбутніх «покинутих кошиків» (Доповнення §3, не MVP)."""
+    """`updated_at` — база для майбутніх «покинутих кошиків» (Доповнення §3, не MVP).
+
+    `contact_*` — гачок: контакти з checkout зберігаємо на кошику ще до place_order,
+    щоб пізніше можна було надіслати автолист покинутого кошика.
+    """
 
     class Status(models.TextChoices):
         OPEN = "open", "Відкритий"
@@ -37,6 +41,9 @@ class Cart(TimeStampedModel):
         "commerce.PromoCode", verbose_name="Промокод", null=True, blank=True,
         on_delete=models.SET_NULL, related_name="carts",
     )
+    contact_full_name = models.CharField("Контакт: ПІБ", max_length=255, blank=True)
+    contact_phone = models.CharField("Контакт: телефон", max_length=20, blank=True)
+    contact_email = models.EmailField("Контакт: email", blank=True)
 
     class Meta:
         verbose_name = "Кошик"
@@ -110,7 +117,7 @@ class PromoCode(TimeStampedModel):
         if self.max_uses is not None and self.used_count >= self.max_uses:
             return False, _("Промокод вичерпано")
         if subtotal is not None and self.min_order_amount and subtotal < self.min_order_amount:
-            return False, _("Мінімальна сума замовлення для промокоду — %(amount)s ₴") % {"amount": self.min_order_amount}
+            return False, _("Мінімальна сума замовлення для промокоду — %(amount)s\xa0грн") % {"amount": self.min_order_amount}
         return True, ""
 
     def calculate_discount(self, subtotal: Decimal) -> Decimal:

@@ -1,4 +1,40 @@
 document.addEventListener('DOMContentLoaded', function () {
+  /* --- Перегляд / редагування блоків кабінету --- */
+  document.querySelectorAll('[data-js="editable-section"]').forEach(function (section) {
+    var view = section.querySelector('[data-js="cabinet-view"]');
+    var edit = section.querySelector('[data-js="cabinet-edit-panel"]');
+    var form = section.querySelector('[data-js="cabinet-form"]');
+    var editBtn = section.querySelector('[data-js="cabinet-edit"]');
+    var cancelBtn = section.querySelector('[data-js="cabinet-cancel"]');
+    if (!view || !edit || !editBtn || !cancelBtn) return;
+
+    function setEditing(on) {
+      view.classList.toggle('is-hidden', on);
+      edit.classList.toggle('is-hidden', !on);
+      if (on) {
+        var focusable = edit.querySelector('input:not([type="hidden"]), textarea, select');
+        if (focusable) focusable.focus();
+      }
+    }
+
+    if (section.getAttribute('data-editing') === '1') {
+      setEditing(true);
+    }
+
+    editBtn.addEventListener('click', function () {
+      setEditing(true);
+    });
+
+    cancelBtn.addEventListener('click', function () {
+      if (form) form.reset();
+      var citySug = section.querySelector('#saved-np-city-suggestions');
+      var whSug = section.querySelector('#saved-np-warehouse-suggestions');
+      if (citySug) citySug.innerHTML = '';
+      if (whSug) whSug.innerHTML = '';
+      setEditing(false);
+    });
+  });
+
   /* --- Автодоповнення міста/відділення НП у профілі (той самий /shipping/np/ API, що на checkout) --- */
   var cityInput = document.getElementById('id_saved_np_city_name');
   var cityRefInput = document.getElementById('id_saved_np_city_ref');
@@ -18,6 +54,10 @@ document.addEventListener('DOMContentLoaded', function () {
         ul.className = 'suggestions-list';
         data.results.forEach(function (row) {
           var li = document.createElement('li');
+          li.className = 'suggestions-list__item';
+          if (row.kind === 'postomat') {
+            li.classList.add('suggestions-list__item--postomat');
+          }
           li.textContent = row.name;
           li.addEventListener('click', function () {
             warehouseInput.value = row.name;

@@ -7,7 +7,7 @@
       </p>
     {% else %}
       <p class="shipping-progress__note" aria-live="polite">
-        {% blocktrans with remaining=shipping_progress.remaining_display %}До безкоштовної доставки залишилось <strong>{{ remaining }} грн</strong>{% endblocktrans %}
+        {% blocktrans with remaining=shipping_progress.remaining_display %}До безкоштовної доставки залишилось <strong>{{ remaining }}&nbsp;грн</strong>{% endblocktrans %}
       </p>
     {% endif %}
     <div class="shipping-progress__track"

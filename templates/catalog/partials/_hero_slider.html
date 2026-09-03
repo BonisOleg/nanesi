@@ -1,0 +1,88 @@
+{% load static i18n %}
+<section class="hero" data-hero-slider data-interval="5000"{% if hero_banners|length > 1 %} aria-roledescription="carousel"{% endif %} aria-label="{% trans 'Банер головної' %}">
+  <div class="hero__viewport">
+    {% for banner in hero_banners %}
+      <article
+        class="hero__slide{% if forloop.first %} is-active{% endif %}{% if banner.background_image %} has-bg{% endif %}"
+        data-hero-slide
+        data-hero-blur="{{ banner.overlay_blur|default_if_none:0 }}"
+        data-hero-overlay="{{ banner.overlay_rgba }}"
+        {% if hero_banners|length > 1 %}role="group" aria-roledescription="slide" aria-label="{% blocktrans with n=forloop.counter total=hero_banners|length %}Слайд {{ n }} з {{ total }}{% endblocktrans %}"{% endif %}
+        {% if not forloop.first %}aria-hidden="true"{% endif %}
+      >
+        {% if banner.background_image %}
+          <div class="hero__bg" aria-hidden="true">
+            <div class="hero__bg-photo" data-hero-bg-photo>
+              <img
+                class="hero__bg-img"
+                src="{{ banner.background_image.url }}"
+                alt=""
+                width="1600"
+                height="900"
+                {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+              >
+            </div>
+            <div class="hero__bg-overlay" data-hero-bg-overlay hidden></div>
+          </div>
+        {% endif %}
+        <div class="container hero__inner">
+          <div class="hero__copy">
+            <div class="hero__copy-main">
+              {% if banner.eyebrow %}
+                <span class="hero__eyebrow">{{ banner.eyebrow }}</span>
+              {% endif %}
+              {% if forloop.first %}
+                <h1 class="hero__title">{{ banner.title }}</h1>
+              {% else %}
+                <p class="hero__title">{{ banner.title }}</p>
+              {% endif %}
+              {% if banner.subtitle %}
+                <div class="hero__text">{{ banner.subtitle|safe }}</div>
+              {% endif %}
+            </div>
+            <div class="hero__copy-foot">
+              <a
+                class="btn--primary"
+                href="{% if banner.button_url %}{{ banner.button_url }}{% else %}{% url 'catalog:catalog' %}{% endif %}"
+              >{% if banner.button_text %}{{ banner.button_text }}{% else %}{% trans "До каталогу" %}{% endif %}</a>
+              {% if hero_banners|length > 1 %}
+                <div class="hero__dots" data-hero-dots role="tablist" aria-label="{% trans 'Слайди банера' %}">
+                  {% for _ in hero_banners %}
+                    <button
+                      type="button"
+                      class="hero__dot{% if forloop.first %} is-active{% endif %}"
+                      data-hero-dot
+                      data-hero-index="{{ forloop.counter0 }}"
+                      role="tab"
+                      aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                      aria-label="{% blocktrans with n=forloop.counter %}Показати слайд {{ n }}{% endblocktrans %}"
+                    ></button>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="hero__media">
+            {% if banner.image %}
+              <img
+                src="{{ banner.image.url }}"
+                alt="{{ banner.title }}"
+                width="960"
+                height="540"
+                {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+              >
+            {% else %}
+              <img
+                src="{% static 'img/hero.png' %}"
+                alt="{{ banner.title }}"
+                width="960"
+                height="540"
+                {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+              >
+            {% endif %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>

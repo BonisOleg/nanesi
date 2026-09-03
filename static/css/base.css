@@ -233,6 +233,7 @@ main {
 
 .field textarea {
   min-height: 88px;
+  resize: none;
 }
 
 .field-error {

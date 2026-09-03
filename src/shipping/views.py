@@ -42,5 +42,8 @@ def np_warehouses(request):
     warehouses = search_warehouses(city.pk, query) if configured else []
     return JsonResponse({
         "configured": configured,
-        "results": [{"id": w.pk, "ref": w.ref, "name": str(w)} for w in warehouses],
+        "results": [
+            {"id": w.pk, "ref": w.ref, "name": w.display_name(), "kind": w.kind}
+            for w in warehouses
+        ],
     })

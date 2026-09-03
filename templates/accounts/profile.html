@@ -8,53 +8,123 @@
     {% include "accounts/partials/_cabinet_nav.html" with active="profile" %}
 
     <div class="cabinet-content">
-      <div class="card cabinet-section">
+      <div class="card cabinet-section" data-js="editable-section"{% if profile_form.errors %} data-editing="1"{% endif %}>
         <h2>{% trans "Профіль" %}</h2>
-        <form method="post" novalidate>
-          {% csrf_token %}
-          <input type="hidden" name="form" value="profile">
-          <div class="field">
-            <label for="{{ profile_form.first_name.id_for_label }}">{% trans "Ім'я" %}</label>
-            {{ profile_form.first_name }}
-          </div>
-          <div class="field">
-            <label for="{{ profile_form.last_name.id_for_label }}">{% trans "Прізвище" %}</label>
-            {{ profile_form.last_name }}
-          </div>
-          <div class="field">
-            <label for="{{ profile_form.phone.id_for_label }}">{% trans "Телефон" %}</label>
-            {{ profile_form.phone }}
-            {% for error in profile_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          <div class="field">
-            <label for="{{ profile_form.email.id_for_label }}">Email</label>
-            {{ profile_form.email }}
-            {% for error in profile_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          </div>
-          {% for error in profile_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-          <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
-        </form>
+
+        <div class="cabinet-view{% if profile_form.errors %} is-hidden{% endif %}" data-js="cabinet-view">
+          <dl class="cabinet-facts">
+            <div class="cabinet-facts__row">
+              <dt>{% trans "Ім'я" %}</dt>
+              <dd>{% if request.user.first_name %}{{ request.user.first_name }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+            </div>
+            <div class="cabinet-facts__row">
+              <dt>{% trans "Прізвище" %}</dt>
+              <dd>{% if request.user.last_name %}{{ request.user.last_name }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+            </div>
+            <div class="cabinet-facts__row">
+              <dt>{% trans "Телефон" %}</dt>
+              <dd>{% if request.user.phone %}{{ request.user.phone }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+            </div>
+            <div class="cabinet-facts__row">
+              <dt>Email</dt>
+              <dd>{% if request.user.email %}{{ request.user.email }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+            </div>
+          </dl>
+          <button class="btn btn-outline" type="button" data-js="cabinet-edit">{% trans "Змінити" %}</button>
+        </div>
+
+        <div class="cabinet-edit{% if not profile_form.errors %} is-hidden{% endif %}" data-js="cabinet-edit-panel">
+          <form method="post" novalidate data-js="cabinet-form">
+            {% csrf_token %}
+            <input type="hidden" name="form" value="profile">
+            <div class="field">
+              <label for="{{ profile_form.first_name.id_for_label }}">{% trans "Ім'я" %}</label>
+              {{ profile_form.first_name }}
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.last_name.id_for_label }}">{% trans "Прізвище" %}</label>
+              {{ profile_form.last_name }}
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.phone.id_for_label }}">{% trans "Телефон" %}</label>
+              {{ profile_form.phone }}
+              {% for error in profile_form.phone.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.email.id_for_label }}">Email</label>
+              {{ profile_form.email }}
+              {% for error in profile_form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            {% for error in profile_form.non_field_errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            <div class="cabinet-actions">
+              <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
+              <button class="btn btn-outline" type="button" data-js="cabinet-cancel">{% trans "Скасувати" %}</button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <div class="card cabinet-section">
-        <h2>{% trans "Збережене відділення Нової Пошти" %}</h2>
-        <form method="post" novalidate>
-          {% csrf_token %}
-          <input type="hidden" name="form" value="warehouse">
-          <div class="field">
-            <label for="{{ warehouse_form.saved_np_city_name.id_for_label }}">{% trans "Місто" %}</label>
-            {{ warehouse_form.saved_np_city_name }}
-            <div id="saved-np-city-suggestions"></div>
-            {{ warehouse_form.saved_np_city_ref }}
-          </div>
-          <div class="field">
-            <label for="{{ warehouse_form.saved_np_warehouse_name.id_for_label }}">{% trans "Відділення" %}</label>
-            {{ warehouse_form.saved_np_warehouse_name }}
-            <div id="saved-np-warehouse-suggestions"></div>
-            {{ warehouse_form.saved_np_warehouse_ref }}
-          </div>
-          <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
-        </form>
+      <div class="card cabinet-section" data-js="editable-section"{% if warehouse_form.errors %} data-editing="1"{% endif %}>
+        <h2>{% trans "Збережена доставка" %}</h2>
+
+        <div class="cabinet-view{% if warehouse_form.errors %} is-hidden{% endif %}" data-js="cabinet-view">
+          {% if request.user.saved_np_city_name or request.user.saved_np_warehouse_name or request.user.saved_ukrposhta_index or request.user.saved_ukrposhta_address %}
+            <dl class="cabinet-facts">
+              <div class="cabinet-facts__row">
+                <dt>{% trans "Місто Нової Пошти" %}</dt>
+                <dd>{% if request.user.saved_np_city_name %}{{ request.user.saved_np_city_name }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+              </div>
+              <div class="cabinet-facts__row">
+                <dt>{% trans "Відділення / поштомат" %}</dt>
+                <dd>{% if request.user.saved_np_warehouse_name %}{{ request.user.saved_np_warehouse_name }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+              </div>
+              <div class="cabinet-facts__row">
+                <dt>{% trans "Індекс Укрпошти" %}</dt>
+                <dd>{% if request.user.saved_ukrposhta_index %}{{ request.user.saved_ukrposhta_index }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+              </div>
+              <div class="cabinet-facts__row">
+                <dt>{% trans "Адреса / відділення Укрпошти" %}</dt>
+                <dd>{% if request.user.saved_ukrposhta_address %}{{ request.user.saved_ukrposhta_address }}{% else %}<span class="text-muted">—</span>{% endif %}</dd>
+              </div>
+            </dl>
+          {% else %}
+            <p class="text-muted cabinet-view__empty">{% trans "Дані доставки ще не збережено." %}</p>
+          {% endif %}
+          <button class="btn btn-outline" type="button" data-js="cabinet-edit">{% trans "Змінити" %}</button>
+        </div>
+
+        <div class="cabinet-edit{% if not warehouse_form.errors %} is-hidden{% endif %}" data-js="cabinet-edit-panel">
+          <form method="post" novalidate data-js="cabinet-form">
+            {% csrf_token %}
+            <input type="hidden" name="form" value="warehouse">
+            <div class="field">
+              <label for="{{ warehouse_form.saved_np_city_name.id_for_label }}">{% trans "Місто Нової Пошти" %}</label>
+              {{ warehouse_form.saved_np_city_name }}
+              <div id="saved-np-city-suggestions"></div>
+              {{ warehouse_form.saved_np_city_ref }}
+            </div>
+            <div class="field">
+              <label for="{{ warehouse_form.saved_np_warehouse_name.id_for_label }}">{% trans "Відділення / поштомат" %}</label>
+              {{ warehouse_form.saved_np_warehouse_name }}
+              <div id="saved-np-warehouse-suggestions"></div>
+              {{ warehouse_form.saved_np_warehouse_ref }}
+            </div>
+            <div class="ukrposhta-fields-row">
+              <div class="field field--ukr-index">
+                <label for="{{ warehouse_form.saved_ukrposhta_index.id_for_label }}">{% trans "Індекс Укрпошти" %}</label>
+                {{ warehouse_form.saved_ukrposhta_index }}
+              </div>
+              <div class="field field--ukr-address">
+                <label for="{{ warehouse_form.saved_ukrposhta_address.id_for_label }}">{% trans "Адреса / відділення Укрпошти" %}</label>
+                {{ warehouse_form.saved_ukrposhta_address }}
+              </div>
+            </div>
+            <div class="cabinet-actions">
+              <button class="btn btn-primary" type="submit">{% trans "Зберегти" %}</button>
+              <button class="btn btn-outline" type="button" data-js="cabinet-cancel">{% trans "Скасувати" %}</button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div class="card cabinet-section">
@@ -76,5 +146,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/account.js' %}" defer></script>
+<script src="{% static 'js/account.js' %}?v=cabinet-edit" defer></script>
 {% endblock %}

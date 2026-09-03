@@ -508,6 +508,52 @@
   color: #a8a19a;
 }
 
+.footer-bottom__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.footer-bottom__copy {
+  display: block;
+}
+
+/* Кредит PrometeyLabs — палітра агенції (orange / purple); специфічність > .site-footer a */
+.site-footer__credit {
+  --pl-orange: #e65100;
+  --pl-purple: #7b2cbf;
+  margin: 0;
+  color: #cfc7bf;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.site-footer .site-footer__credit-link,
+.site-footer .site-footer__credit-name {
+  color: var(--pl-orange);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.site-footer .site-footer__credit-link:hover,
+.site-footer .site-footer__credit-link:focus-visible {
+  color: var(--pl-purple);
+}
+
+@media (max-width: 640px) {
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-bottom__meta {
+    width: 100%;
+  }
+}
+
 .pay-icons {
   display: flex;
   gap: 8px;

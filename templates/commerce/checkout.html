@@ -29,13 +29,15 @@
 
       <div class="card checkout-section">
         <h2>{% trans "Доставка" %}</h2>
-        <div class="field">
-          <label for="{{ form.delivery_method.id_for_label }}">{% trans "Спосіб доставки" %}</label>
-          {{ form.delivery_method }}
+        <fieldset class="field choice-field">
+          <legend class="choice-field__legend">{% trans "Спосіб доставки" %}</legend>
+          <div class="choice-tiles" role="radiogroup" aria-label="{% trans 'Спосіб доставки' %}">
+            {{ form.delivery_method }}
+          </div>
           {% for error in form.delivery_method.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-        </div>
+        </fieldset>
 
-        <div id="np-fields">
+        <div id="np-fields" class="is-hidden">
           <div class="field">
             <label for="{{ form.np_city_name.id_for_label }}">{% trans "Місто" %}</label>
             {{ form.np_city_name }}
@@ -44,7 +46,7 @@
             {% for error in form.np_city_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
           </div>
           <div class="field" id="np-warehouse-field">
-            <label for="{{ form.np_warehouse_name.id_for_label }}">{% trans "Відділення" %}</label>
+            <label for="{{ form.np_warehouse_name.id_for_label }}">{% trans "Відділення / поштомат" %}</label>
             {{ form.np_warehouse_name }}
             <div id="np-warehouse-suggestions"></div>
             {{ form.np_warehouse_ref }}
@@ -53,20 +55,30 @@
         </div>
 
         <div id="ukrposhta-fields" class="is-hidden">
-          <div class="field">
-            <label for="{{ form.ukrposhta_address.id_for_label }}">{% trans "Адреса доставки (Укрпошта)" %}</label>
-            {{ form.ukrposhta_address }}
-            {% for error in form.ukrposhta_address.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          <div class="ukrposhta-fields-row">
+            <div class="field field--ukr-index">
+              <label for="{{ form.ukrposhta_index.id_for_label }}">{% trans "Індекс" %}</label>
+              {{ form.ukrposhta_index }}
+              {% for error in form.ukrposhta_index.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="field field--ukr-address">
+              <label for="{{ form.ukrposhta_address.id_for_label }}">{% trans "Адреса доставки (Укрпошта)" %}</label>
+              {{ form.ukrposhta_address }}
+              {% for error in form.ukrposhta_address.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
           </div>
         </div>
       </div>
 
       <div class="card checkout-section">
         <h2>{% trans "Оплата" %}</h2>
-        <div class="field">
-          {{ form.payment_method }}
+        <fieldset class="field choice-field">
+          <legend class="choice-field__legend">{% trans "Спосіб оплати" %}</legend>
+          <div class="choice-tiles" role="radiogroup" aria-label="{% trans 'Спосіб оплати' %}">
+            {{ form.payment_method }}
+          </div>
           {% for error in form.payment_method.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-        </div>
+        </fieldset>
       </div>
 
       <div class="card checkout-section">
@@ -74,28 +86,45 @@
           <label for="{{ form.comment.id_for_label }}">{% trans "Коментар до замовлення" %}</label>
           {{ form.comment }}
         </div>
+        <div class="field field--consent">
+          <label class="consent-label" for="{{ form.privacy_consent.id_for_label }}">
+            {{ form.privacy_consent }}
+            <span class="consent-label__text">
+              {% url 'content:page_detail' slug='polityka-konfidentsiinosti' as privacy_url %}
+              {% url 'content:page_detail' slug='oferta' as offer_url %}
+              {% blocktrans trimmed with privacy_url=privacy_url offer_url=offer_url %}
+              Я даю згоду на обробку персональних даних згідно з
+              <a href="{{ privacy_url }}" target="_blank" rel="noopener">політикою конфіденційності</a>
+              та приймаю умови
+              <a href="{{ offer_url }}" target="_blank" rel="noopener">публічної оферти</a>.
+              {% endblocktrans %}
+            </span>
+          </label>
+          {% for error in form.privacy_consent.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total }}&nbsp;₴</button>
+      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total }}&nbsp;грн</button>
     </form>
 
     <aside class="card checkout-sidebar">
       <h2>{% trans "Ваше замовлення" %}</h2>
       {% include "commerce/partials/_shipping_progress.html" %}
       {% for line in lines %}
-        <div class="summary-row">
-          <span>{{ line.name }} × {{ line.qty }}</span>
-          <span class="summary-row__price">{{ line.line_total }}&nbsp;₴</span>
+        <div class="summary-row summary-row--line">
+          <span class="summary-row__name">{{ line.name }}</span>
+          <span class="summary-row__qty">×&nbsp;{{ line.qty }}</span>
+          <span class="summary-row__price">{{ line.line_total }}&nbsp;грн</span>
         </div>
       {% endfor %}
       <div class="summary-row summary-row--total">
         <span>{% trans "Разом" %}</span>
-        <span class="summary-row__price">{{ total }}&nbsp;₴</span>
+        <span class="summary-row__price">{{ total }}&nbsp;грн</span>
       </div>
     </aside>
   </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/checkout.js' %}" defer></script>
+<script src="{% static 'js/checkout.js' %}?v=requisites-gdpr" defer></script>
 {% endblock %}

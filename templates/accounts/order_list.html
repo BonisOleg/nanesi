@@ -17,7 +17,7 @@
                 <span class="order-card__number">№ {{ order.number }}</span>
                 <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
               </div>
-              <div class="order-card__date">{{ order.created_at|date:"d.m.Y H:i" }} · {% blocktrans with n=order.items.count %}{{ n }} поз.{% endblocktrans %} · {{ order.total }} ₴</div>
+              <div class="order-card__date">{{ order.created_at|date:"d.m.Y H:i" }} · {% blocktrans with n=order.items.count %}{{ n }} поз.{% endblocktrans %} · {{ order.total }}&nbsp;грн</div>
               <p><a href="{% url 'accounts:order_detail' order.number %}">{% trans "Деталі замовлення →" %}</a></p>
             </div>
           {% endfor %}

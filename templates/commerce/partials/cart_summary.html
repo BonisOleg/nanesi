@@ -2,9 +2,12 @@
 <div id="cart-summary" data-cart-items-count="{{ cart_items_count|default:0 }}">
   {% include "partials/_dl_events.html" %}
   {% if not lines %}
+    {% if promo_feedback %}
+      <p class="promo-form__feedback promo-form__feedback--{{ promo_feedback_level|default:'error' }}" role="alert">{{ promo_feedback }}</p>
+    {% endif %}
     <div class="card">
       <p>{% trans "Кошик порожній." %}</p>
-      <a href="{% url 'catalog:catalog' %}" class="btn btn-outline">{% trans "До каталогу" %}</a>
+      <a href="{% url 'catalog:catalog' %}" class="btn btn-outline"{% if in_drawer %} data-cart-drawer-close{% endif %}>{% trans "До каталогу" %}</a>
     </div>
   {% else %}
     <div class="cart-lines">
@@ -31,7 +34,7 @@
             </div>
           </form>
 
-          <div class="cart-line__total">{{ line.line_total }}&nbsp;₴</div>
+          <div class="cart-line__total">{{ line.line_total }}&nbsp;грн</div>
 
           <form hx-post="{% url 'commerce:cart_remove' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
             {% csrf_token %}
@@ -49,10 +52,13 @@
         {% if promo_code %}
           <div class="promo-form__applied">{% blocktrans with code=promo_code.code %}Промокод <strong>{{ code }}</strong> застосовано{% endblocktrans %}</div>
         {% else %}
-          <input type="text" name="code" placeholder="{% trans 'Промокод' %}" class="promo-form__input">
+          <input type="text" name="code" placeholder="{% trans 'Промокод' %}" class="promo-form__input" value="{{ request.POST.code|default:'' }}" autocomplete="off">
           <button type="submit" class="btn btn-secondary">{% trans "Застосувати" %}</button>
         {% endif %}
       </form>
+      {% if promo_feedback %}
+        <p class="promo-form__feedback promo-form__feedback--{{ promo_feedback_level|default:'error' }}" role="alert">{{ promo_feedback }}</p>
+      {% endif %}
       {% if promo_code %}
         <form class="promo-remove-form" hx-post="{% url 'commerce:promo_remove' %}" hx-target="#cart-summary" hx-swap="outerHTML">
           {% csrf_token %}
@@ -61,19 +67,23 @@
       {% endif %}
 
       <div class="summary-row">
-        <span>{% trans "Сума товарів" %}</span><span class="summary-row__price">{{ subtotal }}&nbsp;₴</span>
+        <span>{% trans "Сума товарів" %}</span><span class="summary-row__price">{{ subtotal }}&nbsp;грн</span>
       </div>
       {% if discount_amount %}
         <div class="summary-row summary-row--discount">
-          <span>{% trans "Знижка" %}</span><span class="summary-row__price">−{{ discount_amount }}&nbsp;₴</span>
+          <span>{% trans "Знижка" %}</span><span class="summary-row__price">−{{ discount_amount }}&nbsp;грн</span>
         </div>
       {% endif %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ total }}&nbsp;₴</span>
+        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ total }}&nbsp;грн</span>
       </div>
 
       <a href="{% url 'commerce:checkout' %}" class="btn btn-primary btn-block cart-checkout-link">{% trans "Оформити замовлення" %}</a>
-      <a href="{% url 'catalog:catalog' %}" class="btn btn-outline btn-block cart-catalog-link">{% trans "До каталогу" %}</a>
+      {% if in_drawer %}
+        <a href="{% url 'commerce:cart' %}" class="btn btn-outline btn-block cart-catalog-link" data-cart-drawer-close>{% trans "Відкрити сторінку кошика" %}</a>
+      {% else %}
+        <a href="{% url 'catalog:catalog' %}" class="btn btn-outline btn-block cart-catalog-link">{% trans "До каталогу" %}</a>
+      {% endif %}
     </div>
   {% endif %}
 </div>

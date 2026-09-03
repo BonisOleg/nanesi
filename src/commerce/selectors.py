@@ -158,7 +158,6 @@ def available_delivery_methods() -> list[tuple[str, str]]:
     methods = []
     if settings_obj.nova_poshta_enabled:
         methods.append((Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE, Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE.label))
-        methods.append((Order.DeliveryMethod.NOVA_POSHTA_COURIER, Order.DeliveryMethod.NOVA_POSHTA_COURIER.label))
     if settings_obj.ukrposhta_enabled:
         methods.append((Order.DeliveryMethod.UKRPOSHTA, Order.DeliveryMethod.UKRPOSHTA.label))
     return methods
@@ -176,6 +175,15 @@ def available_payment_methods() -> list[tuple[str, str]]:
     if settings_obj.bank_transfer_enabled:
         methods.append((Order.PaymentMethod.BANK_TRANSFER, Order.PaymentMethod.BANK_TRANSFER.label))
     return methods
+
+
+def alternate_payment_methods_after_card() -> list[tuple[str, str]]:
+    """Способи оплати для перемикання після помилки картки (без card_online)."""
+    return [
+        (code, label)
+        for code, label in available_payment_methods()
+        if code != Order.PaymentMethod.CARD_ONLINE
+    ]
 
 
 def my_orders(user):

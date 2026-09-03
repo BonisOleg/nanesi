@@ -18,12 +18,14 @@ class User(AbstractUser):
         help_text="Формат 380XXXXXXXXX — для входу та Нової Пошти",
     )
 
-    # Кабінет покупця (Відповіді п.6): збережене відділення НП — підказка на checkout,
-    # ref-и потрібні, щоб автопошук (src.shipping) міг одразу підвантажити відділення.
+    # Кабінет: збережені точки доставки — підказка на checkout.
+    # Ref-и НП потрібні, щоб автопошук (src.shipping) підвантажив відділення/поштомат.
     saved_np_city_name = models.CharField("Збережене місто (НП)", max_length=255, blank=True)
     saved_np_city_ref = models.CharField("Ref міста (НП)", max_length=64, blank=True)
-    saved_np_warehouse_name = models.CharField("Збережене відділення (НП)", max_length=255, blank=True)
-    saved_np_warehouse_ref = models.CharField("Ref відділення (НП)", max_length=64, blank=True)
+    saved_np_warehouse_name = models.CharField("Збережене відділення / поштомат (НП)", max_length=255, blank=True)
+    saved_np_warehouse_ref = models.CharField("Ref відділення / поштомату (НП)", max_length=64, blank=True)
+    saved_ukrposhta_index = models.CharField("Збережений індекс Укрпошти", max_length=5, blank=True)
+    saved_ukrposhta_address = models.CharField("Збережена адреса Укрпошти", max_length=512, blank=True)
 
     class Meta:
         verbose_name = "Користувач"

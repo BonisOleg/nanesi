@@ -23,16 +23,38 @@ class NPCity(models.Model):
 
 
 class NPWarehouse(models.Model):
+    CATEGORY_POSTOMAT = "Postomat"
+    CATEGORY_CARGO = "Cargo"
+
     ref = models.CharField("Ref (API)", max_length=64, unique=True)
     city = models.ForeignKey(NPCity, verbose_name="Місто", on_delete=models.CASCADE, related_name="warehouses")
     number = models.CharField("Номер відділення", max_length=16, blank=True)
     description = models.CharField("Опис / адреса", max_length=512)
+    category = models.CharField("Категорія (API)", max_length=32, blank=True, db_index=True)
     is_active = models.BooleanField("Активне", default=True)
 
     class Meta:
-        verbose_name = "Відділення (НП)"
-        verbose_name_plural = "Відділення (НП)"
+        verbose_name = "Відділення / поштомат (НП)"
+        verbose_name_plural = "Відділення / поштомати (НП)"
         ordering = ["city__name", "number"]
 
+    @property
+    def is_postomat(self) -> bool:
+        return (self.category or "").lower() == self.CATEGORY_POSTOMAT.lower()
+
+    @property
+    def kind(self) -> str:
+        return "postomat" if self.is_postomat else "warehouse"
+
+    def display_name(self) -> str:
+        from django.utils.translation import gettext as _
+
+        if not self.is_postomat:
+            return self.description
+        low = self.description.lower()
+        if "поштомат" in low or "почтомат" in low or "postomat" in low:
+            return self.description
+        return f"{_('Поштомат')} · {self.description}"
+
     def __str__(self) -> str:
-        return self.description
+        return self.display_name()

@@ -18,11 +18,7 @@
   </header>
 
   {% if products %}
-    <div class="product-grid">
-      {% for product in products %}
-        {% include "catalog/partials/_product_card.html" %}
-      {% endfor %}
-    </div>
+    {% include "catalog/partials/_product_grid.html" with products=products %}
     {% include "catalog/partials/_pagination.html" with page_obj=page_obj %}
   {% else %}
     <div class="catalog-empty">{% trans "У цій підбірці поки немає товарів." %}</div>

@@ -14,7 +14,7 @@ class NPCityAdmin(ModelAdmin):
 
 @admin.register(NPWarehouse)
 class NPWarehouseAdmin(ModelAdmin):
-    list_display = ("description", "city", "number", "is_active")
-    list_filter = ("city",)
+    list_display = ("description", "category", "city", "number", "is_active")
+    list_filter = ("category", "is_active")
     search_fields = ("description", "number", "city__name")
     autocomplete_fields = ["city"]

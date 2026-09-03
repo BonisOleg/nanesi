@@ -1,0 +1,20 @@
+{% load i18n %}
+{% if bank_requisites_html %}
+<section class="bank-requisites{% if bank_requisites_compact %} bank-requisites--compact{% endif %}" aria-labelledby="{{ bank_requisites_heading_id|default:'bank-requisites-title' }}">
+  <div class="bank-requisites__head">
+    <h2 id="{{ bank_requisites_heading_id|default:'bank-requisites-title' }}" class="bank-requisites__title">
+      {% if bank_requisites_title %}{{ bank_requisites_title }}{% else %}{% trans "Реквізити для оплати" %}{% endif %}
+    </h2>
+    <button
+      type="button"
+      class="btn bank-requisites__copy"
+      data-copy-text="{{ bank_requisites_plain }}"
+      data-copy-label="{% trans 'Копіювати' %}"
+      data-copied-label="{% trans 'Скопійовано' %}"
+    >{% trans "Копіювати" %}</button>
+  </div>
+  <div class="bank-requisites__body">
+    {{ bank_requisites_html|safe }}
+  </div>
+</section>
+{% endif %}

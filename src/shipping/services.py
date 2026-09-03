@@ -50,9 +50,16 @@ def sync_cities() -> int:
 
 def ensure_warehouses_synced(city: NPCity, *, force: bool = False) -> int:
     """Ліниво синкає відділення ОДНОГО міста (не всіх одразу — це тисячі викликів API)."""
-    if not force and city.warehouses.exists():
+    has_rows = city.warehouses.exists()
+    needs_category = city.warehouses.filter(category="").exists()
+    if not force and has_rows and not needs_category:
         return 0
-    client = get_client()
+    try:
+        client = get_client()
+    except ShippingConfigError:
+        if has_rows:
+            return 0
+        raise
     page, total = 1, 0
     while True:
         rows = client.get_warehouses(city.ref, page=page)
@@ -65,6 +72,7 @@ def ensure_warehouses_synced(city: NPCity, *, force: bool = False) -> int:
                     "city": city,
                     "number": row.get("Number", ""),
                     "description": row.get("Description", ""),
+                    "category": row.get("CategoryOfWarehouse") or "",
                 },
             )
             total += 1
@@ -106,7 +114,7 @@ def create_ttn(order_id: int):
         order = Order.objects.select_for_update().get(pk=order_id)
         if order.ttn_number:
             return order
-        if order.delivery_method not in (Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE, Order.DeliveryMethod.NOVA_POSHTA_COURIER):
+        if order.delivery_method != Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE:
             raise ShippingError("ТТН створюється лише для доставки Новою Поштою")
         if not order.np_city_ref or not order.np_warehouse_ref:
             message = "Немає Ref міста/відділення НП — довідник ще не синкнуто для цього замовлення"

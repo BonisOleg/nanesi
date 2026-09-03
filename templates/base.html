@@ -12,15 +12,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% url 'theme_css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=m320">
-  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=footer-names">
-  <link rel="stylesheet" href="{% static 'css/components.css' %}?v=cart4">
-  <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=m320">
-  <link rel="stylesheet" href="{% static 'css/account.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=m321">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=pl-credit2">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}?v=product-grid">
+  <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=summary-3col-c">
+  <link rel="stylesheet" href="{% static 'css/cart-drawer.css' %}?v=1">
+  <link rel="stylesheet" href="{% static 'css/account.css' %}?v=wishlist-grid">
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=mnav" defer></script>
-  <script src="{% static 'js/commerce.js' %}?v=qty-stepper" defer></script>
+  <script src="{% static 'js/commerce.js' %}?v=cart-drawer1" defer></script>
   {% if site_settings.gtm_id or site_settings.ga4_id or site_settings.meta_pixel_id or site_settings.tiktok_pixel_id %}
     <script src="{% static 'js/analytics.js' %}" defer
       {% if site_settings.gtm_id %}data-gtm-id="{{ site_settings.gtm_id }}"{% endif %}
@@ -78,7 +79,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.6-9.5-9A5.4 5.4 0 0 1 12 5.2 5.4 5.4 0 0 1 21.5 12C19 16.4 12 21 12 21z"/></svg>
           <span class="header-actions__count{% if not wishlist_count %} is-hidden{% endif %}" data-wishlist-count {% if request.user.is_authenticated %}data-server-managed="1"{% endif %}>{{ wishlist_count|default:0 }}</span>
         </a>
-        <a class="header-actions__link" href="{% url 'commerce:cart' %}" aria-label="{% trans 'Кошик' %}" id="cart-link">
+        <a class="header-actions__link" href="{% url 'commerce:cart' %}" aria-label="{% trans 'Кошик' %}" id="cart-link" data-cart-drawer-open>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7h15l-1.5 9h-12z"/><path d="M6 7 5 3H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
           <span class="header-actions__count{% if not cart_items_count %} is-hidden{% endif %}" data-cart-count>{{ cart_items_count|default:0 }}</span>
         </a>
@@ -172,7 +173,7 @@
         {% else %}
           <img class="footer-brand__logo" src="{% static 'img/logo-footer.png' %}" alt="{{ site_settings.site_name }}" width="150" height="75">
         {% endif %}
-        <p>{{ site_settings.hero_subtitle }}</p>
+        <p>{{ site_settings.hero_subtitle|striptags }}</p>
       </div>
       <div class="footer-col">
         <h4>{% trans "Покупцям" %}</h4>
@@ -205,12 +206,26 @@
       </div>
     </div>
     <div class="container footer-bottom">
-      <span>© {% now "Y" %} {{ site_settings.site_name }} — {{ site_settings.tagline }}</span>
-      <div class="pay-icons">
-        <span>Visa</span><span>MC</span><span>Apple Pay</span><span>GPay</span>
+      <div class="footer-bottom__meta">
+        <span class="footer-bottom__copy">© {% now "Y" %} {{ site_settings.site_name }} — {{ site_settings.tagline }}</span>
+        <p class="site-footer__credit">
+          {% trans "Зроблено в" %}
+          {% if request.resolver_match.url_name == "home" %}
+            <a
+              class="site-footer__credit-link"
+              href="https://www.prometeylabs.com/internet-shop-v2/"
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+            >PrometeyLabs</a>
+          {% else %}
+            <span class="site-footer__credit-name">PrometeyLabs</span>
+          {% endif %}
+        </p>
       </div>
     </div>
   </footer>
+
+  {% include "commerce/partials/_cart_drawer.html" %}
 
   {% if site_settings.promo_popup_enabled %}
     <div class="promo-popup" data-promo-popup hidden>

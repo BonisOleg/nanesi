@@ -21,6 +21,7 @@ def _order_snapshot(order: Order) -> dict:
         "delivery_method": order.delivery_method,
         "np_city_name": order.np_city_name,
         "np_warehouse_name": order.np_warehouse_name,
+        "ukrposhta_index": order.ukrposhta_index,
         "ukrposhta_address": order.ukrposhta_address,
         "payment_method": order.payment_method,
         "payment_status": order.payment_status,

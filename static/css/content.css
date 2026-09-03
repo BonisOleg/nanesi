@@ -1,19 +1,81 @@
 /* tokens.css підключається окремим <link> у base.html — без @import (перекривав би theme.css). */
 
+.blog-page__title {
+  margin-bottom: var(--space-5);
+}
+
+.blog-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-bottom: 48px;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .blog-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+}
+
+@media (min-width: 1024px) {
+  .blog-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .blog-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   text-align: left;
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-card);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow var(--transition), border-color var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.blog-card:hover {
+  box-shadow: var(--shadow-soft);
+  border-color: #d2cbc2;
 }
 
 .blog-card__cover {
-  border-radius: var(--radius-sm);
-  margin-bottom: 10px;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 180px;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+  margin: 0;
+  background: var(--color-bg);
+}
+
+.blog-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  min-width: 0;
+}
+
+.blog-card__title {
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .blog-card__date {
   font-size: 0.8rem;
-  margin-top: 4px;
+  margin: 0;
   color: var(--color-text-muted);
 }
 
@@ -75,14 +137,39 @@
 }
 
 .blog-article__cover {
+  display: block;
   width: 100%;
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-5);
+  max-width: 100%;
+  height: auto;
   max-height: 420px;
+  margin: 0 0 var(--space-5);
+  border-radius: var(--radius-md);
   object-fit: cover;
+  object-position: center;
 }
 
 .blog-article__date {
   color: var(--color-text-muted);
   margin-bottom: var(--space-4);
+}
+
+.blog-article {
+  margin-bottom: var(--space-5);
+}
+
+.blog-article__products {
+  padding-bottom: 48px;
+  min-width: 0;
+}
+
+.blog-article__products h2 {
+  margin: 0 0 var(--space-4);
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+@media (max-width: 480px) {
+  .blog-article__products h2 {
+    font-size: 1.1rem;
+  }
 }

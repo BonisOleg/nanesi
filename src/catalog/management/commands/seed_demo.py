@@ -26,6 +26,7 @@ from ._seed_demo_attrs import ATTRIBUTE_GROUPS, ATTRIBUTE_VALUES, PRODUCT_ATTRIB
 from ._seed_demo_data import (
     BRANDS,
     CATEGORIES,
+    HERO_BANNERS_STOCK,
     PRODUCTS as CARE_PRODUCTS,
     SEO_LANDING,
     STATIC_PAGES,
@@ -34,7 +35,7 @@ from ._seed_demo_data import (
 )
 from ._seed_demo_makeup import MAKEUP_PRODUCTS
 from ._seed_demo_kbeauty_brand import KBEAUTY_BRAND_PRODUCTS
-from src.content.models import SiteSettings, StaticPage, TrustBadge
+from src.content.models import HeroBanner, SiteSettings, StaticPage, TrustBadge
 from src.seo.models import SeoLandingPage
 
 STATIC_PRODUCT_DIR = Path(settings.BASE_DIR) / "static" / "img" / "products"
@@ -66,6 +67,7 @@ class Command(BaseCommand):
         self._seed_pages()
         self._seed_trust()
         self._seed_site_settings()
+        self._seed_hero_banners()
         brands, categories, supplier = self._seed_catalog_refs()
         products = self._seed_products(brands, categories, supplier)
         attr_values = self._seed_attributes()
@@ -88,6 +90,18 @@ class Command(BaseCommand):
         if not site.free_shipping_threshold:
             site.free_shipping_threshold = Decimal("1500.00")
             updates.append("free_shipping_threshold")
+        if not (site.bank_transfer_details or "").strip():
+            site.bank_transfer_details = (
+                "<p><strong>Отримувач:</strong> ФОП Тестовий Іван Іванович</p>"
+                "<p><strong>ІПН:</strong> 1234567890</p>"
+                "<p><strong>IBAN:</strong> UA123456789012345678901234567</p>"
+                "<p><strong>Банк:</strong> АТ «ТестБанк»</p>"
+                "<p><strong>Призначення:</strong> Оплата замовлення (вкажіть номер)</p>"
+            )
+            updates.append("bank_transfer_details")
+        if not site.card_payment_enabled:
+            site.card_payment_enabled = True
+            updates.append("card_payment_enabled")
         if updates:
             site.save(update_fields=updates)
 
@@ -139,6 +153,94 @@ class Command(BaseCommand):
             )
             keep_ids.append(badge.pk)
         TrustBadge.objects.exclude(pk__in=keep_ids).update(is_active=False)
+
+    def _seed_hero_banners(self) -> None:
+        """3 слайди: #1 з SiteSettings.hero_*, #2–3 — сток; фони з static/img/hero/."""
+        site = SiteSettings.load()
+        eyebrow = " ".join(p for p in (site.site_name, site.tagline) if p).strip()
+        overlay_defaults = {
+            "overlay_color": "#EFE9E1",
+            "overlay_opacity": 72,
+            "overlay_blur": 10,
+        }
+        slide1_defaults = {
+            "eyebrow": eyebrow or "NANESI Beauty Store",
+            "title": site.hero_title or "Косметика для вашої природної краси",
+            "subtitle": site.hero_subtitle or (
+                "<p>Мультибрендовий магазин догляду та макіяжу. "
+                "Підібрані формули, прозорі склади та зручна доставка по Україні.</p>"
+            ),
+            "button_text": "До каталогу",
+            "button_url": "/katalog/",
+            "is_active": True,
+            **overlay_defaults,
+        }
+        # Підхопити переклади з SiteSettings, якщо є
+        for lang in ("ru", "en"):
+            for field in ("title", "subtitle"):
+                src = getattr(site, f"hero_{field}_{lang}", None) or ""
+                if src:
+                    slide1_defaults[f"{field}_{lang}"] = src
+            tag = getattr(site, f"tagline_{lang}", None) or site.tagline
+            name = getattr(site, f"site_name_{lang}", None) or site.site_name
+            eye = " ".join(p for p in (name, tag) if p).strip()
+            if eye:
+                slide1_defaults[f"eyebrow_{lang}"] = eye
+            slide1_defaults[f"button_text_{lang}"] = {
+                "ru": "В каталог",
+                "en": "Shop now",
+            }[lang]
+
+        banner1, _ = HeroBanner.objects.update_or_create(
+            sort_order=1,
+            defaults=slide1_defaults,
+        )
+        if site.hero_image and not banner1.image:
+            banner1.image = site.hero_image
+            banner1.save(update_fields=["image"])
+
+        keep_ids = [banner1.pk]
+        banners_by_order = {1: banner1}
+        for item in HERO_BANNERS_STOCK:
+            defaults = {
+                "eyebrow": item["eyebrow"],
+                "title": item["title"],
+                "subtitle": item["subtitle"],
+                "button_text": item["button_text"],
+                "button_url": item["button_url"],
+                "is_active": True,
+                **overlay_defaults,
+                "overlay_blur": item.get("overlay_blur", 10),
+                "overlay_opacity": item.get("overlay_opacity", 72),
+            }
+            for lang in ("ru", "en"):
+                for field in ("eyebrow", "title", "subtitle", "button_text"):
+                    key = f"{field}_{lang}"
+                    if item.get(key):
+                        defaults[key] = item[key]
+            banner, _ = HeroBanner.objects.update_or_create(
+                sort_order=item["sort_order"],
+                defaults=defaults,
+            )
+            keep_ids.append(banner.pk)
+            banners_by_order[item["sort_order"]] = banner
+
+        bg_dir = Path(settings.BASE_DIR) / "static" / "img" / "hero"
+        bg_files = {1: "bg-1.jpg", 2: "bg-2.jpg", 3: "bg-3.jpg"}
+        for order, fname in bg_files.items():
+            banner = banners_by_order.get(order)
+            if banner is None or banner.background_image:
+                continue
+            path = bg_dir / fname
+            if not path.exists():
+                continue
+            with path.open("rb") as fh:
+                banner.background_image.save(fname, File(fh), save=True)
+
+        deactivated = HeroBanner.objects.exclude(pk__in=keep_ids).update(is_active=False)
+        self.stdout.write(f"  hero banners: {len(keep_ids)} active" + (
+            f", deactivated extras: {deactivated}" if deactivated else ""
+        ))
 
     def _seed_catalog_refs(self) -> tuple[dict, dict, Supplier]:
         supplier, _ = Supplier.objects.get_or_create(

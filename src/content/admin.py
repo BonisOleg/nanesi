@@ -8,7 +8,7 @@ from unfold.admin import ModelAdmin
 from src.core.admin import TinyMCEAdminMixin
 
 from . import translation  # noqa: F401 — MT registry до TabbedTranslationAdmin
-from .models import BlogPost, NewsletterLead, SiteSettings, StaticPage, TrustBadge
+from .models import BlogPost, HeroBanner, NewsletterLead, SiteSettings, StaticPage, TrustBadge
 
 
 @admin.register(SiteSettings)
@@ -25,6 +25,10 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         ("Контакти", {"fields": ("phone", "email", "instagram_url", "work_hours", "address")}),
         ("Головна — банер і смужка", {
             "fields": ("topbar_promo_text", "hero_title", "hero_subtitle", "hero_image"),
+            "description": (
+                "Fallback, якщо немає активних записів у «Банери головної». "
+                "Seed також підставляє ці поля в перший слайд."
+            ),
         }),
         ("Кольори (акцент бренду)", {"fields": ("accent_color", "accent_hover_color")}),
         ("Доставка", {
@@ -44,11 +48,16 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
             ),
         }),
         ("Сторінка «Дякуємо»", {
-            "fields": ("thank_you_title", "thank_you_number_label", "thank_you_body"),
+            "fields": (
+                "thank_you_title", "thank_you_number_label", "thank_you_body",
+                "payment_pending_title", "payment_pending_body",
+            ),
             "description": (
                 "Тексти після оформлення замовлення. "
                 "У полі «текст під номером» залишайте {phone} як є (латиницею в фігурних дужках) — "
-                "це автоматично заміниться на телефон покупця. Решту речення можна редагувати."
+                "це автоматично заміниться на телефон покупця. Решту речення можна редагувати. "
+                "Блок «Оплата не пройшла» — лише для неоплаченої картки: заголовок і текст "
+                "з рекомендацією спробувати ще або обрати інший спосіб."
             ),
         }),
         ("Доставка і оплата", {
@@ -94,17 +103,19 @@ class BlogPostAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("body",)
     list_display = ("title", "get_cover_preview", "is_published", "published_at")
     list_filter = ("is_published",)
-    search_fields = ("title",)
+    search_fields = ("title", "h1")
     prepopulated_fields = {"slug": ("title",)}
+    autocomplete_fields = ["products"]
     readonly_fields = ("get_cover_preview",)
     fieldsets = (
         (None, {
             "fields": (
-                "title", "slug", "cover_image", "get_cover_preview",
+                "title", "h1", "slug", "cover_image", "get_cover_preview",
                 "is_published", "published_at",
             ),
         }),
         ("Текст", {"fields": ("body",)}),
+        ("Добірка товарів", {"fields": ("products",)}),
         ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
     )
 
@@ -114,6 +125,61 @@ class BlogPostAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         return "—"
 
     get_cover_preview.short_description = "Обкладинка"
+
+
+@admin.register(HeroBanner)
+class HeroBannerAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+    tinymce_fields = ("subtitle",)
+    list_display = (
+        "title", "get_image_preview", "get_bg_preview",
+        "overlay_blur", "is_active", "sort_order",
+    )
+    list_editable = ("is_active", "sort_order", "overlay_blur")
+    list_filter = ("is_active",)
+    search_fields = ("title", "eyebrow", "button_text")
+    readonly_fields = ("get_image_preview", "get_bg_preview")
+    ordering = ("sort_order", "pk")
+    fieldsets = (
+        (None, {
+            "fields": (
+                "eyebrow", "title", "subtitle",
+                "button_text", "button_url",
+                "is_active", "sort_order",
+            ),
+        }),
+        ("Зображення справа", {
+            "fields": ("image", "get_image_preview"),
+        }),
+        ("Фон слайда", {
+            "fields": (
+                "background_image", "get_bg_preview",
+                "overlay_color", "overlay_opacity", "overlay_blur",
+            ),
+            "description": (
+                "Шари ззаду вперед: 1) фото фону → 2) блюр фото → 3) кольорова підложка. "
+                "При прозорості 0% підложка невидима — зміна кольору не вплине на вітрину. "
+                "Щоб побачити колір, поставте прозорість 40–80%. "
+                "Блюр 0 = чітке фото; кожен слайд має свої значення (дивіться саме той, який редагуєте)."
+            ),
+        }),
+    )
+
+    def get_image_preview(self, obj: HeroBanner):
+        if obj.pk and obj.image:
+            return format_html('<img src="{}" style="height:64px;border-radius:6px">', obj.image.url)
+        return "—"
+
+    get_image_preview.short_description = "Прев’ю справа"
+
+    def get_bg_preview(self, obj: HeroBanner):
+        if obj.pk and obj.background_image:
+            return format_html(
+                '<img src="{}" style="height:64px;border-radius:6px;object-fit:cover;width:96px">',
+                obj.background_image.url,
+            )
+        return "—"
+
+    get_bg_preview.short_description = "Прев’ю фону"
 
 
 @admin.register(TrustBadge)

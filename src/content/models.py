@@ -1,9 +1,10 @@
-"""SiteSettings (singleton) + StaticPage + BlogPost + NewsletterLead.
+"""SiteSettings (singleton) + HeroBanner + StaticPage + BlogPost + NewsletterLead.
 
 Усі елементи, що змінюються в процесі роботи магазину (контакти, лого, безкоштовна
-доставка, popup) — керовані з адмінки без участі розробника (Відповіді, «Додатково»).
+доставка, popup, банери головної) — керовані з адмінки без участі розробника.
 """
 from decimal import Decimal
+import re
 
 from django.core.validators import RegexValidator
 from django.db import models
@@ -42,12 +43,12 @@ class SiteSettings(SingletonModel):
     hero_image = models.ImageField("Зображення банера", upload_to="content/", null=True, blank=True)
     topbar_promo_text = models.CharField(
         "Текст верхньої смужки", max_length=255, blank=True,
-        default="Безкоштовна доставка від 1500 ₴",
+        default="Безкоштовна доставка від 1500\xa0грн",
     )
 
     # Безкоштовна доставка (лист Nanesi п.9) — сума керується тут, без розробника
     free_shipping_threshold = models.DecimalField(
-        "Сума безкоштовної доставки, ₴",
+        "Сума безкоштовної доставки, грн",
         max_digits=10,
         decimal_places=2,
         null=True,
@@ -129,6 +130,22 @@ class SiteSettings(SingletonModel):
             "Якщо прибрати {phone}, телефон на сторінці не з’явиться."
         ),
     )
+    payment_pending_title = models.CharField(
+        "Оплата не пройшла — заголовок",
+        max_length=255,
+        blank=True,
+        default="Оплата не пройшла",
+        help_text="Показується на «Дякуємо», якщо карткова оплата неуспішна / ще не оплачено.",
+    )
+    payment_pending_body = models.TextField(
+        "Оплата не пройшла — текст",
+        blank=True,
+        default=(
+            "Спробуйте оплатити ще раз або оберіть інший спосіб оплати нижче. "
+            "Замовлення вже створено і чекає на оплату."
+        ),
+        help_text="Рекомендація клієнту після помилки оплати карткою. Редагується тут.",
+    )
 
     class Meta:
         verbose_name = "Налаштування сайту"
@@ -149,6 +166,28 @@ class SiteSettings(SingletonModel):
             "Статус можна відстежити, написавши нам номер замовлення."
         )
         return tpl.replace("{phone}", phone or "")
+
+    def payment_pending_title_display(self) -> str:
+        return (self.payment_pending_title or "").strip() or "Оплата не пройшла"
+
+    def payment_pending_body_display(self) -> str:
+        return (self.payment_pending_body or "").strip() or (
+            "Спробуйте оплатити ще раз або оберіть інший спосіб оплати нижче. "
+            "Замовлення вже створено і чекає на оплату."
+        )
+
+    def bank_requisites_for_display(self) -> dict:
+        """HTML + plain text для блоку реквізитів (Дякуємо / Доставка і оплата)."""
+        from django.utils.html import strip_tags
+
+        html = (self.bank_transfer_details or "").strip()
+        if not self.bank_transfer_enabled or not html:
+            return {}
+        plain = strip_tags(html).replace("\xa0", " ").strip()
+        return {
+            "bank_requisites_html": html,
+            "bank_requisites_plain": plain,
+        }
 
 
 class StaticPage(TimeStampedModel, SeoFieldsMixin):
@@ -178,9 +217,21 @@ class StaticPage(TimeStampedModel, SeoFieldsMixin):
 
 class BlogPost(TimeStampedModel, SeoFieldsMixin):
     title = models.CharField("Заголовок", max_length=255)
+    h1 = models.CharField(
+        "H1",
+        max_length=255,
+        blank=True,
+        help_text="Якщо порожнє — на сторінці показується Заголовок.",
+    )
     slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
     cover_image = models.ImageField("Обкладинка", upload_to="content/blog/", null=True, blank=True)
     body = models.TextField("Текст статті", blank=True)
+    products = models.ManyToManyField(
+        "catalog.Product",
+        verbose_name="Добірка товарів",
+        blank=True,
+        related_name="blog_posts",
+    )
     is_published = models.BooleanField("Опубліковано", default=False)
     published_at = models.DateTimeField("Дата публікації", null=True, blank=True)
 
@@ -199,6 +250,10 @@ class BlogPost(TimeStampedModel, SeoFieldsMixin):
 
     def get_absolute_url(self) -> str:
         return reverse("content:blog_detail", kwargs={"slug": self.slug})
+
+    @property
+    def display_h1(self) -> str:
+        return (self.h1 or "").strip() or self.title
 
 
 class NewsletterLead(TimeStampedModel):
@@ -223,6 +278,97 @@ class NewsletterLead(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.email
+
+
+class HeroBanner(TimeStampedModel):
+    """Слайд hero-банера на головній. Порожній список → fallback на SiteSettings.hero_*."""
+
+    eyebrow = models.CharField("Рядок над заголовком", max_length=255, blank=True)
+    title = models.CharField("Заголовок", max_length=255)
+    subtitle = models.TextField("Підзаголовок", blank=True)
+    button_text = models.CharField(
+        "Текст кнопки", max_length=80, blank=True, default="До каталогу",
+    )
+    button_url = models.CharField(
+        "Посилання кнопки",
+        max_length=512,
+        blank=True,
+        default="/katalog/",
+        help_text="Відносний шлях або повний URL, напр. /katalog/ чи /dobirka/aktsii/",
+    )
+    image = models.ImageField(
+        "Зображення справа", upload_to="content/hero/", null=True, blank=True,
+    )
+    background_image = models.ImageField(
+        "Фонове зображення",
+        upload_to="content/hero/bg/",
+        null=True,
+        blank=True,
+        help_text="На весь слайд (desktop і mobile). Порожнє — бежевий фон.",
+    )
+    overlay_color = models.CharField(
+        "Колір підложки",
+        max_length=7,
+        blank=True,
+        default="#EFE9E1",
+        validators=[_hex_color_validator],
+        help_text=(
+            "HEX, напр. #EFE9E1. Видно лише коли «Прозорість підложки» > 0. "
+            "При 0% колір повністю прозорий — зміна HEX нічого не змінить на вітрині."
+        ),
+    )
+    overlay_opacity = models.PositiveSmallIntegerField(
+        "Прозорість підложки, %",
+        default=72,
+        help_text=(
+            "Наскільки щільно колір накриває фото: "
+            "0 = фото без підложки (колір не видно), "
+            "50 = легка вуаль, "
+            "100 = суцільний колір без фото. "
+            "Щоб побачити зміну кольору — поставте 40–80."
+        ),
+    )
+    overlay_blur = models.PositiveSmallIntegerField(
+        "Блюр фону, px",
+        default=10,
+        help_text=(
+            "Розмиття саме фото фону (не підложки): "
+            "0 = чітке фото, 6–12 = легкий блюр, до 40. "
+            "Порівнюйте на одному слайді (автопрокрутка перемикає слайди з різними значеннями)."
+        ),
+    )
+    is_active = models.BooleanField("Активний", default=True)
+    sort_order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Банер головної"
+        verbose_name_plural = "Банери головної"
+        ordering = ["sort_order", "pk"]
+
+    def __str__(self) -> str:
+        return self.title or f"Банер #{self.pk}"
+
+    @property
+    def overlay_opacity_css(self) -> str:
+        value = max(0, min(100, int(self.overlay_opacity or 0)))
+        return f"{value / 100:.2f}"
+
+    @property
+    def overlay_blur_css(self) -> str:
+        value = max(0, min(40, int(self.overlay_blur or 0)))
+        return f"{value}px"
+
+    @property
+    def overlay_rgba(self) -> str:
+        """Колір підложки з альфою — один CSS-шар (видно лише при opacity > 0)."""
+        raw = (self.overlay_color or "#EFE9E1").strip()
+        if not re.fullmatch(r"#[0-9A-Fa-f]{6}", raw):
+            raw = "#EFE9E1"
+        r = int(raw[1:3], 16)
+        g = int(raw[3:5], 16)
+        b = int(raw[5:7], 16)
+        a = max(0, min(100, int(self.overlay_opacity or 0))) / 100
+        return f"rgba({r}, {g}, {b}, {a:.2f})"
 
 
 class TrustBadge(TimeStampedModel):

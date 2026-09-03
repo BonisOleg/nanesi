@@ -3,8 +3,8 @@
 {% block title %}{% trans "Оплата замовлення" %} — {{ site_settings.site_name }}{% endblock %}
 {% block content %}
   <div class="card result-card">
-    <h1>{% blocktrans with number=order.number %}Оплата замовлення №{{ number }}{% endblocktrans %}</h1>
-    <p>{% blocktrans with total=order.total %}Сума до оплати: <strong>{{ total }} ₴</strong>{% endblocktrans %}</p>
+    <h1>{% trans "Оплата замовлення" %} <span class="order-number-nowrap">№{{ order.number }}</span></h1>
+    <p>{% blocktrans with total=order.total %}Сума до оплати: <strong>{{ total }}&nbsp;грн</strong>{% endblocktrans %}</p>
     <form method="post" action="{{ checkout.checkout_url }}">
       <input type="hidden" name="data" value="{{ checkout.data }}">
       <input type="hidden" name="signature" value="{{ checkout.signature }}">

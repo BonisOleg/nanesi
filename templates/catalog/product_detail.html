@@ -2,8 +2,8 @@
 {% load static shop_extras i18n %}
 {% block main_class %}container product-page{% endblock %}
 {% block title %}{{ product.name }} — {{ site_settings.site_name }}{% endblock %}
-{% block meta_description %}{% if product.short_description %}<meta name="description" content="{{ product.short_description|truncatewords:30 }}">{% endif %}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=review-file">{% endblock %}
+{% block meta_description %}{% if product.short_description %}<meta name="description" content="{{ product.short_description|striptags|truncatewords:30 }}">{% endif %}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=richtext">{% endblock %}
 
 {% block content %}
   {% include "partials/_dl_events.html" %}
@@ -149,13 +149,21 @@
       {% if product.inci %}<button type="button" data-tab="inci" role="tab" aria-selected="false">INCI</button>{% endif %}
     </div>
     <div class="product-tabs__panel is-active" data-panel="desc" role="tabpanel">
-      <p>{{ product.description|default:product.short_description|linebreaksbr }}</p>
+      <div class="richtext">
+        {% if product.description %}{{ product.description|safe }}
+        {% elif product.short_description %}{{ product.short_description|safe }}
+        {% endif %}
+      </div>
     </div>
     {% if product.usage_instructions %}
-      <div class="product-tabs__panel" data-panel="usage" role="tabpanel"><p>{{ product.usage_instructions|linebreaksbr }}</p></div>
+      <div class="product-tabs__panel" data-panel="usage" role="tabpanel">
+        <div class="richtext">{{ product.usage_instructions|safe }}</div>
+      </div>
     {% endif %}
     {% if product.actives %}
-      <div class="product-tabs__panel" data-panel="actives" role="tabpanel"><p>{{ product.actives|linebreaksbr }}</p></div>
+      <div class="product-tabs__panel" data-panel="actives" role="tabpanel">
+        <div class="richtext">{{ product.actives|safe }}</div>
+      </div>
     {% endif %}
     {% if product.inci %}
       <div class="product-tabs__panel" data-panel="inci" role="tabpanel"><p class="inci">{{ product.inci }}</p></div>
@@ -238,11 +246,7 @@
       <div class="section__head">
         <h2 class="section__title">{% trans "З цим купують" %}</h2>
       </div>
-      <div class="product-grid">
-        {% for product in bought_together_products %}
-          {% include "catalog/partials/_product_card.html" %}
-        {% endfor %}
-      </div>
+      {% include "catalog/partials/_product_grid.html" with products=bought_together_products %}
     </section>
   {% endif %}
 
@@ -252,11 +256,7 @@
         <h2 class="section__title">{% trans "Схожі товари" %}</h2>
         <a class="section__link" href="{% url 'catalog:catalog' %}">{% trans "Каталог" %}</a>
       </div>
-      <div class="product-grid">
-        {% for product in related_products %}
-          {% include "catalog/partials/_product_card.html" %}
-        {% endfor %}
-      </div>
+      {% include "catalog/partials/_product_grid.html" with products=related_products %}
     </section>
   {% endif %}
 {% endblock %}

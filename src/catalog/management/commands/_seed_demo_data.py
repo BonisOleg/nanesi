@@ -347,7 +347,7 @@ TRUST_BADGES = [
     {
         "icon_label": "truck",
         "title": "Безкоштовна доставка",
-        "text": "від 1500 грн",
+        "text": "від 1500\xa0грн",
         "sort_order": 2,
     },
     {
@@ -367,5 +367,63 @@ TRUST_BADGES = [
         "title": "Підтримка 24/7",
         "text": "ми завжди поруч",
         "sort_order": 5,
+    },
+]
+
+# Слайди 2–3 (слайд 1 збирається з SiteSettings у seed_demo)
+HERO_BANNERS_STOCK = [
+    {
+        "sort_order": 2,
+        "eyebrow": "K-Beauty догляд",
+        "title": "Ефективні формули для щоденного ритуалу",
+        "subtitle": (
+            "<p>Ніжний догляд і видимий результат: сироватки, SPF та креми "
+            "від перевірених корейських брендів.</p>"
+        ),
+        "button_text": "Дивитись догляд",
+        "button_url": "/katalog/",
+        "overlay_blur": 8,
+        "overlay_opacity": 70,
+        "title_ru": "Эффективные формулы для ежедневного ритуала",
+        "subtitle_ru": (
+            "<p>Нежный уход и видимый результат: сыворотки, SPF и кремы "
+            "от проверенных корейских брендов.</p>"
+        ),
+        "button_text_ru": "Смотреть уход",
+        "eyebrow_ru": "K-Beauty уход",
+        "title_en": "Effective formulas for your daily ritual",
+        "subtitle_en": (
+            "<p>Gentle care and visible results: serums, SPF and creams "
+            "from trusted Korean brands.</p>"
+        ),
+        "button_text_en": "Shop skincare",
+        "eyebrow_en": "K-Beauty care",
+    },
+    {
+        "sort_order": 3,
+        "eyebrow": "Акції місяця",
+        "title": "Краса без компромісів — вигідні пропозиції",
+        "subtitle": (
+            "<p>Підбірка акційних позицій з тестового асортименту. "
+            "Оновлюйте тексти та зображення в адмінці будь-коли.</p>"
+        ),
+        "button_text": "До акцій",
+        "button_url": "/dobirka/aktsii/",
+        "overlay_blur": 12,
+        "overlay_opacity": 68,
+        "title_ru": "Красота без компромиссов — выгодные предложения",
+        "subtitle_ru": (
+            "<p>Подборка акционных позиций из тестового ассортимента. "
+            "Обновляйте тексты и изображения в админке в любое время.</p>"
+        ),
+        "button_text_ru": "К акциям",
+        "eyebrow_ru": "Акции месяца",
+        "title_en": "Beauty without compromise — special offers",
+        "subtitle_en": (
+            "<p>A selection of promo items from the demo catalog. "
+            "Update copy and images in the admin anytime.</p>"
+        ),
+        "button_text_en": "View sale",
+        "eyebrow_en": "This month’s deals",
     },
 ]

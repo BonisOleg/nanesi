@@ -81,7 +81,7 @@ def profile_view(request):
             warehouse_form = SavedWarehouseForm(request.POST, instance=request.user)
             if warehouse_form.is_valid():
                 warehouse_form.save()
-                messages.success(request, _("Відділення збережено."))
+                messages.success(request, _("Доставку збережено."))
                 return redirect("accounts:profile")
         else:
             profile_form = ProfileForm(request.POST, instance=request.user)

@@ -7,6 +7,7 @@ app_name = "commerce"
 urlpatterns = [
     # Слаги — за картою сайту v4.1 (розділ 9 «Адреси»)
     path("koshyk/", views.CartView.as_view(), name="cart"),
+    path("koshyk/summary/", views.cart_summary_fragment, name="cart_summary"),
     path("koshyk/add/<int:variant_id>/", views.cart_add, name="cart_add"),
     path("koshyk/update/<int:item_id>/", views.cart_update, name="cart_update"),
     path("koshyk/remove/<int:item_id>/", views.cart_remove, name="cart_remove"),

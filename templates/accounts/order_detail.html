@@ -17,17 +17,19 @@
           {{ order.created_at|date:"d.m.Y H:i" }} ·
           {{ order.get_delivery_method_display }}
           {% if order.np_city_name %} · {{ order.np_city_name }}, {{ order.np_warehouse_name }}{% endif %}
+          {% if order.ukrposhta_address %} · {% if order.ukrposhta_index %}{{ order.ukrposhta_index }}, {% endif %}{{ order.ukrposhta_address }}{% endif %}
         </p>
 
         {% for item in order.items.all %}
-          <div class="order-item-row">
-            <span>{{ item.product_name }} × {{ item.qty }}</span>
-            <span>{{ item.line_total }} ₴</span>
+          <div class="summary-row summary-row--line">
+            <span class="summary-row__name">{{ item.product_name }}</span>
+            <span class="summary-row__qty">×&nbsp;{{ item.qty }}</span>
+            <span class="summary-row__price">{{ item.line_total }}&nbsp;грн</span>
           </div>
         {% endfor %}
 
         <div class="summary-row summary-row--total">
-          <span>{% trans "Разом" %}</span><span>{{ order.total }} ₴</span>
+          <span>{% trans "Разом" %}</span><span>{{ order.total }}&nbsp;грн</span>
         </div>
 
         <div class="order-detail__actions">

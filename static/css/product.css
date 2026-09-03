@@ -351,6 +351,18 @@
   display: block;
 }
 
+.product-tabs__panel .richtext > *:first-child {
+  margin-top: 0;
+}
+
+.product-tabs__panel .richtext > *:last-child {
+  margin-bottom: 0;
+}
+
+.product-tabs__panel .richtext p {
+  margin: 0 0 0.75em;
+}
+
 .product-tabs__panel .inci {
   color: var(--color-muted);
   font-size: 0.86rem;

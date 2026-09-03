@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from src.catalog.models import ProductVariant
 from src.commerce import selectors, services
@@ -20,6 +20,23 @@ from src.commerce.models_1 import money
 from src.commerce.payments.liqpay import get_liqpay_service
 from src.content.models import SiteSettings
 from src.core import analytics
+
+
+def _saved_delivery_initial(user) -> dict:
+    """Підставляє останні НП і Укрпошту; активний спосіб — той, що зберігали останнім заповненим."""
+    initial = {}
+    if user.saved_np_warehouse_name:
+        initial["np_city_name"] = user.saved_np_city_name
+        initial["np_city_ref"] = user.saved_np_city_ref
+        initial["np_warehouse_name"] = user.saved_np_warehouse_name
+        initial["np_warehouse_ref"] = user.saved_np_warehouse_ref
+        initial["delivery_method"] = Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE
+    if user.saved_ukrposhta_address or user.saved_ukrposhta_index:
+        initial["ukrposhta_index"] = user.saved_ukrposhta_index
+        initial["ukrposhta_address"] = user.saved_ukrposhta_address
+        if not user.saved_np_warehouse_name:
+            initial["delivery_method"] = Order.DeliveryMethod.UKRPOSHTA
+    return initial
 
 
 def _cart_context(request):
@@ -52,6 +69,15 @@ class CartView(View):
         # тому CSRF-кука має бути видана незалежно від того, чи кошик наразі порожній.
         context = analytics.attach_pending_events(_cart_context(request), request)
         return render(request, "commerce/cart.html", context)
+
+
+@ensure_csrf_cookie
+@require_GET
+def cart_summary_fragment(request):
+    """Фрагмент для drawer/popup кошика (HTMX / fetch)."""
+    context = analytics.attach_pending_events(_cart_context(request), request)
+    context["in_drawer"] = True
+    return render(request, "commerce/partials/cart_summary.html", context)
 
 
 def _wants_json(request) -> bool:
@@ -126,13 +152,23 @@ def cart_remove(request, item_id: int):
 @require_POST
 def promo_apply(request):
     code = request.POST.get("code", "")
+    is_hx = bool(request.headers.get("HX-Request"))
+    promo_feedback = None
     try:
         services.apply_promo_code(request, code)
-        messages.success(request, _("Промокод застосовано"))
+        if not is_hx:
+            messages.success(request, _("Промокод застосовано"))
     except services.PromoError as exc:
-        messages.error(request, str(exc))
-    if request.headers.get("HX-Request"):
-        return render(request, "commerce/partials/cart_summary.html", _cart_context(request))
+        if is_hx:
+            promo_feedback = str(exc)
+        else:
+            messages.error(request, str(exc))
+    if is_hx:
+        context = _cart_context(request)
+        if promo_feedback:
+            context["promo_feedback"] = promo_feedback
+            context["promo_feedback_level"] = "error"
+        return render(request, "commerce/partials/cart_summary.html", context)
     return redirect("commerce:cart")
 
 
@@ -150,17 +186,23 @@ class CheckoutView(View):
         if not context["lines"]:
             messages.info(request, _("Кошик порожній"))
             return redirect("commerce:cart")
+        cart = context["cart"]
         initial = {
             "full_name": request.user.get_full_name() if request.user.is_authenticated else "",
             "email": request.user.email if request.user.is_authenticated else "",
             "phone": request.user.phone if request.user.is_authenticated else "",
         }
-        if request.user.is_authenticated and request.user.saved_np_warehouse_name:
-            initial["delivery_method"] = Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE
-            initial["np_city_name"] = request.user.saved_np_city_name
-            initial["np_city_ref"] = request.user.saved_np_city_ref
-            initial["np_warehouse_name"] = request.user.saved_np_warehouse_name
-            initial["np_warehouse_ref"] = request.user.saved_np_warehouse_ref
+        if cart:
+            # Контакти з попередньої спроби checkout (покинутий кошик) — фолбек для гостя
+            # і доповнення порожніх полів у авторизованого.
+            if not initial["full_name"]:
+                initial["full_name"] = cart.contact_full_name
+            if not initial["phone"]:
+                initial["phone"] = cart.contact_phone
+            if not initial["email"]:
+                initial["email"] = cart.contact_email
+        if request.user.is_authenticated:
+            initial.update(_saved_delivery_initial(request.user))
         context["form"] = CheckoutForm(initial=initial)
         context["dl_events_json"] = analytics.events_json(analytics.build_event(
             "begin_checkout",
@@ -173,6 +215,13 @@ class CheckoutView(View):
         return render(request, "commerce/checkout.html", context)
 
     def post(self, request):
+        # Гачок під покинутий кошик: контакти пишемо одразу, навіть якщо форма з помилками.
+        services.save_cart_contacts(
+            request,
+            full_name=request.POST.get("full_name", ""),
+            phone=request.POST.get("phone", ""),
+            email=request.POST.get("email", ""),
+        )
         form = CheckoutForm(request.POST)
         context = _cart_context(request)
         if not context["lines"]:
@@ -199,11 +248,38 @@ class ThankYouView(View):
         if order is None:
             messages.error(request, _("Замовлення не знайдено"))
             return redirect("commerce:cart")
+        return render(request, "commerce/thank_you.html", self._context(request, order))
+
+    def post(self, request, order_number: str):
+        order = selectors.get_order_for_thanks(request, order_number)
+        if order is None:
+            messages.error(request, _("Замовлення не знайдено"))
+            return redirect("commerce:cart")
+
+        if request.POST.get("action") == "change_payment":
+            try:
+                services.change_unpaid_card_payment_method(
+                    order, request.POST.get("payment_method", ""),
+                )
+                messages.success(request, _("Спосіб оплати змінено"))
+            except services.PaymentMethodError as exc:
+                messages.error(request, str(exc))
+            order.refresh_from_db()
+
+        return redirect("commerce:thank_you", order_number=order.number)
+
+    def _context(self, request, order: Order) -> dict:
+        # purchase — після створення замовлення (не після успішної оплати карткою)
         dl_events_json = analytics.events_json(analytics.build_event(
             "purchase",
             value=order.total,
             items=[
-                analytics.make_item(item_id=item.sku, item_name=item.product_name, price=item.unit_price, quantity=item.qty)
+                analytics.make_item(
+                    item_id=item.sku,
+                    item_name=item.product_name,
+                    price=item.unit_price,
+                    quantity=item.qty,
+                )
                 for item in order.items.all()
             ],
             extra={
@@ -213,13 +289,31 @@ class ThankYouView(View):
             },
         ))
         site = SiteSettings.load()
-        return render(request, "commerce/thank_you.html", {
+        show_payment_pending = (
+            order.payment_method == Order.PaymentMethod.CARD_ONLINE
+            and order.payment_status == Order.PaymentStatus.UNPAID
+        )
+        context = {
             "order": order,
             "dl_events_json": dl_events_json,
             "thank_you_title": site.thank_you_title_display(),
             "thank_you_number_label": site.thank_you_number_label_display(),
             "thank_you_body": site.thank_you_body_display(order.phone),
-        })
+            "show_bank_requisites": False,
+            "show_payment_pending": show_payment_pending,
+            "payment_pending_title": site.payment_pending_title_display(),
+            "payment_pending_body": site.payment_pending_body_display(),
+            "can_retry_payment": show_payment_pending and get_liqpay_service() is not None,
+            "alternate_payment_methods": (
+                selectors.alternate_payment_methods_after_card() if show_payment_pending else []
+            ),
+        }
+        if order.payment_method == Order.PaymentMethod.BANK_TRANSFER:
+            requisites = site.bank_requisites_for_display()
+            if requisites:
+                context.update(requisites)
+                context["show_bank_requisites"] = True
+        return context
 
 
 class PaymentInitView(View):

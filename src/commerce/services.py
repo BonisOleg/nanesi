@@ -37,6 +37,10 @@ class OrderStatusError(Exception):
     pass
 
 
+class PaymentMethodError(Exception):
+    pass
+
+
 ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     Order.Status.NEW: {Order.Status.CONFIRMED, Order.Status.CANCELLED},
     Order.Status.CONFIRMED: {Order.Status.PAID, Order.Status.ASSEMBLING, Order.Status.CANCELLED},
@@ -104,18 +108,25 @@ def remove_item(request, item_id: int) -> Cart:
     return cart
 
 
-@transaction.atomic
 def apply_promo_code(request, code: str) -> PromoCode:
+    """Валідацію робимо до atomic: інакше PromoError у TestCase/сесії ламає session save."""
     cart = get_or_create_cart(request)
     subtotal = cart_subtotal(cart_lines(cart))
-    promo = PromoCode.objects.select_for_update().filter(code=code.strip().upper()).first()
+    code_norm = code.strip().upper()
+    promo = PromoCode.objects.filter(code=code_norm).first()
     if promo is None:
         raise PromoError(_("Промокод не знайдено"))
     is_valid, message = promo.is_valid_now(subtotal=subtotal)
     if not is_valid:
         raise PromoError(message)
-    cart.promo_code = promo
-    cart.save(update_fields=["promo_code", "updated_at"])
+
+    with transaction.atomic():
+        promo = PromoCode.objects.select_for_update().filter(pk=promo.pk).first()
+        is_valid, message = promo.is_valid_now(subtotal=subtotal)
+        if not is_valid:
+            raise PromoError(message)
+        cart.promo_code = promo
+        cart.save(update_fields=["promo_code", "updated_at"])
     return promo
 
 
@@ -124,6 +135,18 @@ def remove_promo_code(request) -> Cart:
     cart = get_or_create_cart(request)
     cart.promo_code = None
     cart.save(update_fields=["promo_code", "updated_at"])
+    return cart
+
+
+def save_cart_contacts(request, *, full_name: str = "", phone: str = "", email: str = "") -> Cart:
+    """Гачок під покинутий кошик: пишемо контакти з checkout на Cart до place_order."""
+    cart = get_or_create_cart(request)
+    cart.contact_full_name = (full_name or "").strip()[:255]
+    cart.contact_phone = (phone or "").strip()[:20]
+    cart.contact_email = (email or "").strip()[:254]
+    cart.save(update_fields=[
+        "contact_full_name", "contact_phone", "contact_email", "updated_at",
+    ])
     return cart
 
 
@@ -182,6 +205,7 @@ def place_order(request, cleaned_data: dict) -> Order:
         np_city_ref=cleaned_data.get("np_city_ref", ""),
         np_warehouse_name=cleaned_data.get("np_warehouse_name", ""),
         np_warehouse_ref=cleaned_data.get("np_warehouse_ref", ""),
+        ukrposhta_index=cleaned_data.get("ukrposhta_index", ""),
         ukrposhta_address=cleaned_data.get("ukrposhta_address", ""),
         payment_method=cleaned_data["payment_method"],
         subtotal=subtotal,
@@ -219,9 +243,77 @@ def place_order(request, cleaned_data: dict) -> Order:
     cart.promo_code = None
     cart.save(update_fields=["status", "promo_code", "updated_at"])
 
+    persist_saved_delivery(request.user, cleaned_data)
+
     request.session["last_order_number"] = order.number
     queue_order_event(order, OrderIntegrationEvent.EventType.ORDER_CREATED)
     return order
+
+
+def persist_saved_delivery(user, cleaned_data: dict) -> None:
+    """Останнє обране відділення/поштомат НП і адреса Укрпошти — у профіль покупця."""
+    if not getattr(user, "is_authenticated", False):
+        return
+    method = cleaned_data.get("delivery_method")
+    fields: list[str] = []
+    if method == Order.DeliveryMethod.NOVA_POSHTA_WAREHOUSE:
+        user.saved_np_city_name = cleaned_data.get("np_city_name", "")
+        user.saved_np_city_ref = cleaned_data.get("np_city_ref", "")
+        user.saved_np_warehouse_name = cleaned_data.get("np_warehouse_name", "")
+        user.saved_np_warehouse_ref = cleaned_data.get("np_warehouse_ref", "")
+        fields = [
+            "saved_np_city_name", "saved_np_city_ref",
+            "saved_np_warehouse_name", "saved_np_warehouse_ref",
+        ]
+    elif method == Order.DeliveryMethod.UKRPOSHTA:
+        user.saved_ukrposhta_index = cleaned_data.get("ukrposhta_index", "")
+        user.saved_ukrposhta_address = cleaned_data.get("ukrposhta_address", "")
+        fields = ["saved_ukrposhta_index", "saved_ukrposhta_address"]
+    if fields:
+        user.save(update_fields=fields)
+
+
+@transaction.atomic
+def change_unpaid_card_payment_method(order: Order, new_method: str) -> Order:
+    """Неоплачена картка → післяплата / реквізити (thank-you UX після помилки оплати)."""
+    from src.commerce.selectors import available_payment_methods
+
+    if order.payment_status != Order.PaymentStatus.UNPAID:
+        raise PaymentMethodError(_("Змінити спосіб оплати можна лише для неоплаченого замовлення"))
+    if order.payment_method != Order.PaymentMethod.CARD_ONLINE:
+        raise PaymentMethodError(_("Змінити спосіб можна лише після неуспішної оплати карткою"))
+
+    allowed = {
+        code for code, _label in available_payment_methods()
+        if code != Order.PaymentMethod.CARD_ONLINE
+    }
+    if new_method not in allowed:
+        raise PaymentMethodError(_("Обраний спосіб оплати недоступний"))
+
+    order.payment_method = new_method
+    order.save(update_fields=["payment_method", "updated_at"])
+    queue_order_event(
+        order,
+        OrderIntegrationEvent.EventType.STATUS_CHANGED,
+        extra={"payment_method": new_method, "reason": "client_switch_after_card_fail"},
+    )
+    return order
+
+
+@transaction.atomic
+def restore_order_stock(order: Order) -> bool:
+    """Повертає qty позицій на склад. Ідемпотентно через order.stock_restored."""
+    if order.stock_restored:
+        return False
+    for item in order.items.all():
+        if not item.product_variant_id or not item.qty:
+            continue
+        ProductVariant.objects.filter(pk=item.product_variant_id).update(
+            stock_quantity=F("stock_quantity") + item.qty,
+        )
+    order.stock_restored = True
+    order.save(update_fields=["stock_restored", "updated_at"])
+    return True
 
 
 @transaction.atomic
@@ -244,6 +336,9 @@ def change_order_status(order: Order, to_status: str, *, user=None, note: str = 
         order, OrderIntegrationEvent.EventType.STATUS_CHANGED,
         extra={"from_status": from_status, "to_status": to_status},
     )
+
+    if to_status == Order.Status.CANCELLED:
+        restore_order_stock(order)
 
     if to_status in (Order.Status.PAID, Order.Status.ASSEMBLING):
         from src.shipping.services import dispatch_shipment_for_order

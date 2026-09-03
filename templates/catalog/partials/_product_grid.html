@@ -1,0 +1,13 @@
+{% load product_grid %}
+{% with cols=products|length|pick_grid_columns %}
+<div
+  class="product-grid product-grid--cols-{{ cols }}"
+  data-grid-cols="{{ cols }}"
+>
+  {% for product in products %}
+    <div class="product-grid__item">
+      {% include "catalog/partials/_product_card.html" %}
+    </div>
+  {% endfor %}
+</div>
+{% endwith %}

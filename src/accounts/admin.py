@@ -45,6 +45,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
                 "saved_np_warehouse_name", "saved_np_warehouse_ref",
             ),
         }),
+        ("Укрпошта (збережене)", {"fields": ("saved_ukrposhta_index", "saved_ukrposhta_address")}),
         ("Дати", {"fields": ("last_login", "date_joined")}),
     )
     add_fieldsets = (

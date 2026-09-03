@@ -16,7 +16,7 @@ def uah(value):
         return value
     amount = amount.to_integral_value() if amount == amount.to_integral_value() else round(amount, 2)
     text = f"{amount:,.0f}".replace(",", " ") if amount == int(amount) else f"{amount:,.2f}".replace(",", " ")
-    return f"{text} ₴"
+    return f"{text}\xa0грн"
 
 
 @register.filter

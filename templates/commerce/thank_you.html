@@ -1,23 +1,70 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load static i18n %}
 {% block title %}{{ thank_you_title }} — {{ site_settings.site_name }}{% endblock %}
 {% block content %}
   {% include "partials/_dl_events.html" %}
   <div class="card result-card">
     <h1>{{ thank_you_title }}</h1>
-    <p>{{ thank_you_number_label }}: <strong>{{ order.number }}</strong></p>
+    <p>{{ thank_you_number_label }}: <strong class="order-number-nowrap">{{ order.number }}</strong></p>
     <p class="text-muted">{{ thank_you_body }}</p>
+    <p class="result-card__payment">
+      {% trans "Оплата" %}: {{ order.get_payment_method_display }}
+      {% if order.payment_status == "paid" %}
+        <span class="result-card__pay-ok">· {% trans "Оплачено" %}</span>
+      {% elif show_payment_pending %}
+        <span class="result-card__pay-wait">· {% trans "Очікує оплати" %}</span>
+      {% endif %}
+    </p>
+
+    {% if show_payment_pending %}
+      <div class="payment-pending" role="status">
+        <h2 class="payment-pending__title">{{ payment_pending_title }}</h2>
+        <p class="payment-pending__body">{{ payment_pending_body }}</p>
+        <div class="payment-pending__actions">
+          {% if can_retry_payment %}
+            <a href="{% url 'commerce:payment_init' order.number %}" class="btn btn-primary btn-block">
+              {% trans "Спробувати ще раз" %}
+            </a>
+          {% endif %}
+          {% if alternate_payment_methods %}
+            <p class="payment-pending__alt-label">{% trans "Або оберіть інший спосіб" %}</p>
+            <form method="post" class="payment-pending__alt-form" action="">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="change_payment">
+              {% for code, label in alternate_payment_methods %}
+                <button type="submit" name="payment_method" value="{{ code }}" class="btn btn-secondary btn-block">
+                  {{ label }}
+                </button>
+              {% endfor %}
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     <div class="result-card__items">
       {% for item in order.items.all %}
-        <div class="summary-row">
-          <span>{{ item.product_name }} × {{ item.qty }}</span>
-          <span class="summary-row__price">{{ item.line_total }}&nbsp;₴</span>
+        <div class="summary-row summary-row--line">
+          <span class="summary-row__name">{{ item.product_name }}</span>
+          <span class="summary-row__qty">×&nbsp;{{ item.qty }}</span>
+          <span class="summary-row__price">{{ item.line_total }}&nbsp;грн</span>
         </div>
       {% endfor %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ order.total }}&nbsp;₴</span>
+        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ order.total }}&nbsp;грн</span>
       </div>
     </div>
+
+    {% if show_bank_requisites %}
+      {% include "commerce/partials/_bank_requisites.html" %}
+    {% endif %}
+
     <a href="{% url 'catalog:catalog' %}" class="btn btn-primary btn-block cart-checkout-link">{% trans "До каталогу" %}</a>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  {% if show_bank_requisites %}
+    <script src="{% static 'js/copy-requisites.js' %}?v=1" defer></script>
+  {% endif %}
 {% endblock %}

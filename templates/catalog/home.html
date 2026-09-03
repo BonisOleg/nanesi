@@ -2,26 +2,10 @@
 {% load static i18n %}
 {% block main_class %}{% endblock %}
 {% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}?v=hero-grid1">{% endblock %}
 
 {% block content %}
-  <section class="hero">
-    <div class="container hero__inner">
-      <div>
-        <span class="hero__eyebrow">{{ site_settings.site_name }} {{ site_settings.tagline }}</span>
-        <h1 class="hero__title">{{ site_settings.hero_title }}</h1>
-        <p class="hero__text">{{ site_settings.hero_subtitle }}</p>
-        <a class="btn--primary" href="{% url 'catalog:catalog' %}">{% trans "До каталогу" %}</a>
-      </div>
-      <div class="hero__media">
-        {% if site_settings.hero_image %}
-          <img src="{{ site_settings.hero_image.url }}" alt="{{ site_settings.hero_title }}" width="960" height="540">
-        {% else %}
-          <img src="{% static 'img/hero.png' %}" alt="{{ site_settings.hero_title }}" width="960" height="540">
-        {% endif %}
-      </div>
-    </div>
-  </section>
+  {% include "catalog/partials/_hero_slider.html" %}
 
   {% if trust_badges %}
     <section class="trust">
@@ -109,11 +93,7 @@
             <h2 class="section__title">{{ block.collection.name }}</h2>
             <a class="section__link" href="{% url 'catalog:collection_detail' slug=block.collection.slug %}">{% trans "Дивитись усі" %}</a>
           </div>
-          <div class="product-grid">
-            {% for product in block.products %}
-              {% include "catalog/partials/_product_card.html" %}
-            {% endfor %}
-          </div>
+          {% include "catalog/partials/_product_grid.html" with products=block.products %}
         </div>
       </section>
     {% endfor %}
@@ -140,4 +120,8 @@
       </div>
     </div>
   </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/home-hero.js' %}?v=csp1" defer></script>
 {% endblock %}

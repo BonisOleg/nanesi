@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
-  var deliverySelect = document.getElementById('id_delivery_method');
+  var deliveryInputs = document.querySelectorAll('input[name="delivery_method"]');
   var npFields = document.getElementById('np-fields');
-  var npWarehouseField = document.getElementById('np-warehouse-field');
   var ukrposhtaFields = document.getElementById('ukrposhta-fields');
 
   function toggleClass(el, isVisible) {
@@ -9,17 +8,42 @@ document.addEventListener('DOMContentLoaded', function () {
     el.classList.toggle('is-hidden', !isVisible);
   }
 
+  function selectedDelivery() {
+    var checked = document.querySelector('input[name="delivery_method"]:checked');
+    return checked ? checked.value : '';
+  }
+
   function updateVisibility() {
-    var value = deliverySelect ? deliverySelect.value : '';
-    var isNp = value.indexOf('np_') === 0;
-    toggleClass(npFields, isNp);
-    toggleClass(npWarehouseField, value === 'np_warehouse');
+    var value = selectedDelivery();
+    toggleClass(npFields, value === 'np_warehouse');
     toggleClass(ukrposhtaFields, value === 'ukrposhta');
   }
-  if (deliverySelect) {
-    deliverySelect.addEventListener('change', updateVisibility);
-  }
+
+  deliveryInputs.forEach(function (input) {
+    input.addEventListener('change', updateVisibility);
+  });
   updateVisibility();
+
+  function fillSuggestions(list, rows, onPick) {
+    list.innerHTML = '';
+    if (!rows || !rows.length) return;
+    var ul = document.createElement('ul');
+    ul.className = 'suggestions-list';
+    rows.forEach(function (row) {
+      var li = document.createElement('li');
+      li.className = 'suggestions-list__item';
+      if (row.kind === 'postomat') {
+        li.classList.add('suggestions-list__item--postomat');
+      }
+      li.textContent = row.name;
+      li.addEventListener('click', function () {
+        onPick(row);
+        list.innerHTML = '';
+      });
+      ul.appendChild(li);
+    });
+    list.appendChild(ul);
+  }
 
   function setupCitySearch() {
     var input = document.getElementById('id_np_city_name');
@@ -27,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var list = document.getElementById('np-city-suggestions');
     if (!input) return;
     var timer = null;
+    input.setAttribute('autocomplete', 'off');
     input.addEventListener('input', function () {
       refInput.value = '';
       clearTimeout(timer);
@@ -35,22 +60,15 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/shipping/np/cities/?q=' + encodeURIComponent(query))
           .then(function (r) { return r.json(); })
           .then(function (data) {
-            list.innerHTML = '';
-            if (!data.configured || !data.results.length) return;
-            var ul = document.createElement('ul');
-            ul.className = 'suggestions-list';
-            data.results.forEach(function (row) {
-              var li = document.createElement('li');
-              li.textContent = row.name;
-              li.addEventListener('click', function () {
-                input.value = row.name;
-                refInput.value = row.ref;
-                list.innerHTML = '';
-                document.dispatchEvent(new CustomEvent('np-city-selected', { detail: row }));
-              });
-              ul.appendChild(li);
+            if (!data.configured || !data.results.length) {
+              list.innerHTML = '';
+              return;
+            }
+            fillSuggestions(list, data.results, function (row) {
+              input.value = row.name;
+              refInput.value = row.ref;
+              document.dispatchEvent(new CustomEvent('np-city-selected', { detail: row }));
             });
-            list.appendChild(ul);
           })
           .catch(function () { list.innerHTML = ''; });
       }, 250);
@@ -67,31 +85,27 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch('/shipping/np/warehouses/?city=' + encodeURIComponent(cityId) + '&q=' + encodeURIComponent(query || ''))
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        warehouseList.innerHTML = '';
-        if (!data.configured || !data.results.length) return;
-        var ul = document.createElement('ul');
-        ul.className = 'suggestions-list';
-        data.results.forEach(function (row) {
-          var li = document.createElement('li');
-          li.textContent = row.name;
-          li.addEventListener('click', function () {
-            warehouseInput.value = row.name;
-            warehouseRefInput.value = row.ref;
-            warehouseList.innerHTML = '';
-          });
-          ul.appendChild(li);
+        if (!data.configured || !data.results.length) {
+          warehouseList.innerHTML = '';
+          return;
+        }
+        fillSuggestions(warehouseList, data.results, function (row) {
+          warehouseInput.value = row.name;
+          warehouseRefInput.value = row.ref;
         });
-        warehouseList.appendChild(ul);
       })
       .catch(function () { warehouseList.innerHTML = ''; });
   }
 
   document.addEventListener('np-city-selected', function (e) {
     selectedCityId = e.detail.id;
+    if (warehouseInput) warehouseInput.value = '';
+    if (warehouseRefInput) warehouseRefInput.value = '';
     fetchWarehouses(selectedCityId, '');
   });
 
   if (warehouseInput) {
+    warehouseInput.setAttribute('autocomplete', 'off');
     warehouseInput.addEventListener('input', function () {
       warehouseRefInput.value = '';
       if (selectedCityId) {

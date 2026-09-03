@@ -21,11 +21,7 @@
   {% if products %}
     <section class="seo-landing__products">
       <h2>{% trans "Товари з цієї добірки" %}</h2>
-      <div class="product-grid">
-        {% for product in products %}
-          {% include "catalog/partials/_product_card.html" %}
-        {% endfor %}
-      </div>
+      {% include "catalog/partials/_product_grid.html" with products=products %}
     </section>
   {% endif %}
 {% endblock %}

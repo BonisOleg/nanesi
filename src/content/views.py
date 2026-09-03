@@ -46,6 +46,13 @@ class PageDetailView(DetailView):
             return ["content/contacts.html"]
         return [self.template_name]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = context.get("page") or getattr(self, "object", None)
+        if page is not None and getattr(page, "slug", None) == "dostavka-i-oplata":
+            context.update(SiteSettings.load().bank_requisites_for_display())
+        return context
+
     def render_to_response(self, context, **response_kwargs):
         landing = getattr(self, "_landing", None)
         if landing is not None:
@@ -74,6 +81,11 @@ class BlogDetailView(DetailView):
     def get_object(self, queryset=None):
         obj = get_object_or_404(self.get_queryset(), slug=self.kwargs["slug"])
         return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["products"] = self.object.products.filter(is_active=True)
+        return context
 
 
 def theme_css(request):

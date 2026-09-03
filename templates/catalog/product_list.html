@@ -4,7 +4,7 @@
 {% block title %}
   {% if category %}{{ category.name }} — {% elif brand %}{{ brand.name }} — {% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %} — {% endif %}{% trans "Каталог" %} — {{ site_settings.site_name }}
 {% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=no-count">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=richtext">{% endblock %}
 
 {% block content %}
   <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
@@ -103,7 +103,7 @@
           {% endif %}
 
           <div class="filter-group">
-            <h4>{% trans "Ціна, ₴" %}</h4>
+            <h4>{% trans "Ціна, грн" %}</h4>
             <div class="filter-price">
               <label class="sr-only" for="price-min">{% trans "Від" %}</label>
               <input id="price-min" type="number" name="price_min" min="0" step="1" inputmode="decimal" placeholder="{% trans 'від' %}" value="{{ price_min }}">
@@ -126,7 +126,7 @@
 
     <section class="catalog-results">
       {% if brand and brand.description %}
-        <p class="text-muted brand-description">{{ brand.description }}</p>
+        <div class="text-muted brand-description richtext">{{ brand.description|safe }}</div>
       {% endif %}
       <div class="catalog-toolbar">
         <div class="catalog-toolbar__actions">
@@ -149,11 +149,7 @@
       </div>
 
       {% if products %}
-        <div class="product-grid">
-          {% for product in products %}
-            {% include "catalog/partials/_product_card.html" %}
-          {% endfor %}
-        </div>
+        {% include "catalog/partials/_product_grid.html" with products=products %}
         {% include "catalog/partials/_pagination.html" with page_obj=page_obj %}
       {% else %}
         <div class="catalog-empty">{% trans "Нічого не знайдено. Спробуйте інші фільтри." %}</div>

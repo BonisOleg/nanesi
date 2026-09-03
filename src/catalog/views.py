@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Prefetch
@@ -9,7 +11,7 @@ from src.catalog import selectors
 from src.catalog.forms import ReviewForm
 from src.catalog.models import Brand, Category, Product, ProductAttributeValue
 from src.catalog.services import reviews as review_services
-from src.content.models import TrustBadge
+from src.content.models import HeroBanner, SiteSettings, TrustBadge
 from src.core import analytics
 
 REVIEWS_PER_PAGE = 5
@@ -42,6 +44,32 @@ def _paginate_reviews(request, product: Product) -> dict:
     }
 
 
+def _hero_banners_for_home() -> list:
+    """Активні HeroBanner; якщо порожньо — один слайд з SiteSettings.hero_*."""
+    banners = list(HeroBanner.objects.filter(is_active=True).order_by("sort_order", "pk"))
+    if banners:
+        return banners
+    site = SiteSettings.load()
+    eyebrow = " ".join(p for p in (site.site_name, site.tagline) if p).strip()
+    return [
+        SimpleNamespace(
+            eyebrow=eyebrow,
+            title=site.hero_title or "",
+            subtitle=site.hero_subtitle or "",
+            button_text="",
+            button_url="",
+            image=site.hero_image,
+            background_image=None,
+            overlay_color="#EFE9E1",
+            overlay_opacity=72,
+            overlay_blur=10,
+            overlay_opacity_css="0.72",
+            overlay_blur_css="10px",
+            overlay_rgba="rgba(239, 233, 225, 0.72)",
+        )
+    ]
+
+
 def home(request):
     sections = selectors.home_sections()
     context = {
@@ -49,6 +77,7 @@ def home(request):
         "promo_collections": sections.get("promo_collections", []),
         "collection_product_sections": sections.get("collection_product_sections", []),
         "trust_badges": TrustBadge.objects.filter(is_active=True).order_by("sort_order", "pk"),
+        "hero_banners": _hero_banners_for_home(),
     }
     return render(request, "catalog/home.html", context)
 

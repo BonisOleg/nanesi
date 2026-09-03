@@ -22,8 +22,7 @@ class Order(TimeStampedModel):
         CANCELLED = "cancelled", _("Скасовано")
 
     class DeliveryMethod(models.TextChoices):
-        NOVA_POSHTA_WAREHOUSE = "np_warehouse", _("Нова Пошта — відділення")
-        NOVA_POSHTA_COURIER = "np_courier", _("Нова Пошта — курʼєр")
+        NOVA_POSHTA_WAREHOUSE = "np_warehouse", _("Нова Пошта")
         UKRPOSHTA = "ukrposhta", _("Укрпошта")
 
     class PaymentMethod(models.TextChoices):
@@ -42,6 +41,11 @@ class Order(TimeStampedModel):
         on_delete=models.SET_NULL, related_name="orders",
     )
     status = models.CharField("Статус", max_length=20, choices=Status.choices, default=Status.NEW)
+    stock_restored = models.BooleanField(
+        "Залишок повернуто на склад",
+        default=False,
+        help_text="True після скасування — щоб не повернути qty двічі",
+    )
 
     # Контакт (гість-checkout, Відповіді п.6): телефон та/або email
     full_name = models.CharField("ПІБ", max_length=255)
@@ -52,8 +56,9 @@ class Order(TimeStampedModel):
     delivery_method = models.CharField("Спосіб доставки", max_length=20, choices=DeliveryMethod.choices)
     np_city_name = models.CharField("Місто (НП)", max_length=255, blank=True)
     np_city_ref = models.CharField("Ref міста (НП)", max_length=64, blank=True)
-    np_warehouse_name = models.CharField("Відділення (НП)", max_length=255, blank=True)
-    np_warehouse_ref = models.CharField("Ref відділення (НП)", max_length=64, blank=True)
+    np_warehouse_name = models.CharField("Відділення / поштомат (НП)", max_length=255, blank=True)
+    np_warehouse_ref = models.CharField("Ref відділення / поштомату (НП)", max_length=64, blank=True)
+    ukrposhta_index = models.CharField("Індекс (Укрпошта)", max_length=5, blank=True)
     ukrposhta_address = models.CharField("Адреса (Укрпошта)", max_length=512, blank=True)
 
     # Оплата

@@ -4,10 +4,10 @@
     {% if site_settings.promo_popup_title %}{{ site_settings.promo_popup_title }}
     {% else %}{% blocktrans with percent=site_settings.promo_popup_discount_percent %}−{{ percent }}% на перше замовлення{% endblocktrans %}{% endif %}
   </h2>
-  <p>
-    {% if site_settings.promo_popup_text %}{{ site_settings.promo_popup_text }}
-    {% else %}{% blocktrans with name=site_settings.site_name %}Залиште email — надішлемо промокод і новини асортименту {{ name }}.{% endblocktrans %}{% endif %}
-  </p>
+  <div>
+    {% if site_settings.promo_popup_text %}{{ site_settings.promo_popup_text|safe }}
+    {% else %}<p>{% blocktrans with name=site_settings.site_name %}Залиште email — надішлемо промокод і новини асортименту {{ name }}.{% endblocktrans %}</p>{% endif %}
+  </div>
   <form class="subscribe-form" method="post" action="{% url 'content:newsletter_subscribe' %}"
         hx-post="{% url 'content:newsletter_subscribe' %}" hx-target="closest [data-newsletter-form]" hx-swap="outerHTML">
     {% csrf_token %}

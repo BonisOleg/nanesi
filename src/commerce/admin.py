@@ -18,11 +18,21 @@ class CartItemInline(TabularInline):
 class CartAdmin(ModelAdmin):
     """Довідково/дебаг — кошики створюються автоматично на вітрині."""
 
-    list_display = ("pk", "user", "session_key", "status", "updated_at")
+    list_display = ("pk", "user", "session_key", "status", "contact_phone", "updated_at")
     list_filter = ("status",)
-    search_fields = ("session_key", "user__username", "user__email")
+    search_fields = (
+        "session_key", "user__username", "user__email",
+        "contact_full_name", "contact_phone", "contact_email",
+    )
     inlines = [CartItemInline]
     readonly_fields = ["created_at", "updated_at"]
+    fieldsets = (
+        (None, {"fields": ("user", "session_key", "status", "promo_code")}),
+        ("Контакти з checkout (покинутий кошик)", {
+            "fields": ("contact_full_name", "contact_phone", "contact_email"),
+        }),
+        ("Службові", {"fields": ("created_at", "updated_at")}),
+    )
 
 
 @admin.register(PromoCode)
@@ -91,7 +101,8 @@ class OrderAdmin(ModelAdmin):
         ("Доставка", {
             "fields": (
                 "delivery_method", "np_city_name", "np_city_ref",
-                "np_warehouse_name", "np_warehouse_ref", "ukrposhta_address",
+                "np_warehouse_name", "np_warehouse_ref",
+                "ukrposhta_index", "ukrposhta_address",
                 "ttn_number", "shipping_error",
             ),
         }),

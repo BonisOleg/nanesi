@@ -1,10 +1,6 @@
-{% load shop_extras i18n %}
+{% load i18n %}
 {% if products %}
-  <div class="wishlist-grid">
-    {% for product in products %}
-      {% include "catalog/partials/_product_card.html" with product=product %}
-    {% endfor %}
-  </div>
+  {% include "catalog/partials/_product_grid.html" with products=products %}
 {% else %}
   <div class="empty-state">
     <p>{% trans "У обраному ще немає товарів." %}</p>

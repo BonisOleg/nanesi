@@ -133,11 +133,31 @@ class ProfileForm(forms.ModelForm):
 class SavedWarehouseForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ["saved_np_city_name", "saved_np_city_ref", "saved_np_warehouse_name", "saved_np_warehouse_ref"]
-        labels = {"saved_np_city_name": _("Місто"), "saved_np_warehouse_name": _("Відділення")}
+        labels = {
+            "saved_np_city_name": _("Місто"),
+            "saved_np_warehouse_name": _("Відділення / поштомат"),
+            "saved_ukrposhta_index": _("Індекс Укрпошти"),
+            "saved_ukrposhta_address": _("Адреса / відділення Укрпошти"),
+        }
+        fields = [
+            "saved_np_city_name", "saved_np_city_ref",
+            "saved_np_warehouse_name", "saved_np_warehouse_ref",
+            "saved_ukrposhta_index", "saved_ukrposhta_address",
+        ]
         widgets = {
-            "saved_np_city_name": forms.TextInput(attrs=_widget(id="id_saved_np_city_name")),
+            "saved_np_city_name": forms.TextInput(attrs=_widget(id="id_saved_np_city_name", autocomplete="off")),
             "saved_np_city_ref": forms.HiddenInput(attrs={"id": "id_saved_np_city_ref"}),
-            "saved_np_warehouse_name": forms.TextInput(attrs=_widget(id="id_saved_np_warehouse_name")),
+            "saved_np_warehouse_name": forms.TextInput(attrs=_widget(id="id_saved_np_warehouse_name", autocomplete="off")),
             "saved_np_warehouse_ref": forms.HiddenInput(attrs={"id": "id_saved_np_warehouse_ref"}),
+            "saved_ukrposhta_index": forms.TextInput(attrs=_widget(
+                id="id_saved_ukrposhta_index",
+                inputmode="numeric",
+                autocomplete="postal-code",
+                pattern=r"\d{5}",
+                maxlength="5",
+            )),
+            "saved_ukrposhta_address": forms.TextInput(attrs=_widget(
+                id="id_saved_ukrposhta_address",
+                autocomplete="street-address",
+            )),
         }
