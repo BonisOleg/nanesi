@@ -323,10 +323,22 @@ def restore_order_stock(order: Order) -> bool:
 
 
 @transaction.atomic
-def change_order_status(order: Order, to_status: str, *, user=None, note: str = "") -> Order:
+def change_order_status(
+    order: Order,
+    to_status: str,
+    *,
+    user=None,
+    note: str = "",
+    enqueue_crm: bool = True,
+    force: bool = False,
+) -> Order:
+    """Зміна статусу. enqueue_crm=False — для webhook SalesDrive (анти-цикл).
+    force=True — дозволити перехід поза ALLOWED_TRANSITIONS (менеджер у CRM)."""
     if user is not None and not user_can_manage_orders(user):
         raise OrderStatusError("Немає права змінювати статус замовлення")
-    if to_status not in ALLOWED_TRANSITIONS.get(order.status, set()):
+    if order.status == to_status:
+        return order
+    if not force and to_status not in ALLOWED_TRANSITIONS.get(order.status, set()):
         raise OrderStatusError(f"Перехід {order.status} → {to_status} заборонено")
 
     from_status = order.status
@@ -338,10 +350,11 @@ def change_order_status(order: Order, to_status: str, *, user=None, note: str = 
         order.paid_at = timezone.now()
     order.save()
     OrderStatusLog.objects.create(order=order, from_status=from_status, to_status=to_status, note=note, changed_by=user)
-    queue_order_event(
-        order, OrderIntegrationEvent.EventType.STATUS_CHANGED,
-        extra={"from_status": from_status, "to_status": to_status},
-    )
+    if enqueue_crm:
+        queue_order_event(
+            order, OrderIntegrationEvent.EventType.STATUS_CHANGED,
+            extra={"from_status": from_status, "to_status": to_status},
+        )
 
     if to_status == Order.Status.CANCELLED:
         restore_order_stock(order)

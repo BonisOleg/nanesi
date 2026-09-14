@@ -1,4 +1,8 @@
 """Thin views: parse → selector/service → render (ecommerce_business_logic_skill, rule 3)."""
+import hmac
+import json
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
@@ -20,6 +24,8 @@ from src.commerce.models_1 import money
 from src.commerce.payments.liqpay import get_liqpay_service
 from src.content.models import SiteSettings
 from src.core import analytics
+
+logger = logging.getLogger(__name__)
 
 
 def _saved_delivery_initial(user) -> dict:
@@ -392,3 +398,30 @@ def payment_callback(request, order_number: str):
     """result_url — лише UX-редирект, статус нею НЕ встановлюється (SEC-07)."""
     order = get_object_or_404(Order, number=order_number)
     return redirect("commerce:thank_you", order_number=order.number)
+
+
+@csrf_exempt
+@require_POST
+def salesdrive_webhook(request, token: str):
+    """SalesDrive → сайт: лише status_change. Секрет у шляху (SALESDRIVE_WEBHOOK_SECRET)."""
+    from src.commerce.salesdrive_webhook import SalesDriveWebhookError, handle_salesdrive_webhook
+
+    expected = getattr(settings, "SALESDRIVE_WEBHOOK_SECRET", "") or ""
+    if not expected or not hmac.compare_digest(token, expected):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return JsonResponse({"ok": False, "error": "invalid json"}, status=400)
+    if not isinstance(body, dict):
+        return JsonResponse({"ok": False, "error": "invalid body"}, status=400)
+
+    try:
+        result = handle_salesdrive_webhook(body)
+    except SalesDriveWebhookError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=exc.http_status)
+    except Exception:
+        logger.exception("SalesDrive webhook failed")
+        return JsonResponse({"ok": False, "error": "internal"}, status=500)
+    return JsonResponse(result, status=200)

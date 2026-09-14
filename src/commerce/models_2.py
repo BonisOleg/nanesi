@@ -88,6 +88,11 @@ class Order(TimeStampedModel):
     ttn_number = models.CharField("ТТН", max_length=32, blank=True)
     shipping_error = models.TextField("Помилка доставки (API)", blank=True)
 
+    # SalesDrive — id заявки після успішного create через outbox
+    salesdrive_order_id = models.PositiveIntegerField(
+        "ID заявки SalesDrive", null=True, blank=True, db_index=True,
+    )
+
     class Meta:
         verbose_name = "Замовлення"
         verbose_name_plural = "Замовлення"

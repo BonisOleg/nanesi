@@ -80,14 +80,14 @@ class OrderIntegrationEventInline(TabularInline):
 class OrderAdmin(ModelAdmin):
     list_display = (
         "number", "full_name", "phone", "status", "payment_status",
-        "payment_method", "delivery_method", "total", "created_at",
+        "payment_method", "delivery_method", "salesdrive_order_id", "total", "created_at",
     )
     list_filter = ("status", "payment_status", "payment_method", "delivery_method")
-    search_fields = ("number", "full_name", "phone", "email", "ttn_number")
+    search_fields = ("number", "full_name", "phone", "email", "ttn_number", "salesdrive_order_id")
     readonly_fields = [
         "number", "user", "subtotal", "discount_amount", "total",
         "payment_intent_id", "payment_idempotency_key", "paid_at",
-        "ttn_number", "shipping_error", "created_at", "updated_at",
+        "ttn_number", "shipping_error", "salesdrive_order_id", "created_at", "updated_at",
     ]
     inlines = [OrderItemInline, OrderStatusLogInline, OrderIntegrationEventInline]
     actions = [
@@ -96,7 +96,9 @@ class OrderAdmin(ModelAdmin):
     ]
 
     fieldsets = (
-        ("Замовлення", {"fields": ("number", "user", "status", "created_at", "updated_at")}),
+        ("Замовлення", {
+            "fields": ("number", "user", "status", "salesdrive_order_id", "created_at", "updated_at"),
+        }),
         ("Контакт", {"fields": ("full_name", "phone", "email")}),
         ("Доставка", {
             "fields": (
@@ -178,8 +180,7 @@ class OrderAdmin(ModelAdmin):
 
 @admin.register(OrderIntegrationEvent)
 class OrderIntegrationEventAdmin(ModelAdmin):
-    """Черга подій для CRM/ERP (KeyCRM/SalesDrive, Доповнення §3) — «розетка в коді»,
-    без живого API. Лише перегляд: події пише queue_order_event(), не адмін."""
+    """Черга подій SalesDrive (create/update). Лише перегляд — пише queue_order_event()."""
 
     list_display = ("order", "event_type", "status", "created_at", "sent_at")
     list_filter = ("event_type", "status")

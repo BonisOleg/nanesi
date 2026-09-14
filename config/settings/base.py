@@ -156,6 +156,11 @@ LIQPAY_PRIVATE_KEY = config("LIQPAY_PRIVATE_KEY", default="")
 LIQPAY_SERVER_URL = config("LIQPAY_SERVER_URL", default="")
 LIQPAY_SANDBOX = config("LIQPAY_SANDBOX", default=True, cast=bool)
 
+# --- SalesDrive CRM: порожні = outbox лишається PENDING ---
+SALESDRIVE_API_URL = config("SALESDRIVE_API_URL", default="")
+SALESDRIVE_API_KEY = config("SALESDRIVE_API_KEY", default="")
+SALESDRIVE_WEBHOOK_SECRET = config("SALESDRIVE_WEBHOOK_SECRET", default="")
+
 # --- TinyMCE (admin_skill канон) ---
 # Enter → <br> (linebreak), щоб переноси були видимі на вітрині без CSS white-space.
 # setup: під час завантаження контенту «голі» \n → <br> (paste / старі дані).

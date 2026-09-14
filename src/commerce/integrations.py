@@ -1,12 +1,11 @@
-"""Гачок для CRM/ERP (KeyCRM/SalesDrive) — Доповнення §3 «підготувати», не жива інтеграція.
+"""Гачок для CRM/ERP (SalesDrive) — place_order/change_order_status лише пишуть outbox.
 
-place_order()/change_order_status() викликають queue_order_event() і більше нічого не
-знають про CRM. Коли з'явиться реальний адаптер (обраний сервіс + доступ), він читає
-Status.PENDING з OrderIntegrationEvent і сам позначає sent/failed — checkout не міняється.
+Реальний HTTP — salesdrive_stub.process_pending_events (команда або on_commit).
 """
 import json
 
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import transaction
 
 from src.commerce.models import Order, OrderIntegrationEvent
 
@@ -20,7 +19,9 @@ def _order_snapshot(order: Order) -> dict:
         "email": order.email,
         "delivery_method": order.delivery_method,
         "np_city_name": order.np_city_name,
+        "np_city_ref": order.np_city_ref,
         "np_warehouse_name": order.np_warehouse_name,
+        "np_warehouse_ref": order.np_warehouse_ref,
         "ukrposhta_index": order.ukrposhta_index,
         "ukrposhta_address": order.ukrposhta_address,
         "payment_method": order.payment_method,
@@ -31,6 +32,7 @@ def _order_snapshot(order: Order) -> dict:
         "total": order.total,
         "promo_code": order.promo_code_snapshot,
         "comment": order.comment,
+        "salesdrive_order_id": order.salesdrive_order_id,
         "items": [
             {
                 "name": item.product_name, "sku": item.sku,
@@ -47,4 +49,14 @@ def queue_order_event(order: Order, event_type: str, *, extra: dict | None = Non
         payload.update(extra)
     # JSONField зберігає лише JSON-типи — Decimal/datetime проганяємо через DjangoJSONEncoder.
     payload = json.loads(json.dumps(payload, cls=DjangoJSONEncoder))
-    return OrderIntegrationEvent.objects.create(order=order, event_type=event_type, payload=payload)
+    event = OrderIntegrationEvent.objects.create(order=order, event_type=event_type, payload=payload)
+
+    order_pk = order.pk
+
+    def _flush() -> None:
+        from src.commerce.salesdrive_stub import process_pending_events
+
+        process_pending_events(limit=20, order_id=order_pk)
+
+    transaction.on_commit(_flush)
+    return event

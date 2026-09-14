@@ -18,4 +18,9 @@ urlpatterns = [
     path("oformlennya/<str:order_number>/pay/", views.PaymentInitView.as_view(), name="payment_init"),
     path("oformlennya/<str:order_number>/pay/callback/", views.payment_callback, name="payment_callback"),
     path("payment/webhook/", views.payment_webhook, name="payment_webhook"),
+    path(
+        "webhooks/salesdrive/<str:token>/",
+        views.salesdrive_webhook,
+        name="salesdrive_webhook",
+    ),
 ]
