@@ -35,4 +35,21 @@
       qtyInput.value = String(val);
     });
   }
+  document.querySelectorAll("[data-review-file]").forEach(function (wrap) {
+    var input = wrap.querySelector('input[type="file"]');
+    var nameEl = wrap.querySelector("[data-review-file-name]");
+    if (!input || !nameEl) return;
+    var emptyText = nameEl.getAttribute("data-empty") || nameEl.textContent;
+    input.addEventListener("change", function () {
+      var files = input.files;
+      if (!files || !files.length) {
+        nameEl.textContent = emptyText;
+        return;
+      }
+      var names = Array.prototype.map.call(files, function (f) {
+        return f.name;
+      });
+      nameEl.textContent = names.join(", ");
+    });
+  });
 })();

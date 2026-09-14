@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static i18n %}
+{% load static i18n shop_extras %}
 {% block title %}{{ thank_you_title }} — {{ site_settings.site_name }}{% endblock %}
 {% block content %}
   {% include "partials/_dl_events.html" %}
@@ -47,11 +47,11 @@
         <div class="summary-row summary-row--line">
           <span class="summary-row__name">{{ item.product_name }}</span>
           <span class="summary-row__qty">×&nbsp;{{ item.qty }}</span>
-          <span class="summary-row__price">{{ item.line_total }}&nbsp;грн</span>
+          <span class="summary-row__price">{{ item.line_total|uah }}</span>
         </div>
       {% endfor %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ order.total }}&nbsp;грн</span>
+        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ order.total|uah }}</span>
       </div>
     </div>
 

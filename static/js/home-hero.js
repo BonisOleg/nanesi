@@ -1,4 +1,4 @@
-/* Hero-слайдер: fade, автопрокрутка 5с, фон/блюр через JS (CSP блокує inline style). */
+/* Hero-слайдер: crossfade 1с, автопрокрутка 5с, фон/блюр через JS (CSP блокує inline style). */
 (function () {
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -44,8 +44,10 @@
     var intervalMs = parseInt(root.getAttribute("data-interval"), 10) || 5000;
     var index = Math.max(0, slides.findIndex(function (s) { return s.classList.contains("is-active"); }));
     if (index < 0) index = 0;
+    var FADE_MS = 1000;
     var timer = null;
     var leavingTimer = null;
+    var enterFrame = 0;
 
     function allDots() {
       return Array.prototype.slice.call(root.querySelectorAll("[data-hero-dot]"));
@@ -68,24 +70,54 @@
       if (leavingTimer) {
         window.clearTimeout(leavingTimer);
         leavingTimer = null;
-        slides.forEach(function (s) { s.classList.remove("is-leaving"); });
       }
+      if (enterFrame) {
+        window.cancelAnimationFrame(enterFrame);
+        enterFrame = 0;
+      }
+      slides.forEach(function (s) {
+        s.classList.remove("is-leaving");
+        s.classList.remove("is-entering");
+        if (s !== curr && s !== prev) s.classList.remove("is-active");
+      });
 
       prev.classList.remove("is-active");
       prev.classList.add("is-leaving");
       prev.setAttribute("aria-hidden", "true");
 
-      curr.classList.add("is-active");
       curr.setAttribute("aria-hidden", "false");
       applySlideFx(curr);
 
       index = next;
       setDotState(index);
 
-      leavingTimer = window.setTimeout(function () {
+    function activate() {
+      curr.classList.remove("is-entering");
+      curr.classList.add("is-active");
+      fitSlideTitle(curr);
+    }
+
+      function finishLeave() {
         prev.classList.remove("is-leaving");
         leavingTimer = null;
-      }, prefersReducedMotion() ? 0 : 560);
+      }
+
+      if (prefersReducedMotion()) {
+        activate();
+        finishLeave();
+        return;
+      }
+
+      curr.classList.add("is-entering");
+      fitSlideTitle(curr);
+      enterFrame = window.requestAnimationFrame(function () {
+        enterFrame = window.requestAnimationFrame(function () {
+          enterFrame = 0;
+          activate();
+        });
+      });
+
+      leavingTimer = window.setTimeout(finishLeave, FADE_MS);
     }
 
     function nextSlide() {
@@ -149,10 +181,90 @@
 
     setDotState(index);
     start();
+    fitSlideTitle(slides[index]);
+  }
+
+  var TITLE_MIN_PX = 18;
+  var TITLE_MAX_LINES = 2;
+  var TITLE_FIT_MAX = 1200;
+
+  function titleLineHeight(el) {
+    var cs = window.getComputedStyle(el);
+    var fs = parseFloat(cs.fontSize) || 16;
+    var lh = cs.lineHeight;
+    if (!lh || lh === "normal") return fs * 1.15;
+    if (lh.indexOf("px") !== -1) return parseFloat(lh) || fs * 1.15;
+    var n = parseFloat(lh);
+    if (!n) return fs * 1.15;
+    return n < 5 ? n * fs : n;
+  }
+
+  function titleLineCount(el) {
+    var lh = titleLineHeight(el);
+    if (lh <= 0) return 1;
+    return Math.round(el.scrollHeight / lh);
+  }
+
+  function titleFitsLines(el) {
+    return titleLineCount(el) <= TITLE_MAX_LINES;
+  }
+
+  function fitSlideTitle(slide) {
+    var el = slide && slide.querySelector(".hero__title");
+    if (!el) return;
+    el.style.removeProperty("font-size");
+    var width = window.innerWidth;
+    if (width < 768 || width >= TITLE_FIT_MAX) return;
+    if (!el.offsetWidth) return;
+    if (titleFitsLines(el)) return;
+
+    var start = parseFloat(window.getComputedStyle(el).fontSize) || 24;
+    var lo = TITLE_MIN_PX;
+    var hi = start;
+    var best = TITLE_MIN_PX;
+    for (var i = 0; i < 10; i++) {
+      var mid = (lo + hi) / 2;
+      el.style.setProperty("font-size", mid + "px");
+      if (titleFitsLines(el)) {
+        best = mid;
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    el.style.setProperty("font-size", best + "px");
+  }
+
+  function fitHeroTitles(root) {
+    var scope = root || document;
+    scope.querySelectorAll("[data-hero-slide].is-active, [data-hero-slide].is-entering").forEach(fitSlideTitle);
+  }
+
+  function initHeroTitleFit() {
+    if (document.documentElement.dataset.heroTitleFit === "1") return;
+    document.documentElement.dataset.heroTitleFit = "1";
+
+    var timer = 0;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () {
+        document.querySelectorAll("[data-hero-slider]").forEach(fitHeroTitles);
+      }, 80);
+    }
+
+    schedule();
+    window.addEventListener("resize", schedule, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", schedule);
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(schedule);
+    }
   }
 
   function boot() {
     document.querySelectorAll("[data-hero-slider]").forEach(initSlider);
+    initHeroTitleFit();
   }
 
   if (document.readyState === "loading") {

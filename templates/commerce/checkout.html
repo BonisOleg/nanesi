@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static i18n %}
+{% load static i18n shop_extras %}
 {% block title %}{% trans "Оформлення замовлення" %} — {{ site_settings.site_name }}{% endblock %}
 {% block content %}
   {% include "partials/_dl_events.html" %}
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total }}&nbsp;грн</button>
+      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total|uah }}</button>
     </form>
 
     <aside class="card checkout-sidebar">
@@ -114,17 +114,27 @@
         <div class="summary-row summary-row--line">
           <span class="summary-row__name">{{ line.name }}</span>
           <span class="summary-row__qty">×&nbsp;{{ line.qty }}</span>
-          <span class="summary-row__price">{{ line.line_total }}&nbsp;грн</span>
+          <span class="summary-row__price">{{ line.line_total|uah }}</span>
         </div>
       {% endfor %}
+      <div class="summary-row">
+        <span>{% trans "Товари" %}</span>
+        <span class="summary-row__price">{{ subtotal|uah }}</span>
+      </div>
+      {% if discount_amount %}
+      <div class="summary-row summary-row--discount">
+        <span>{% if promo_code %}{% blocktrans with code=promo_code.code %}Знижка ({{ code }}){% endblocktrans %}{% else %}{% trans "Знижка" %}{% endif %}</span>
+        <span class="summary-row__price">−{{ discount_amount|uah }}</span>
+      </div>
+      {% endif %}
       <div class="summary-row summary-row--total">
         <span>{% trans "Разом" %}</span>
-        <span class="summary-row__price">{{ total }}&nbsp;грн</span>
+        <span class="summary-row__price">{{ total|uah }}</span>
       </div>
     </aside>
   </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/checkout.js' %}?v=requisites-gdpr" defer></script>
+<script src="{% static 'js/checkout.js' %}?v=fs-methods1" defer></script>
 {% endblock %}

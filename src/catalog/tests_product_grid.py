@@ -14,16 +14,16 @@ class PickGridColumnsTests(SimpleTestCase):
         self.assertEqual(pick_grid_columns(2), 3)
 
     def test_exact_division(self):
-        self.assertEqual(pick_grid_columns(5), 5)
+        self.assertEqual(pick_grid_columns(5), 3)
         self.assertEqual(pick_grid_columns(8), 4)
         self.assertEqual(pick_grid_columns(9), 3)
-        self.assertEqual(pick_grid_columns(10), 5)
+        self.assertEqual(pick_grid_columns(10), 4)
         self.assertEqual(pick_grid_columns(12), 4)
 
     def test_incomplete_last_row_centered(self):
-        """7 → 4+3; 11 → 4+4+3; 13 → 5+5+3; 14 → 5+5+4."""
+        """7 → 4+3; 11 → 4+4+3; 13/14 → 3 (макс. 4 кол.)."""
         self.assertEqual(pick_grid_columns(7), 4)
         self.assertEqual(pick_grid_columns(11), 4)
-        self.assertEqual(pick_grid_columns(13), 5)
-        self.assertEqual(pick_grid_columns(14), 5)
+        self.assertEqual(pick_grid_columns(13), 3)
+        self.assertEqual(pick_grid_columns(14), 4)
         self.assertEqual(pick_grid_columns(6), 3)

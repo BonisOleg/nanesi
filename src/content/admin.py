@@ -32,9 +32,15 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         }),
         ("Кольори (акцент бренду)", {"fields": ("accent_color", "accent_hover_color")}),
         ("Доставка", {
-            "fields": ("free_shipping_threshold",),
+            "fields": (
+                "free_shipping_enabled",
+                "free_shipping_threshold",
+                "free_shipping_np",
+                "free_shipping_ukrposhta",
+            ),
             "description": (
-                "Сума для прогрес-бару в кошику. Змінюється тут — без участі розробника. "
+                "Поріг і прогрес-бар у кошику. Вимкніть тумблер, щоб сховати бар. "
+                "Позначте способи, для яких доставка стає безкоштовною після порогу. "
                 "Текст верхньої смужки («Безкоштовна доставка від …») оновіть у блоці вище."
             ),
         }),

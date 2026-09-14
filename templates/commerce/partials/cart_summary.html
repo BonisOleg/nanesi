@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n shop_extras %}
 <div id="cart-summary" data-cart-items-count="{{ cart_items_count|default:0 }}">
   {% include "partials/_dl_events.html" %}
   {% if not lines %}
@@ -34,7 +34,7 @@
             </div>
           </form>
 
-          <div class="cart-line__total">{{ line.line_total }}&nbsp;грн</div>
+          <div class="cart-line__total">{{ line.line_total|uah }}</div>
 
           <form hx-post="{% url 'commerce:cart_remove' line.item_id %}" hx-target="#cart-summary" hx-swap="outerHTML">
             {% csrf_token %}
@@ -67,15 +67,15 @@
       {% endif %}
 
       <div class="summary-row">
-        <span>{% trans "Сума товарів" %}</span><span class="summary-row__price">{{ subtotal }}&nbsp;грн</span>
+        <span>{% trans "Сума товарів" %}</span><span class="summary-row__price">{{ subtotal|uah }}</span>
       </div>
       {% if discount_amount %}
         <div class="summary-row summary-row--discount">
-          <span>{% trans "Знижка" %}</span><span class="summary-row__price">−{{ discount_amount }}&nbsp;грн</span>
+          <span>{% trans "Знижка" %}</span><span class="summary-row__price">−{{ discount_amount|uah }}</span>
         </div>
       {% endif %}
       <div class="summary-row summary-row--total">
-        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ total }}&nbsp;грн</span>
+        <span>{% trans "Разом" %}</span><span class="summary-row__price">{{ total|uah }}</span>
       </div>
 
       <a href="{% url 'commerce:checkout' %}" class="btn btn-primary btn-block cart-checkout-link">{% trans "Оформити замовлення" %}</a>

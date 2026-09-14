@@ -42,10 +42,12 @@
     if (event.key === 'Escape' && !popup.hidden) closePopup();
   });
 
-  document.addEventListener('htmx:afterSwap', function (event) {
-    if (!popup.contains(event.target)) return;
-    var subscribed = event.target.matches('[data-popup-subscribed]') || event.target.querySelector('[data-popup-subscribed]');
-    if (subscribed) markDismissed();
+  /* Підписка з popup або інлайн-форми: після HTMX outerHTML swap старий target
+     може вже бути від’єднаний від DOM — перевіряємо success-маркер у документі. */
+  document.addEventListener('htmx:afterSwap', function () {
+    if (document.querySelector('[data-popup-subscribed]')) {
+      markDismissed();
+    }
   });
 
   if (!isDismissed()) {

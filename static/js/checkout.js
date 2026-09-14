@@ -17,6 +17,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var value = selectedDelivery();
     toggleClass(npFields, value === 'np_warehouse');
     toggleClass(ukrposhtaFields, value === 'ukrposhta');
+    var progress = document.querySelector('[data-shipping-progress]');
+    if (progress) {
+      var covers = value === 'np_warehouse'
+        ? progress.getAttribute('data-covers-np') === '1'
+        : value === 'ukrposhta'
+          ? progress.getAttribute('data-covers-ukrposhta') === '1'
+          : false;
+      progress.hidden = !covers;
+    }
   }
 
   deliveryInputs.forEach(function (input) {
@@ -45,6 +54,58 @@ document.addEventListener('DOMContentLoaded', function () {
     list.appendChild(ul);
   }
 
+  function clearList(el) {
+    if (el) el.innerHTML = '';
+  }
+
+  var selectedCityId = null;
+  var warehouseInput = document.getElementById('id_np_warehouse_name');
+  var warehouseRefInput = document.getElementById('id_np_warehouse_ref');
+  var warehouseList = document.getElementById('np-warehouse-suggestions');
+  var warehouseFetchSeq = 0;
+  var warehouseListOpen = false;
+
+  function clearWarehouseSelection() {
+    selectedCityId = null;
+    warehouseListOpen = false;
+    if (warehouseInput) warehouseInput.value = '';
+    if (warehouseRefInput) warehouseRefInput.value = '';
+    clearList(warehouseList);
+  }
+
+  function fetchWarehouses(cityId, query, opts) {
+    opts = opts || {};
+    var show = opts.show === true;
+    if (!show && !warehouseListOpen) {
+      clearList(warehouseList);
+      return;
+    }
+    if (show) warehouseListOpen = true;
+    var seq = ++warehouseFetchSeq;
+    var expectedCity = cityId;
+    fetch('/shipping/np/warehouses/?city=' + encodeURIComponent(cityId) + '&q=' + encodeURIComponent(query || ''))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (seq !== warehouseFetchSeq) return;
+        if (expectedCity !== selectedCityId || !warehouseListOpen) {
+          clearList(warehouseList);
+          return;
+        }
+        if (!data.configured || !data.results.length) {
+          clearList(warehouseList);
+          return;
+        }
+        fillSuggestions(warehouseList, data.results, function (row) {
+          warehouseInput.value = row.name;
+          warehouseRefInput.value = row.ref;
+          warehouseListOpen = false;
+        });
+      })
+      .catch(function () {
+        if (seq === warehouseFetchSeq) clearList(warehouseList);
+      });
+  }
+
   function setupCitySearch() {
     var input = document.getElementById('id_np_city_name');
     var refInput = document.getElementById('id_np_city_ref');
@@ -52,16 +113,27 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!input) return;
     var timer = null;
     input.setAttribute('autocomplete', 'off');
+
+    input.addEventListener('focus', function () {
+      warehouseListOpen = false;
+      clearList(warehouseList);
+    });
+
     input.addEventListener('input', function () {
       refInput.value = '';
+      clearWarehouseSelection();
       clearTimeout(timer);
       var query = input.value.trim();
       timer = setTimeout(function () {
+        if (!query) {
+          clearList(list);
+          return;
+        }
         fetch('/shipping/np/cities/?q=' + encodeURIComponent(query))
           .then(function (r) { return r.json(); })
           .then(function (data) {
             if (!data.configured || !data.results.length) {
-              list.innerHTML = '';
+              clearList(list);
               return;
             }
             fillSuggestions(list, data.results, function (row) {
@@ -70,47 +142,52 @@ document.addEventListener('DOMContentLoaded', function () {
               document.dispatchEvent(new CustomEvent('np-city-selected', { detail: row }));
             });
           })
-          .catch(function () { list.innerHTML = ''; });
+          .catch(function () { clearList(list); });
       }, 250);
     });
   }
   setupCitySearch();
 
-  var selectedCityId = null;
-  var warehouseInput = document.getElementById('id_np_warehouse_name');
-  var warehouseRefInput = document.getElementById('id_np_warehouse_ref');
-  var warehouseList = document.getElementById('np-warehouse-suggestions');
-
-  function fetchWarehouses(cityId, query) {
-    fetch('/shipping/np/warehouses/?city=' + encodeURIComponent(cityId) + '&q=' + encodeURIComponent(query || ''))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (!data.configured || !data.results.length) {
-          warehouseList.innerHTML = '';
-          return;
-        }
-        fillSuggestions(warehouseList, data.results, function (row) {
-          warehouseInput.value = row.name;
-          warehouseRefInput.value = row.ref;
-        });
-      })
-      .catch(function () { warehouseList.innerHTML = ''; });
-  }
-
   document.addEventListener('np-city-selected', function (e) {
     selectedCityId = e.detail.id;
+    warehouseListOpen = false;
     if (warehouseInput) warehouseInput.value = '';
     if (warehouseRefInput) warehouseRefInput.value = '';
-    fetchWarehouses(selectedCityId, '');
+    clearList(warehouseList);
+    // Список відділень — лише після фокусу/кліку в полі, не одразу після міста.
   });
 
   if (warehouseInput) {
     warehouseInput.setAttribute('autocomplete', 'off');
+
+    function openWarehouseSuggestions() {
+      if (!selectedCityId) {
+        clearList(warehouseList);
+        return;
+      }
+      fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
+    }
+
+    warehouseInput.addEventListener('focus', openWarehouseSuggestions);
+    warehouseInput.addEventListener('click', openWarehouseSuggestions);
+
     warehouseInput.addEventListener('input', function () {
       warehouseRefInput.value = '';
       if (selectedCityId) {
-        fetchWarehouses(selectedCityId, warehouseInput.value.trim());
+        fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
+      } else {
+        clearList(warehouseList);
       }
+    });
+
+    warehouseInput.addEventListener('blur', function () {
+      // Даємо час на click по пункті списку.
+      setTimeout(function () {
+        if (document.activeElement !== warehouseInput) {
+          warehouseListOpen = false;
+          clearList(warehouseList);
+        }
+      }, 180);
     });
   }
 });

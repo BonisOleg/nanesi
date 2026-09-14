@@ -33,6 +33,88 @@ class FreeShippingProgressTests(TestCase):
         self.assertIsNone(progress.threshold)
         self.assertFalse(progress.reached)
 
+    def test_disabled_by_toggle(self):
+        site = SiteSettings.load()
+        site.free_shipping_enabled = False
+        site.save(update_fields=["free_shipping_enabled"])
+        progress = free_shipping_progress(Decimal("2000.00"))
+        self.assertIsNone(progress.threshold)
+
+    def test_disabled_when_no_methods(self):
+        site = SiteSettings.load()
+        site.free_shipping_np = False
+        site.free_shipping_ukrposhta = False
+        site.save(update_fields=["free_shipping_np", "free_shipping_ukrposhta"])
+        progress = free_shipping_progress(Decimal("2000.00"))
+        self.assertIsNone(progress.threshold)
+
+    def test_covers_flags_on_progress(self):
+        site = SiteSettings.load()
+        site.free_shipping_np = True
+        site.free_shipping_ukrposhta = False
+        site.save(update_fields=["free_shipping_np", "free_shipping_ukrposhta"])
+        progress = free_shipping_progress(Decimal("1500.00"))
+        self.assertTrue(progress.covers_np)
+        self.assertFalse(progress.covers_ukrposhta)
+        self.assertTrue(site.free_shipping_covers("np_warehouse"))
+        self.assertFalse(site.free_shipping_covers("ukrposhta"))
+
+
+class FreeShippingOrderApplyTests(TestCase):
+    def setUp(self):
+        from src.catalog.models import Brand, Category, Product, ProductVariant
+
+        site = SiteSettings.load()
+        site.free_shipping_enabled = True
+        site.free_shipping_threshold = Decimal("1500.00")
+        site.free_shipping_np = True
+        site.free_shipping_ukrposhta = False
+        site.save(update_fields=[
+            "free_shipping_enabled", "free_shipping_threshold",
+            "free_shipping_np", "free_shipping_ukrposhta",
+        ])
+        brand = Brand.objects.create(name="FSBrand", slug="fs-brand")
+        category = Category.objects.create(name="FSCat", slug="fs-cat")
+        product = Product.objects.create(
+            name="Cream", slug="cream-fs", brand=brand, category=category, is_active=True,
+        )
+        self.variant = ProductVariant.objects.create(
+            product=product, sku="SKU-FS-1", retail_price=Decimal("1600.00"),
+            stock_quantity=5, is_active=True,
+        )
+
+    def _place(self, delivery_method: str) -> Order:
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        from src.commerce.services import add_item, place_order
+
+        factory = RequestFactory()
+        request = factory.post("/oformlennya/")
+        request.session = self.client.session
+        request.user = AnonymousUser()
+        add_item(request, self.variant.pk, qty=1)
+        return place_order(request, {
+            "full_name": "Тест",
+            "phone": "380501112233",
+            "email": "",
+            "delivery_method": delivery_method,
+            "payment_method": "cod",
+            "np_city_name": "Київ",
+            "np_city_ref": "c",
+            "np_warehouse_name": "Відділення 1",
+            "np_warehouse_ref": "w",
+            "ukrposhta_index": "01001",
+            "ukrposhta_address": "Хрещатик",
+            "comment": "",
+        })
+
+    def test_zero_shipping_only_for_covered_method(self):
+        np_order = self._place("np_warehouse")
+        self.assertEqual(np_order.shipping_cost, Decimal("0"))
+        ukr_order = self._place("ukrposhta")
+        self.assertIsNone(ukr_order.shipping_cost)
+
     def test_format_uah_amount(self):
         self.assertEqual(format_uah_amount(Decimal("300.00")), "300")
         self.assertEqual(format_uah_amount(Decimal("300.50")), "300,50")

@@ -189,8 +189,14 @@ def place_order(request, cleaned_data: dict) -> Order:
     from src.content.models import SiteSettings
 
     # Поріг — від subtotal до знижки: промокод не «знімає» безкоштовну доставку.
-    threshold = SiteSettings.load().free_shipping_threshold
-    if threshold and subtotal >= threshold:
+    site = SiteSettings.load()
+    threshold = site.free_shipping_threshold
+    delivery_method = cleaned_data["delivery_method"]
+    if (
+        site.free_shipping_covers(delivery_method)
+        and threshold
+        and subtotal >= threshold
+    ):
         shipping_cost = Decimal("0")
 
     total = money(subtotal - discount_amount + (shipping_cost or Decimal("0")))

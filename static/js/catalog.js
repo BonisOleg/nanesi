@@ -221,10 +221,81 @@
     }
   }
 
-  var sortSelect = document.querySelector("[data-catalog-sort]");
-  if (sortSelect && form) {
-    sortSelect.addEventListener("change", function () {
+  var sortRoot = document.querySelector("[data-catalog-sort]");
+  if (sortRoot && form) {
+    var sortTrigger = sortRoot.querySelector("[data-catalog-sort-trigger]");
+    var sortMenu = sortRoot.querySelector("[data-catalog-sort-menu]");
+    var sortNative = sortRoot.querySelector("[data-catalog-sort-native]");
+    var sortCurrent = sortRoot.querySelector("[data-catalog-sort-current]");
+    var sortOptions = sortRoot.querySelectorAll(".catalog-sort__option");
+
+    function closeSort() {
+      if (!sortMenu || !sortTrigger) return;
+      sortMenu.hidden = true;
+      sortTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    function openSort() {
+      if (!sortMenu || !sortTrigger) return;
+      sortMenu.hidden = false;
+      sortTrigger.setAttribute("aria-expanded", "true");
+      var selected = sortRoot.querySelector('.catalog-sort__option[aria-selected="true"]');
+      if (selected) selected.focus();
+    }
+
+    function selectSort(option) {
+      if (!option || !sortNative) return;
+      var value = option.getAttribute("data-value") || "";
+      sortOptions.forEach(function (item) {
+        item.setAttribute("aria-selected", item === option ? "true" : "false");
+      });
+      if (sortCurrent) sortCurrent.textContent = option.textContent.trim();
+      sortNative.value = value;
+      closeSort();
       form.requestSubmit();
-    });
+    }
+
+    if (sortTrigger && sortMenu) {
+      sortTrigger.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (sortMenu.hidden) openSort();
+        else closeSort();
+      });
+
+      sortOptions.forEach(function (option) {
+        option.addEventListener("click", function () {
+          selectSort(option);
+        });
+        option.addEventListener("keydown", function (e) {
+          var items = Array.prototype.slice.call(sortOptions);
+          var idx = items.indexOf(option);
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            items[(idx + 1) % items.length].focus();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            items[(idx - 1 + items.length) % items.length].focus();
+          } else if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            selectSort(option);
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeSort();
+            sortTrigger.focus();
+          }
+        });
+      });
+
+      document.addEventListener("click", function (e) {
+        if (!sortRoot.contains(e.target)) closeSort();
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !sortMenu.hidden) {
+          closeSort();
+          sortTrigger.focus();
+        }
+      });
+    }
   }
 })();

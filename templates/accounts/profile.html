@@ -132,7 +132,7 @@
         {% if recent_orders %}
           {% for order in recent_orders %}
             <div class="order-item-row">
-              <span><a href="{% url 'accounts:order_detail' order.number %}">№ {{ order.number }}</a> — {{ order.created_at|date:"d.m.Y" }}</span>
+              <span><a href="{% url 'accounts:order_detail' order.number %}">{{ order.number }}</a> — {{ order.created_at|date:"d.m.Y" }}</span>
               <span class="order-status">{{ order.get_status_display }}</span>
             </div>
           {% endfor %}
@@ -146,5 +146,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/account.js' %}?v=cabinet-edit" defer></script>
+<script src="{% static 'js/account.js' %}?v=np-wh-focus1" defer></script>
 {% endblock %}

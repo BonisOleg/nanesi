@@ -334,7 +334,7 @@ class PaymentInitView(View):
         checkout_data = liqpay.create_checkout_data(
             order_number=order.number,
             amount=float(order.total),
-            description=f"Замовлення №{order.number}",
+            description=f"Замовлення {order.number}",
             result_url=result_url,
             server_url=settings.LIQPAY_SERVER_URL,
         )

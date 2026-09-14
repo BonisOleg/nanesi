@@ -126,7 +126,7 @@ def order_repeat_view(request, order_number: str):
     if added:
         messages.success(
             request,
-            _("Додано в кошик %(added)s позицій із замовлення №%(number)s.")
+            _("Додано в кошик %(added)s позицій із замовлення %(number)s.")
             % {"added": added, "number": order.number},
         )
     if unavailable:

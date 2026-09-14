@@ -486,34 +486,71 @@
   color: var(--color-star);
 }
 
-.review-form input[type="file"] {
-  padding: var(--space-2) 0;
-  border: none;
-  min-height: auto;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
+.review-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
 }
 
-/* Мобільний: кнопка і «Файл не вибрано» в колонку — без обрізання «…» */
+.review-file__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.review-file__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  margin: 0;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #fff);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.review-file__btn:hover {
+  border-color: var(--color-muted, #9a8f86);
+}
+
+.review-file:has(.review-file__input:focus-visible) .review-file__btn {
+  outline: 2px solid var(--color-accent, #c4a484);
+  outline-offset: 2px;
+}
+
+.review-file__name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  color: var(--color-muted, #6b635c);
+  font-size: 0.92rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 @media (max-width: 599px) {
-  .review-form input[type="file"] {
-    display: flex;
+  .review-file {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
   }
 
-  .review-form input[type="file"]::file-selector-button,
-  .review-form input[type="file"]::-webkit-file-upload-button {
-    display: block;
-    float: none;
+  .review-file__btn {
     width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    margin: 0;
   }
 }

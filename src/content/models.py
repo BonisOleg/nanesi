@@ -46,7 +46,12 @@ class SiteSettings(SingletonModel):
         default="Безкоштовна доставка від 1500\xa0грн",
     )
 
-    # Безкоштовна доставка (лист Nanesi п.9) — сума керується тут, без розробника
+    # Безкоштовна доставка (лист Nanesi п.9) — сума, тумблер і методи з адмінки
+    free_shipping_enabled = models.BooleanField(
+        "Безкоштовна доставка увімкнена",
+        default=True,
+        help_text="Вимкніть, щоб сховати прогрес-бар і не застосовувати нульову доставку.",
+    )
     free_shipping_threshold = models.DecimalField(
         "Сума безкоштовної доставки, грн",
         max_digits=10,
@@ -58,6 +63,14 @@ class SiteSettings(SingletonModel):
             "Поріг для прогрес-бару в кошику: «До безкоштовної доставки залишилось … грн». "
             "Порожнє поле — бар не показується. Текст верхньої смужки оновіть окремо."
         ),
+    )
+    free_shipping_np = models.BooleanField(
+        "Діє для Нової Пошти",
+        default=True,
+    )
+    free_shipping_ukrposhta = models.BooleanField(
+        "Діє для Укрпошти",
+        default=True,
     )
 
     # Мови (Доповнення §1): uk завжди активна; ru/en — тумблер
@@ -153,6 +166,23 @@ class SiteSettings(SingletonModel):
 
     def __str__(self) -> str:
         return self.site_name
+
+    def free_shipping_is_configured(self) -> bool:
+        """Тумблер + поріг + хоча б один спосіб доставки."""
+        return (
+            self.free_shipping_enabled
+            and bool(self.free_shipping_threshold and self.free_shipping_threshold > 0)
+            and (self.free_shipping_np or self.free_shipping_ukrposhta)
+        )
+
+    def free_shipping_covers(self, delivery_method: str) -> bool:
+        if not self.free_shipping_is_configured():
+            return False
+        if delivery_method == "np_warehouse":
+            return self.free_shipping_np
+        if delivery_method == "ukrposhta":
+            return self.free_shipping_ukrposhta
+        return False
 
     def thank_you_title_display(self) -> str:
         return (self.thank_you_title or "").strip() or "Дякуємо за замовлення!"

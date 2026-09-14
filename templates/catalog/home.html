@@ -2,7 +2,7 @@
 {% load static i18n %}
 {% block main_class %}{% endblock %}
 {% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}?v=hero-grid1">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}?v=hero-title2">{% endblock %}
 
 {% block content %}
   {% include "catalog/partials/_hero_slider.html" %}
@@ -123,5 +123,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/home-hero.js' %}?v=csp1" defer></script>
+  <script src="{% static 'js/home-hero.js' %}?v=hero-title3" defer></script>
 {% endblock %}

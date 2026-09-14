@@ -1,7 +1,7 @@
 """modeltranslation: uk (основна) / ru / en — Доповнення §1 «Мови»."""
 from modeltranslation.translator import TranslationOptions, translator
 
-from .models import AttributeValue, Brand, Category, Collection, Product
+from .models import Attribute, AttributeValue, Brand, Category, Collection, Product
 
 
 class SeoTranslationMixin(TranslationOptions):
@@ -30,6 +30,10 @@ class CollectionTranslationOptions(TranslationOptions):
     fields = ("name",)
 
 
+class AttributeTranslationOptions(TranslationOptions):
+    fields = ("name",)
+
+
 class AttributeValueTranslationOptions(TranslationOptions):
     fields = ("value",)
 
@@ -38,4 +42,5 @@ translator.register(Category, CategoryTranslationOptions)
 translator.register(Brand, BrandTranslationOptions)
 translator.register(Product, ProductTranslationOptions)
 translator.register(Collection, CollectionTranslationOptions)
+translator.register(Attribute, AttributeTranslationOptions)
 translator.register(AttributeValue, AttributeValueTranslationOptions)

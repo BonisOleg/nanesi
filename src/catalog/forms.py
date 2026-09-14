@@ -49,7 +49,12 @@ class ReviewForm(forms.Form):
     )
     photos = MultipleFileField(
         label=_("Фото (до 5)"), required=False,
-        widget=MultipleFileInput(attrs={"multiple": True, "accept": "image/*"}),
+        widget=MultipleFileInput(attrs={
+            "multiple": True,
+            "accept": "image/*",
+            "class": "review-file__input",
+            "aria-labelledby": "id_photos-label",
+        }),
     )
 
     def __init__(self, *args, is_authenticated=False, **kwargs):

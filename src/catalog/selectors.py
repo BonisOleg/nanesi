@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 
 from django.db.models import Avg, Count, Min, Prefetch, Q, QuerySet
 from django.utils.text import slugify
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext_lazy as _
 
 from src.catalog.models import (
     Attribute,
@@ -91,6 +91,29 @@ def nav_category_tree() -> QuerySet[Category]:
 
 def volume_slug(volume: str) -> str:
     return slugify((volume or "").strip(), allow_unicode=True)
+
+
+def localize_volume_label(label: str, lang: str | None = None) -> str:
+    """Вітринні одиниці об'єму: uk «мл/г/рефіл» → en «ml/g/refill», ru «рефил».
+
+    Значення в БД лишаються українськими; slug фільтра — від канону uk.
+    """
+    import re
+
+    text = (label or "").strip()
+    if not text:
+        return text
+    code = (lang or get_language() or "uk").split("-")[0].lower()
+    if code == "uk":
+        return text
+    if code == "ru":
+        return text.replace("рефіл", "рефил")
+    if code == "en":
+        text = text.replace("рефіл", "refill")
+        text = re.sub(r"(?<=\d)\s*мл\b", " ml", text)
+        text = re.sub(r"(?<=\d)\s*г\b", " g", text)
+        return text
+    return text
 
 
 def active_brands() -> QuerySet[Brand]:
@@ -194,7 +217,7 @@ def volume_options_for_catalog() -> list[dict]:
         if not slug or slug in seen:
             continue
         seen.add(slug)
-        options.append({"slug": slug, "label": label})
+        options.append({"slug": slug, "label": localize_volume_label(label)})
     return sorted(options, key=lambda item: item["label"])
 
 
@@ -361,6 +384,23 @@ def products_for_collection(collection: Collection) -> QuerySet[Product]:
     if collection.kind == Collection.Kind.SALE:
         return qs.filter(variants__sale_price__isnull=False).distinct().order_by("-created_at")
     return qs.none()
+
+
+def search_suggest(query: str, *, limit: int = 8) -> list[Product]:
+    """Підказки для хедера: назва / бренд / SKU (як плейсхолдер пошуку)."""
+    q = (query or "").strip()
+    if len(q) < 2:
+        return []
+    return list(
+        visible_products()
+        .filter(
+            Q(name__icontains=q)
+            | Q(brand__name__icontains=q)
+            | Q(variants__sku__icontains=q)
+        )
+        .distinct()
+        .order_by("name")[:limit]
+    )
 
 
 def home_category_circles() -> QuerySet[Category]:

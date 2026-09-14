@@ -1,7 +1,27 @@
 from django.test import TestCase
 
 from src.shipping.models import NPCity, NPWarehouse
-from src.shipping.selectors import search_warehouses
+from src.shipping.selectors import search_cities, search_warehouses
+
+
+class NPCitySearchTests(TestCase):
+    def test_kyiv_ranks_above_oblast_substring_matches(self):
+        """«киї» має віддати Київ раніше за села з «Київська» у назві."""
+        NPCity.objects.create(ref="a1", name="Андріївка (Київська обл.)", area="Київська")
+        NPCity.objects.create(ref="a2", name="Антонівка (Київська обл.)", area="Київська")
+        NPCity.objects.create(ref="kyiv", name="Київ", area="Київська")
+        NPCity.objects.create(ref="kyivka", name="Київка", area="Полтавська")
+
+        names = [c.name for c in search_cities("киї")]
+        self.assertEqual(names[0], "Київ")
+        self.assertIn("Київка", names)
+        self.assertLess(names.index("Київ"), names.index("Київка"))
+        self.assertLess(names.index("Київка"), names.index("Андріївка (Київська обл.)"))
+
+    def test_city_search_returns_all_matches_without_cap(self):
+        for i in range(35):
+            NPCity.objects.create(ref=f"c-{i}", name=f"Тестмісто {i:02d}")
+        self.assertEqual(len(list(search_cities("тестмісто"))), 35)
 
 
 class NPWarehouseDisplayTests(TestCase):

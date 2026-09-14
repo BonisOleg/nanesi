@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% block title %}{% blocktrans with number=order.number %}Замовлення № {{ number }}{% endblocktrans %} — {% trans "Кабінет" %} — {{ site_settings.site_name }}{% endblock %}
+{% load i18n shop_extras %}
+{% block title %}{% blocktrans with number=order.number %}Замовлення {{ number }}{% endblocktrans %} — {% trans "Кабінет" %} — {{ site_settings.site_name }}{% endblock %}
 {% block content %}
   <h1 class="page-title">{% trans "Кабінет" %}</h1>
 
@@ -10,7 +10,7 @@
     <div class="cabinet-content">
       <div class="card cabinet-section">
         <div class="order-card__head">
-          <h2>{% blocktrans with number=order.number %}Замовлення № {{ number }}{% endblocktrans %}</h2>
+          <h2>{% blocktrans with number=order.number %}Замовлення {{ number }}{% endblocktrans %}</h2>
           <span class="order-status order-status--{{ order.status }}">{{ order.get_status_display }}</span>
         </div>
         <p class="order-detail__meta">
@@ -24,12 +24,12 @@
           <div class="summary-row summary-row--line">
             <span class="summary-row__name">{{ item.product_name }}</span>
             <span class="summary-row__qty">×&nbsp;{{ item.qty }}</span>
-            <span class="summary-row__price">{{ item.line_total }}&nbsp;грн</span>
+            <span class="summary-row__price">{{ item.line_total|uah }}</span>
           </div>
         {% endfor %}
 
         <div class="summary-row summary-row--total">
-          <span>{% trans "Разом" %}</span><span>{{ order.total }}&nbsp;грн</span>
+          <span>{% trans "Разом" %}</span><span>{{ order.total|uah }}</span>
         </div>
 
         <div class="order-detail__actions">

@@ -10,6 +10,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from src.catalog.templatetags.shop_extras import format_money
 from src.core.models import TimeStampedModel
 
 _MONEY_QUANT = Decimal("0.01")
@@ -117,7 +118,9 @@ class PromoCode(TimeStampedModel):
         if self.max_uses is not None and self.used_count >= self.max_uses:
             return False, _("Промокод вичерпано")
         if subtotal is not None and self.min_order_amount and subtotal < self.min_order_amount:
-            return False, _("Мінімальна сума замовлення для промокоду — %(amount)s\xa0грн") % {"amount": self.min_order_amount}
+            return False, _("Мінімальна сума замовлення для промокоду — %(amount)s") % {
+                "amount": format_money(self.min_order_amount),
+            }
         return True, ""
 
     def calculate_discount(self, subtotal: Decimal) -> Decimal:

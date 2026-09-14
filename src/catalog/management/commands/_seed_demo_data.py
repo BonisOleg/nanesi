@@ -25,12 +25,12 @@ STATIC_PAGES = [
         "slug": "obmin-ta-povernennya",
         "title": "Обмін та повернення",
         "body": (
-            "<p>Ви можете обміняти або повернути товар належної якості протягом "
-            "14 днів з моменту отримання замовлення.</p>"
+            "<p>Обмін та повернення товарів здійснюються згідно із чинним "
+            "законодавством України.</p>"
             "<p>Товар має бути в оригінальній упаковці, без слідів використання, "
             "зі збереженими пломбами та ярликами (якщо передбачені).</p>"
             "<p>Для оформлення обміну чи повернення зверніться до служби підтримки "
-            "із номером замовлення. Умови можуть уточнюватися Замовником в адмінці.</p>"
+            "із номером замовлення. Детальні умови уточнюються Замовником в адмінці.</p>"
         ),
     },
     {
@@ -335,6 +335,14 @@ SEO_LANDING = {
     "body": "<p>Тестова SEO-посадкова для перевірки sitemap і catch-all URL.</p>",
     "is_indexed": True,
     "is_active": True,
+    "title_ru": "K-Beauty уход",
+    "meta_title_ru": "K-Beauty уход — NANESI",
+    "meta_description_ru": "Подборка корейского ухода: сыворотки, SPF, кремы.",
+    "body_ru": "<p>Тестовая SEO-посадочная для проверки sitemap и catch-all URL.</p>",
+    "title_en": "K-Beauty care",
+    "meta_title_en": "K-Beauty care — NANESI",
+    "meta_description_en": "A selection of Korean skincare: serums, SPF, creams.",
+    "body_en": "<p>Demo SEO landing page for sitemap and catch-all URL checks.</p>",
 }
 
 TRUST_BADGES = [
@@ -352,20 +360,20 @@ TRUST_BADGES = [
     },
     {
         "icon_label": "award",
-        "title": "Офіційні постачальники",
-        "text": "напряму з Кореї",
+        "title": "Перевірені постачальники",
+        "text": "оригінальна продукція",
         "sort_order": 3,
     },
     {
         "icon_label": "refresh",
-        "title": "14 днів на повернення",
-        "text": "та обмін",
+        "title": "Обмін та повернення",
+        "text": "згідно із законодавством",
         "sort_order": 4,
     },
     {
         "icon_label": "headset",
-        "title": "Підтримка 24/7",
-        "text": "ми завжди поруч",
+        "title": "Підтримка щодня",
+        "text": "Пн–Нд 10:00–20:00",
         "sort_order": 5,
     },
 ]
@@ -425,5 +433,20 @@ HERO_BANNERS_STOCK = [
         ),
         "button_text_en": "View sale",
         "eyebrow_en": "This month’s deals",
+    },
+]
+
+BLOG_POSTS = [
+    {
+        "slug": "blog-1",
+        "title": "Блог 1",
+        "body": "<p>Демо-стаття для перевірки блогу на вітрині.</p>",
+        "published_at": "2026-09-02T14:17:15+00:00",
+    },
+    {
+        "slug": "blog-2",
+        "title": "Блог-2",
+        "body": "<p>Друга демо-стаття блогу NANESI.</p>",
+        "published_at": "2026-09-02T14:17:56+00:00",
     },
 ]

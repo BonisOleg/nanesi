@@ -3,9 +3,11 @@ from types import SimpleNamespace
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Prefetch
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.translation import gettext as _
-from django.views.decorators.http import require_POST
+from django.utils.translation import get_language, gettext as _
+from src.core.views_i18n import localize_path
+from django.views.decorators.http import require_GET, require_POST
 
 from src.catalog import selectors
 from src.catalog.forms import ReviewForm
@@ -47,7 +49,12 @@ def _paginate_reviews(request, product: Product) -> dict:
 def _hero_banners_for_home() -> list:
     """Активні HeroBanner; якщо порожньо — один слайд з SiteSettings.hero_*."""
     banners = list(HeroBanner.objects.filter(is_active=True).order_by("sort_order", "pk"))
+    lang = (get_language() or "uk").split("-")[0]
     if banners:
+        for banner in banners:
+            url = (banner.button_url or "").strip()
+            if url.startswith("/") and not url.startswith("//"):
+                banner.button_url = localize_path(url, lang)
         return banners
     site = SiteSettings.load()
     eyebrow = " ".join(p for p in (site.site_name, site.tagline) if p).strip()
@@ -266,3 +273,20 @@ def review_create(request, slug):
         "review_form": form,
     }
     return render(request, "catalog/product_detail.html", context)
+
+
+@require_GET
+def search_suggest(request):
+    """JSON-підказки для інпута пошуку в хедері."""
+    query = request.GET.get("q", "").strip()
+    products = selectors.search_suggest(query)
+    return JsonResponse({
+        "results": [
+            {
+                "name": product.name,
+                "brand": product.brand.name if product.brand_id else "",
+                "url": product.get_absolute_url(),
+            }
+            for product in products
+        ],
+    })

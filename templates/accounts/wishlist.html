@@ -7,12 +7,17 @@
   {% if request.user.is_authenticated %}
     {% include "accounts/partials/_wishlist_grid.html" %}
   {% else %}
-    <div id="guest-wishlist-grid" data-wishlist-guest>
+    <div
+      id="guest-wishlist-grid"
+      data-wishlist-guest
+      data-render-url="{% url 'accounts:wishlist_render' %}"
+      data-error-text="{% trans 'Не вдалося завантажити обране.' %}"
+    >
       <p class="text-muted">{% trans "Завантаження…" %}</p>
     </div>
   {% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/account.js' %}" defer></script>
+<script src="{% static 'js/account.js' %}?v=wishlist-i18n" defer></script>
 {% endblock %}

@@ -1,13 +1,16 @@
-{% load i18n %}
+{% load i18n shop_extras %}
 {% if shipping_progress.threshold %}
-  <div class="shipping-progress{% if shipping_progress.reached %} is-reached{% endif %}">
+  <div class="shipping-progress{% if shipping_progress.reached %} is-reached{% endif %}"
+       data-shipping-progress
+       data-covers-np="{% if shipping_progress.covers_np %}1{% else %}0{% endif %}"
+       data-covers-ukrposhta="{% if shipping_progress.covers_ukrposhta %}1{% else %}0{% endif %}">
     {% if shipping_progress.reached %}
       <p class="shipping-progress__note shipping-progress__note--done" aria-live="polite">
         {% trans "Вітаємо! Вам доступна безкоштовна доставка" %}
       </p>
     {% else %}
       <p class="shipping-progress__note" aria-live="polite">
-        {% blocktrans with remaining=shipping_progress.remaining_display %}До безкоштовної доставки залишилось <strong>{{ remaining }}&nbsp;грн</strong>{% endblocktrans %}
+        {% blocktrans with remaining=shipping_progress.remaining|uah %}До безкоштовної доставки залишилось <strong>{{ remaining }}</strong>{% endblocktrans %}
       </p>
     {% endif %}
     <div class="shipping-progress__track"

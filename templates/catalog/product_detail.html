@@ -3,7 +3,7 @@
 {% block main_class %}container product-page{% endblock %}
 {% block title %}{{ product.name }} — {{ site_settings.site_name }}{% endblock %}
 {% block meta_description %}{% if product.short_description %}<meta name="description" content="{{ product.short_description|striptags|truncatewords:30 }}">{% endif %}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=richtext">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=review-file">{% endblock %}
 
 {% block content %}
   {% include "partials/_dl_events.html" %}
@@ -72,13 +72,15 @@
               <a class="variant-option{% if variant.has_swatch %} variant-option--shade{% endif %}{% if variant.pk == current_variant.pk %} is-active{% endif %}{% if not variant.in_stock %} is-disabled{% endif %}"
                  href="?variant={{ variant.pk }}">
                 {% include "catalog/partials/_shade_swatch.html" with variant=variant %}
-                <span>{{ variant.shade|default:variant.volume|default:variant.sku }}</span>
+                <span>{% if variant.shade %}{{ variant.shade }}{% elif variant.volume %}{{ variant.volume|localize_volume }}{% else %}{{ variant.sku }}{% endif %}</span>
               </a>
             {% endfor %}
           </div>
         </div>
       {% elif current_variant.volume %}
-        <p class="product-info__volume">{% blocktrans with volume=current_variant.volume %}Об'єм: {{ volume }}{% endblocktrans %}</p>
+        {% with vol=current_variant.volume|localize_volume %}
+        <p class="product-info__volume">{% blocktrans with volume=vol %}Об'єм: {{ volume }}{% endblocktrans %}</p>
+        {% endwith %}
       {% endif %}
 
       {% if current_variant %}
@@ -205,8 +207,19 @@
       </div>
 
       <div class="field">
-        <label for="{{ review_form.photos.id_for_label }}">{{ review_form.photos.label }}</label>
-        {{ review_form.photos }}
+        <label id="{{ review_form.photos.id_for_label }}-label">{{ review_form.photos.label }}</label>
+        <div class="review-file" data-review-file>
+          <label class="review-file__btn" for="{{ review_form.photos.id_for_label }}">
+            {% trans "Вибрати файли" %}
+          </label>
+          {{ review_form.photos }}
+          <span
+            class="review-file__name"
+            data-review-file-name
+            data-empty="{% trans 'Файл не вибрано' %}"
+            aria-live="polite"
+          >{% trans "Файл не вибрано" %}</span>
+        </div>
         {% for error in review_form.photos.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
 
@@ -262,5 +275,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/product.js' %}" defer></script>
+<script src="{% static 'js/product.js' %}?v=review-file" defer></script>
 {% endblock %}

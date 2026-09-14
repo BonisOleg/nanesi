@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% load static i18n %}
+{% load static i18n shop_extras %}
 {% block main_class %}container{% endblock %}
 {% block title %}
   {% if category %}{{ category.name }} — {% elif brand %}{{ brand.name }} — {% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %} — {% endif %}{% trans "Каталог" %} — {{ site_settings.site_name }}
 {% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=richtext">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=filters-hide-desk">{% endblock %}
 
 {% block content %}
   <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
@@ -103,7 +103,7 @@
           {% endif %}
 
           <div class="filter-group">
-            <h4>{% trans "Ціна, грн" %}</h4>
+            <h4>{% trans "Ціна" %}, {% currency_label_tag %}</h4>
             <div class="filter-price">
               <label class="sr-only" for="price-min">{% trans "Від" %}</label>
               <input id="price-min" type="number" name="price_min" min="0" step="1" inputmode="decimal" placeholder="{% trans 'від' %}" value="{{ price_min }}">
@@ -137,14 +137,53 @@
             aria-controls="catalog-filters-body"
             aria-expanded="false"
           >{% trans "Фільтри" %}</button>
-          <label>
-            <span class="sr-only">{% trans "Сортування" %}</span>
-            <select name="sort" form="catalog-filter-form" data-catalog-sort>
+          <div class="catalog-sort" data-catalog-sort>
+            <span class="sr-only" id="catalog-sort-label">{% trans "Сортування" %}</span>
+            <button
+              type="button"
+              class="catalog-sort__trigger"
+              data-catalog-sort-trigger
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="catalog-sort-list"
+              aria-labelledby="catalog-sort-label catalog-sort-current"
+            >
+              <span id="catalog-sort-current" data-catalog-sort-current>
+                {% for value, label in sort_options %}{% if value == sort %}{{ label }}{% endif %}{% endfor %}
+              </span>
+              <span class="catalog-sort__chevron" aria-hidden="true"></span>
+            </button>
+            <ul
+              class="catalog-sort__menu"
+              id="catalog-sort-list"
+              role="listbox"
+              hidden
+              data-catalog-sort-menu
+              aria-labelledby="catalog-sort-label"
+            >
+              {% for value, label in sort_options %}
+                <li
+                  role="option"
+                  class="catalog-sort__option"
+                  tabindex="-1"
+                  data-value="{{ value }}"
+                  aria-selected="{% if value == sort %}true{% else %}false{% endif %}"
+                >{{ label }}</li>
+              {% endfor %}
+            </ul>
+            <select
+              class="catalog-sort__native"
+              name="sort"
+              form="catalog-filter-form"
+              tabindex="-1"
+              aria-hidden="true"
+              data-catalog-sort-native
+            >
               {% for value, label in sort_options %}
                 <option value="{{ value }}" {% if value == sort %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -159,5 +198,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/catalog.js' %}?v=filters-actions" defer></script>
+<script src="{% static 'js/catalog.js' %}?v=sort-custom" defer></script>
 {% endblock %}

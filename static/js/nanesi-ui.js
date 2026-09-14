@@ -217,11 +217,145 @@
     });
   }
 
+  function initTopbarScroll() {
+    var chrome = document.querySelector("[data-site-chrome]");
+    var topbar = chrome && chrome.querySelector(".topbar");
+    if (!chrome || !topbar || chrome.dataset.topbarBound === "1") return;
+    chrome.dataset.topbarBound = "1";
+
+    /* Hide потребує більшого «наміру» вниз; show — вгору або майже top.
+       Lock після toggle глушить зворотний зв’язок від зміни висоти sticky. */
+    var HIDE_AFTER = 48;
+    var SHOW_AFTER = 72;
+    var TOP = 16;
+    /* трохи довше за CSS transition (0.28s), щоб layout-стрибок не гойдав стан */
+    var LOCK_MS = 320;
+    var lastY = window.pageYOffset || 0;
+    var acc = 0;
+    var hidden = false;
+    var ticking = false;
+    var lockedUntil = 0;
+
+    function setHidden(next) {
+      if (next === hidden) return;
+      hidden = next;
+      chrome.classList.toggle("is-topbar-hidden", hidden);
+      topbar.setAttribute("aria-hidden", hidden ? "true" : "false");
+      if (hidden) topbar.setAttribute("inert", "");
+      else topbar.removeAttribute("inert");
+      lockedUntil = performance.now() + LOCK_MS;
+      acc = 0;
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          lastY = yPos();
+          acc = 0;
+        });
+      });
+    }
+
+    function yPos() {
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      return y < 0 ? 0 : y;
+    }
+
+    function update() {
+      ticking = false;
+      var y = yPos();
+      var now = performance.now();
+      if (now < lockedUntil) {
+        lastY = y;
+        acc = 0;
+        return;
+      }
+
+      var delta = y - lastY;
+      lastY = y;
+
+      if (y <= TOP) {
+        acc = 0;
+        setHidden(false);
+        return;
+      }
+
+      /* Ігноруємо субпіксельний шум трекпада / iOS */
+      if (delta > -0.5 && delta < 0.5) return;
+
+      if ((acc > 0 && delta < 0) || (acc < 0 && delta > 0)) acc = 0;
+      acc += delta;
+
+      if (!hidden && acc >= HIDE_AFTER) {
+        setHidden(true);
+      } else if (hidden && acc <= -SHOW_AFTER) {
+        setHidden(false);
+      }
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  function initHeaderSearch() {
+    var header = document.querySelector("[data-site-header]");
+    var toggle = document.querySelector("[data-search-toggle]");
+    var form = document.querySelector("[data-header-search]");
+    var closeBtn = form && form.querySelector("[data-search-close]");
+    var input = form && form.querySelector("input[type='search']");
+    if (!header || !toggle || !form || toggle.dataset.searchBound === "1") return;
+    toggle.dataset.searchBound = "1";
+
+    var desktop = window.matchMedia("(min-width: 900px)");
+
+    function isOpen() {
+      return header.classList.contains("is-search-open");
+    }
+
+    function closeSearch() {
+      if (!isOpen()) return;
+      header.classList.remove("is-search-open");
+      toggle.setAttribute("aria-expanded", "false");
+      if (form) form.dispatchEvent(new Event("close-suggest"));
+    }
+
+    function openSearch() {
+      if (desktop.matches) return;
+      header.classList.add("is-search-open");
+      toggle.setAttribute("aria-expanded", "true");
+      window.setTimeout(function () {
+        if (input) input.focus();
+      }, 50);
+    }
+
+    toggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (isOpen()) closeSearch();
+      else openSearch();
+    });
+
+    if (closeBtn) closeBtn.addEventListener("click", closeSearch);
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeSearch();
+    });
+
+    if (desktop.addEventListener) {
+      desktop.addEventListener("change", function () {
+        if (desktop.matches) closeSearch();
+      });
+    }
+  }
+
   function boot() {
     initMobileMenu();
     initCatalogMenu();
     initWishlist();
     cleanupAfterLogin();
+    initTopbarScroll();
+    initHeaderSearch();
   }
 
   if (document.readyState === "loading") {

@@ -16,4 +16,5 @@ urlpatterns = [
     path("tovar/<str:slug>/", views.product_detail, name="product_detail"),
     path("tovar/<str:slug>/vidguk/", views.review_create, name="review_create"),
     path("poshuk/", views.catalog_list, name="search"),
+    path("poshuk/pidkazky/", views.search_suggest, name="search_suggest"),
 ]

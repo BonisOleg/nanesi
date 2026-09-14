@@ -134,7 +134,7 @@ def create_ttn(order_id: int):
                 "Weight": "1",
                 "SeatsAmount": "1",
                 "ServiceType": "WarehouseWarehouse",
-                "Description": f"Замовлення №{order.number}",
+                "Description": f"Замовлення {order.number}",
                 "Cost": str(order.total),
                 "CitySender": sender["NP_SENDER_CITY_REF"],
                 "Sender": sender["NP_SENDER_REF"],

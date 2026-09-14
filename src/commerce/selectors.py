@@ -123,20 +123,24 @@ class FreeShippingProgress:
     reached: bool
     percent: int
     remaining_display: str
+    covers_np: bool = False
+    covers_ukrposhta: bool = False
 
 
 def free_shipping_progress(amount: Decimal) -> FreeShippingProgress:
-    """Прогрес до порогу з SiteSettings.free_shipping_threshold.
+    """Прогрес до порогу з SiteSettings.
 
     amount — сума товарів ДО промокоду (знижка не відкочує безкоштовну доставку).
     """
-    threshold = SiteSettings.load().free_shipping_threshold
+    site = SiteSettings.load()
     empty = FreeShippingProgress(
         threshold=None, remaining=Decimal("0"), reached=False,
         percent=0, remaining_display="0",
+        covers_np=False, covers_ukrposhta=False,
     )
-    if not threshold or threshold <= 0:
+    if not site.free_shipping_is_configured():
         return empty
+    threshold = site.free_shipping_threshold
     remaining = max(Decimal("0"), threshold - amount)
     reached = amount >= threshold
     if reached:
@@ -150,6 +154,8 @@ def free_shipping_progress(amount: Decimal) -> FreeShippingProgress:
         reached=reached,
         percent=percent,
         remaining_display=format_uah_amount(remaining),
+        covers_np=site.free_shipping_np,
+        covers_ukrposhta=site.free_shipping_ukrposhta,
     )
 
 
