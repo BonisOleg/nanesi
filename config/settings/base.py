@@ -157,13 +157,44 @@ LIQPAY_SERVER_URL = config("LIQPAY_SERVER_URL", default="")
 LIQPAY_SANDBOX = config("LIQPAY_SANDBOX", default=True, cast=bool)
 
 # --- TinyMCE (admin_skill канон) ---
+# Enter → <br> (linebreak), щоб переноси були видимі на вітрині без CSS white-space.
+# setup: під час завантаження контенту «голі» \n → <br> (paste / старі дані).
 TINYMCE_DEFAULT_CONFIG = {
     "height": 400,
     "menubar": False,
-    "plugins": "link lists image code",
+    "plugins": "link lists image code paste",
     "toolbar": "undo redo | bold italic underline | bullist numlist | link image | code",
     "content_css": False,
     "skin": "oxide",
+    "forced_root_block": "p",
+    "newline_behavior": "linebreak",
+    "remove_trailing_brs": False,
+    "paste_preprocess": (
+        "function(plugin, args){"
+        "if(!args.content)return;"
+        "var c=args.content.replace(/\\r\\n/g,'\\n').replace(/\\r/g,'\\n');"
+        "if(c.indexOf('<')===-1){args.content=c.replace(/\\n/g,'<br>');}"
+        "}"
+    ),
+    "setup": (
+        "function(editor){"
+        "editor.on('BeforeSetContent',function(e){"
+        "if(!e.content||e.content.indexOf('\\n')===-1)return;"
+        "var c=e.content.replace(/\\r\\n/g,'\\n').replace(/\\r/g,'\\n');"
+        "if(!/<(?:p|br|div|li|h[1-6]|ul|ol|table)\\b/i.test(c)){"
+        "e.content=c.trim().split(/\\n{2,}/).map(function(p){"
+        "return '<p>'+p.replace(/\\n/g,'<br>')+'</p>';"
+        "}).join('');"
+        "return;"
+        "}"
+        "e.content=c.split(/(<[^>]+>)/).map(function(part){"
+        "if(!part||part.charAt(0)==='<')return part;"
+        "if(!part.trim())return part.replace(/\\n/g,'');"
+        "return part.replace(/\\n/g,'<br>');"
+        "}).join('');"
+        "});"
+        "}"
+    ),
 }
 
 # --- CSP (django-csp 4.0): адмінка (Unfold/Alpine.js) виключена — потребує unsafe-eval ---
