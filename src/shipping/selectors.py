@@ -1,5 +1,7 @@
 """Тільки читання — пошук міст/відділень ЛИШЕ з локальної БД (novaposhta_skill,
 Фаза 1: «Пошук відділень на checkout — лише з локальної БД», без live-запиту)."""
+from functools import lru_cache
+
 from django.db import connection
 from django.db.models import Case, IntegerField, Value, When
 from django.db.models.expressions import RawSQL
@@ -7,14 +9,35 @@ from django.db.models.functions import Length, Lower
 
 from src.shipping.models import NPCity, NPWarehouse
 
-# ctype=C на Postgres: звичайний LOWER/ILIKE не згортає кирилицю («киї» ≠ «Киї»).
-_LOWER_UTF8_PG = 'LOWER((%s)::text COLLATE "C.UTF-8")'
+# ctype=C: звичайний LOWER/ILIKE не згортає кирилицю («киї» ≠ «Киї»).
+# Alpine Postgres має ICU (und-x-icu), glibc-образи — часто C.UTF-8; hardcode одного ламає інший.
+_PG_LOWER_COLLATIONS = ("und-x-icu", "uk-x-icu", "C.UTF-8")
+
+
+@lru_cache(maxsize=1)
+def _pg_cyrillic_lower_collation() -> str | None:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT collname
+            FROM pg_collation
+            WHERE collname = ANY(%s)
+            ORDER BY array_position(%s::text[], collname)
+            LIMIT 1
+            """,
+            [list(_PG_LOWER_COLLATIONS), list(_PG_LOWER_COLLATIONS)],
+        )
+        row = cursor.fetchone()
+    return row[0] if row else None
 
 
 def _lower_ci(field: str):
     """Case-insensitive lower для кирилиці (Postgres ctype=C + SQLite у тестах)."""
     if connection.vendor == "postgresql":
-        return RawSQL(_LOWER_UTF8_PG % field, [])
+        coll = _pg_cyrillic_lower_collation()
+        if coll:
+            return RawSQL(f'LOWER(({field})::text COLLATE "{coll}")', [])
+        return Lower(field)
     return Lower(field)
 
 
