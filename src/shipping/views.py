@@ -24,12 +24,15 @@ def np_cities(request):
 
 @require_GET
 def np_warehouses(request):
-    city_id = request.GET.get("city")
+    city_id = request.GET.get("city", "").strip()
+    city_ref = request.GET.get("city_ref", "").strip()
     query = request.GET.get("q", "").strip()
-    if not city_id:
-        return JsonResponse({"configured": False, "results": []})
 
-    city = NPCity.objects.filter(pk=city_id).first()
+    city = None
+    if city_id.isdigit():
+        city = NPCity.objects.filter(pk=int(city_id)).first()
+    elif city_ref:
+        city = NPCity.objects.filter(ref=city_ref).first()
     if city is None:
         return JsonResponse({"configured": False, "results": []})
 
@@ -42,6 +45,7 @@ def np_warehouses(request):
     warehouses = search_warehouses(city.pk, query) if configured else []
     return JsonResponse({
         "configured": configured,
+        "city_id": city.pk,
         "results": [
             {"id": w.pk, "ref": w.ref, "name": w.display_name(), "kind": w.kind}
             for w in warehouses

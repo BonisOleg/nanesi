@@ -58,7 +58,18 @@ document.addEventListener('DOMContentLoaded', function () {
     clearWarehouseSuggestions();
   }
 
-  function fetchWarehouses(cityId, query, opts) {
+  function warehouseCityParam() {
+    if (selectedCityId) {
+      return 'city=' + encodeURIComponent(selectedCityId);
+    }
+    var ref = cityRefInput && cityRefInput.value ? cityRefInput.value.trim() : '';
+    if (ref) {
+      return 'city_ref=' + encodeURIComponent(ref);
+    }
+    return '';
+  }
+
+  function fetchWarehouses(query, opts) {
     opts = opts || {};
     var show = opts.show === true;
     if (!warehouseSuggestions) return;
@@ -66,17 +77,18 @@ document.addEventListener('DOMContentLoaded', function () {
       clearWarehouseSuggestions();
       return;
     }
+    var cityParam = warehouseCityParam();
+    if (!cityParam) {
+      clearWarehouseSuggestions();
+      return;
+    }
     if (show) warehouseListOpen = true;
     var seq = ++warehouseFetchSeq;
-    var expectedCity = cityId;
-    fetch('/shipping/np/warehouses/?city=' + encodeURIComponent(cityId) + '&q=' + encodeURIComponent(query || ''))
+    fetch('/shipping/np/warehouses/?' + cityParam + '&q=' + encodeURIComponent(query || ''))
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (seq !== warehouseFetchSeq) return;
-        if (expectedCity !== selectedCityId || !warehouseListOpen) {
-          clearWarehouseSuggestions();
-          return;
-        }
+        if (seq !== warehouseFetchSeq || !warehouseListOpen) return;
+        if (data.city_id) selectedCityId = data.city_id;
         warehouseSuggestions.innerHTML = '';
         if (!data.configured || !data.results.length) return;
         var ul = document.createElement('ul');
@@ -146,21 +158,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (warehouseInput) {
     function openWarehouseSuggestions() {
-      if (!selectedCityId) {
-        clearWarehouseSuggestions();
-        return;
-      }
-      fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
+      fetchWarehouses(warehouseInput.value.trim(), { show: true });
     }
     warehouseInput.addEventListener('focus', openWarehouseSuggestions);
     warehouseInput.addEventListener('click', openWarehouseSuggestions);
     warehouseInput.addEventListener('input', function () {
       warehouseRefInput.value = '';
-      if (selectedCityId) {
-        fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
-      } else {
-        clearWarehouseSuggestions();
-      }
+      fetchWarehouses(warehouseInput.value.trim(), { show: true });
     });
     warehouseInput.addEventListener('blur', function () {
       setTimeout(function () {

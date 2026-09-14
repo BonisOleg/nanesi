@@ -59,3 +59,29 @@ class NPWarehouseDisplayTests(TestCase):
         results = list(search_warehouses(self.city.pk))
         refs = [row.ref for row in results]
         self.assertEqual(refs, ["b-1", "p-3"])
+
+    def test_numeric_query_ranks_exact_number_first(self):
+        NPWarehouse.objects.create(
+            ref="b-112", city=self.city, number="112",
+            description="Відділення №112 (до 10 кг)", category="Branch",
+        )
+        NPWarehouse.objects.create(
+            ref="b-12", city=self.city, number="12",
+            description="Відділення №12: вул. Родини Бунге, 8", category="Branch",
+        )
+        NPWarehouse.objects.create(
+            ref="b-10212", city=self.city, number="10212",
+            description="Пункт №10212", category="Branch",
+        )
+        refs = [row.ref for row in search_warehouses(self.city.pk, "12")]
+        self.assertEqual(refs[0], "b-12")
+        self.assertLess(refs.index("b-12"), refs.index("b-112"))
+
+    def test_warehouse_suggestions_are_capped(self):
+        for i in range(55):
+            NPWarehouse.objects.create(
+                ref=f"b-{i}", city=self.city, number=str(i),
+                description=f"Відділення №{i}", category="Branch",
+            )
+        self.assertEqual(len(list(search_warehouses(self.city.pk))), 40)
+        self.assertEqual(len(list(search_warehouses(self.city.pk, limit=None))), 55)

@@ -3,11 +3,14 @@
 from functools import lru_cache
 
 from django.db import connection
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Length, Lower
 
 from src.shipping.models import NPCity, NPWarehouse
+
+# Checkout suggestions: без ліміту Київ віддає тисячі DOM-вузлів і «вбиває» мобільний Safari.
+SUGGESTIONS_LIMIT = 40
 
 # ctype=C: звичайний LOWER/ILIKE не згортає кирилицю («киї» ≠ «Киї»).
 # Alpine Postgres має ICU (und-x-icu), glibc-образи — часто C.UTF-8; hardcode одного ламає інший.
@@ -63,24 +66,43 @@ def search_cities(query: str):
     return qs.order_by("_rank", Length("name"), "name")
 
 
-def search_warehouses(city_id: int, query: str = ""):
+def search_warehouses(city_id: int, query: str = "", *, limit: int = SUGGESTIONS_LIMIT):
     """Відділення і поштомати для checkout; вантажні термінали (Cargo) не показуємо.
 
-    Без limit — усі точки міста (UI вже зі скролом у .suggestions-list).
+    Ліміт обовʼязковий для UI. Цифровий запит («12», «№12») — спочатку точний number.
     """
     qs = NPWarehouse.objects.filter(is_active=True, city_id=city_id).exclude(
         category__iexact=NPWarehouse.CATEGORY_CARGO,
-    )
-    needle = (query or "").casefold().strip()
-    if needle:
-        qs = qs.annotate(desc_lower=_lower_ci("description")).filter(desc_lower__contains=needle)
-    return qs.annotate(
+    ).annotate(
         _kind=Case(
             When(category__iexact=NPWarehouse.CATEGORY_POSTOMAT, then=Value(1)),
             default=Value(0),
             output_field=IntegerField(),
         ),
-    ).order_by("_kind", "number", "description")
+    )
+
+    needle = (query or "").strip().lstrip("№#").casefold().strip()
+    if needle.isdigit():
+        qs = qs.filter(
+            Q(number=needle) | Q(number__startswith=needle) | Q(description__icontains=needle),
+        ).annotate(
+            _rank=Case(
+                When(number=needle, then=Value(0)),
+                When(number__startswith=needle, then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField(),
+            ),
+        ).order_by("_rank", "_kind", "number", "description")
+    elif needle:
+        qs = qs.annotate(desc_lower=_lower_ci("description")).filter(
+            desc_lower__contains=needle,
+        ).order_by("_kind", "number", "description")
+    else:
+        qs = qs.order_by("_kind", "number", "description")
+
+    if limit is not None and limit >= 0:
+        return qs[:limit]
+    return qs
 
 
 def is_reference_data_available() -> bool:

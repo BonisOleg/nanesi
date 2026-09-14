@@ -59,6 +59,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   var selectedCityId = null;
+  var cityInput = document.getElementById('id_np_city_name');
+  var cityRefInput = document.getElementById('id_np_city_ref');
   var warehouseInput = document.getElementById('id_np_warehouse_name');
   var warehouseRefInput = document.getElementById('id_np_warehouse_ref');
   var warehouseList = document.getElementById('np-warehouse-suggestions');
@@ -73,24 +75,36 @@ document.addEventListener('DOMContentLoaded', function () {
     clearList(warehouseList);
   }
 
-  function fetchWarehouses(cityId, query, opts) {
+  function warehouseCityParam() {
+    if (selectedCityId) {
+      return 'city=' + encodeURIComponent(selectedCityId);
+    }
+    var ref = cityRefInput && cityRefInput.value ? cityRefInput.value.trim() : '';
+    if (ref) {
+      return 'city_ref=' + encodeURIComponent(ref);
+    }
+    return '';
+  }
+
+  function fetchWarehouses(query, opts) {
     opts = opts || {};
     var show = opts.show === true;
     if (!show && !warehouseListOpen) {
       clearList(warehouseList);
       return;
     }
+    var cityParam = warehouseCityParam();
+    if (!cityParam) {
+      clearList(warehouseList);
+      return;
+    }
     if (show) warehouseListOpen = true;
     var seq = ++warehouseFetchSeq;
-    var expectedCity = cityId;
-    fetch('/shipping/np/warehouses/?city=' + encodeURIComponent(cityId) + '&q=' + encodeURIComponent(query || ''))
+    fetch('/shipping/np/warehouses/?' + cityParam + '&q=' + encodeURIComponent(query || ''))
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (seq !== warehouseFetchSeq) return;
-        if (expectedCity !== selectedCityId || !warehouseListOpen) {
-          clearList(warehouseList);
-          return;
-        }
+        if (seq !== warehouseFetchSeq || !warehouseListOpen) return;
+        if (data.city_id) selectedCityId = data.city_id;
         if (!data.configured || !data.results.length) {
           clearList(warehouseList);
           return;
@@ -107,23 +121,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function setupCitySearch() {
-    var input = document.getElementById('id_np_city_name');
-    var refInput = document.getElementById('id_np_city_ref');
     var list = document.getElementById('np-city-suggestions');
-    if (!input) return;
+    if (!cityInput) return;
     var timer = null;
-    input.setAttribute('autocomplete', 'off');
+    cityInput.setAttribute('autocomplete', 'off');
 
-    input.addEventListener('focus', function () {
+    cityInput.addEventListener('focus', function () {
       warehouseListOpen = false;
       clearList(warehouseList);
     });
 
-    input.addEventListener('input', function () {
-      refInput.value = '';
+    cityInput.addEventListener('input', function () {
+      if (cityRefInput) cityRefInput.value = '';
       clearWarehouseSelection();
       clearTimeout(timer);
-      var query = input.value.trim();
+      var query = cityInput.value.trim();
       timer = setTimeout(function () {
         if (!query) {
           clearList(list);
@@ -137,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function () {
               return;
             }
             fillSuggestions(list, data.results, function (row) {
-              input.value = row.name;
-              refInput.value = row.ref;
+              cityInput.value = row.name;
+              if (cityRefInput) cityRefInput.value = row.ref;
               document.dispatchEvent(new CustomEvent('np-city-selected', { detail: row }));
             });
           })
@@ -154,34 +166,24 @@ document.addEventListener('DOMContentLoaded', function () {
     if (warehouseInput) warehouseInput.value = '';
     if (warehouseRefInput) warehouseRefInput.value = '';
     clearList(warehouseList);
-    // Список відділень — лише після фокусу/кліку в полі, не одразу після міста.
   });
 
   if (warehouseInput) {
     warehouseInput.setAttribute('autocomplete', 'off');
 
     function openWarehouseSuggestions() {
-      if (!selectedCityId) {
-        clearList(warehouseList);
-        return;
-      }
-      fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
+      fetchWarehouses(warehouseInput.value.trim(), { show: true });
     }
 
     warehouseInput.addEventListener('focus', openWarehouseSuggestions);
     warehouseInput.addEventListener('click', openWarehouseSuggestions);
 
     warehouseInput.addEventListener('input', function () {
-      warehouseRefInput.value = '';
-      if (selectedCityId) {
-        fetchWarehouses(selectedCityId, warehouseInput.value.trim(), { show: true });
-      } else {
-        clearList(warehouseList);
-      }
+      if (warehouseRefInput) warehouseRefInput.value = '';
+      fetchWarehouses(warehouseInput.value.trim(), { show: true });
     });
 
     warehouseInput.addEventListener('blur', function () {
-      // Даємо час на click по пункті списку.
       setTimeout(function () {
         if (document.activeElement !== warehouseInput) {
           warehouseListOpen = false;
