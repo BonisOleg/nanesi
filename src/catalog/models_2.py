@@ -8,6 +8,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from src.core.models import TimeStampedModel
+from src.core.utils.images import validate_image
 
 
 class Attribute(models.Model):
@@ -90,6 +91,7 @@ class Collection(TimeStampedModel):
         upload_to="catalog/collections/",
         null=True,
         blank=True,
+        validators=[validate_image],
     )
     products = models.ManyToManyField("catalog.Product", verbose_name="Товари", blank=True, related_name="collections")
     is_active = models.BooleanField("Активна", default=True)
@@ -141,7 +143,11 @@ class Review(TimeStampedModel):
 
 class ReviewImage(models.Model):
     review = models.ForeignKey(Review, verbose_name="Відгук", on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField("Фото", upload_to="catalog/reviews/")
+    image = models.ImageField(
+        "Фото",
+        upload_to="catalog/reviews/",
+        validators=[validate_image],
+    )
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:

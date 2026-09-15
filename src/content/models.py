@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from src.core.models import SeoFieldsMixin, SingletonModel, TimeStampedModel
+from src.core.utils.images import validate_image
 
 _hex_color_validator = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
@@ -40,7 +41,13 @@ class SiteSettings(SingletonModel):
         default="Мультибрендовий магазин догляду та макіяжу. Підібрані формули, "
         "прозорі склади та зручна доставка по Україні.",
     )
-    hero_image = models.ImageField("Зображення банера", upload_to="content/", null=True, blank=True)
+    hero_image = models.ImageField(
+        "Зображення банера",
+        upload_to="content/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+    )
     topbar_promo_text = models.CharField(
         "Текст верхньої смужки", max_length=255, blank=True,
         default="Безкоштовна доставка від 1500\xa0грн",
@@ -254,7 +261,13 @@ class BlogPost(TimeStampedModel, SeoFieldsMixin):
         help_text="Якщо порожнє — на сторінці показується Заголовок.",
     )
     slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
-    cover_image = models.ImageField("Обкладинка", upload_to="content/blog/", null=True, blank=True)
+    cover_image = models.ImageField(
+        "Обкладинка",
+        upload_to="content/blog/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+    )
     body = models.TextField("Текст статті", blank=True)
     products = models.ManyToManyField(
         "catalog.Product",
@@ -327,13 +340,18 @@ class HeroBanner(TimeStampedModel):
         help_text="Відносний шлях або повний URL, напр. /katalog/ чи /dobirka/aktsii/",
     )
     image = models.ImageField(
-        "Зображення справа", upload_to="content/hero/", null=True, blank=True,
+        "Зображення справа",
+        upload_to="content/hero/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
     )
     background_image = models.ImageField(
         "Фонове зображення",
         upload_to="content/hero/bg/",
         null=True,
         blank=True,
+        validators=[validate_image],
         help_text="На весь слайд (desktop і mobile). Порожнє — бежевий фон.",
     )
     overlay_color = models.CharField(

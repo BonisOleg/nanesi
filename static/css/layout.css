@@ -677,6 +677,16 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .footer-bottom__meta {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
 }
 
 .footer-bottom__copy {

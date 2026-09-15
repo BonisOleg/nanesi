@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from src.core.models import SeoFieldsMixin, TimeStampedModel
+from src.core.utils.images import validate_image
 
 SHADE_HEX_RE = r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$"
 SHADE_PREVIEW_LIMIT = 5
@@ -22,7 +23,13 @@ class Category(TimeStampedModel, SeoFieldsMixin):
         on_delete=models.CASCADE, related_name="children",
     )
     description = models.TextField("Опис", blank=True)
-    image = models.ImageField("Зображення", upload_to="catalog/categories/", null=True, blank=True)
+    image = models.ImageField(
+        "Зображення",
+        upload_to="catalog/categories/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+    )
     is_active = models.BooleanField("Активна", default=True)
     show_in_header = models.BooleanField(
         "Показувати в шапці",
@@ -203,6 +210,7 @@ class ProductVariant(TimeStampedModel):
         "Фото відтінку (свотч)",
         upload_to="catalog/shades/",
         blank=True,
+        validators=[validate_image],
         help_text="Для перламутру, глітеру, duo-chrome — коли HEX не передає колір.",
     )
     volume = models.CharField("Об'єм / варіант", max_length=100, blank=True)
@@ -275,7 +283,11 @@ class ProductVariant(TimeStampedModel):
 
 class ProductImage(TimeStampedModel):
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField("Зображення", upload_to="catalog/products/")
+    image = models.ImageField(
+        "Зображення",
+        upload_to="catalog/products/",
+        validators=[validate_image],
+    )
     alt_text = models.CharField("Alt-текст", max_length=255, blank=True)
     is_main = models.BooleanField("Головне фото", default=False)
     sort_order = models.PositiveIntegerField("Порядок", default=0)
