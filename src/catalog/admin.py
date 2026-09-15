@@ -110,18 +110,30 @@ class ProductVariantAdmin(ModelAdmin):
     list_select_related = ("product", "product__brand")
     actions = ["apply_recommended_price"]
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        from src.commerce.salesdrive_products import schedule_sync_variant_ids
+
+        if obj.pk:
+            schedule_sync_variant_ids([obj.pk])
+
     @admin.action(description="Розрахувати рекомендовану ціну (за правилом націнки)")
     def apply_recommended_price(self, request, queryset):
         from src.pricing.services import PricingError, apply_markup_to_variant
+        from src.commerce.salesdrive_products import schedule_sync_variant_ids
 
         applied, failed = 0, 0
+        synced_ids: list[int] = []
         for variant in queryset:
             try:
                 apply_markup_to_variant(variant)
                 applied += 1
+                synced_ids.append(variant.pk)
             except PricingError as exc:
                 failed += 1
                 self.message_user(request, f"{variant.sku}: {exc}", level="warning")
+        if synced_ids:
+            schedule_sync_variant_ids(synced_ids)
         self.message_user(request, f"Ціну оновлено: {applied}, пропущено: {failed}")
 
 
@@ -156,17 +168,35 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     @admin.action(description="Розрахувати рекомендовану ціну (за правилом націнки)")
     def apply_recommended_price_to_variants(self, request, queryset):
         from src.pricing.services import PricingError, apply_markup_to_variant
+        from src.commerce.salesdrive_products import schedule_sync_variant_ids
 
         applied, failed = 0, 0
+        synced_ids: list[int] = []
         variants = ProductVariant.objects.filter(product__in=queryset).select_related("product")
         for variant in variants:
             try:
                 apply_markup_to_variant(variant)
                 applied += 1
+                synced_ids.append(variant.pk)
             except PricingError as exc:
                 failed += 1
                 self.message_user(request, f"{variant.sku}: {exc}", level="warning")
+        if synced_ids:
+            schedule_sync_variant_ids(synced_ids)
         self.message_user(request, f"Ціну оновлено: {applied}, пропущено: {failed}")
+
+    def save_formset(self, request, form, formset, change):
+        super().save_formset(request, form, formset, change)
+        if formset.model is ProductVariant:
+            from src.commerce.salesdrive_products import schedule_sync_variant_ids
+
+            ids = []
+            for f in formset.forms:
+                inst = getattr(f, "instance", None)
+                if inst is not None and inst.pk and not f.cleaned_data.get("DELETE"):
+                    ids.append(inst.pk)
+            if ids:
+                schedule_sync_variant_ids(ids)
 
     def get_price_display(self, obj: Product):
         variant = obj.default_variant

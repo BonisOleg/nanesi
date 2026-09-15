@@ -13,6 +13,7 @@ class OrderIntegrationEvent(TimeStampedModel):
     class EventType(models.TextChoices):
         ORDER_CREATED = "order_created", "Замовлення створено"
         STATUS_CHANGED = "status_changed", "Змінено статус"
+        TTN_UPDATED = "ttn_updated", "Оновлено ТТН"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Очікує відправки"

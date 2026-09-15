@@ -156,6 +156,15 @@ def create_ttn(order_id: int):
         order.ttn_number = result.get("IntDocNumber", "")
         order.shipping_error = ""
         order.save(update_fields=["ttn_number", "shipping_error", "updated_at"])
+
+        from src.commerce.integrations import queue_order_event
+        from src.commerce.models import OrderIntegrationEvent
+
+        queue_order_event(
+            order,
+            OrderIntegrationEvent.EventType.TTN_UPDATED,
+            extra={"ttn_number": order.ttn_number},
+        )
         return order
 
 

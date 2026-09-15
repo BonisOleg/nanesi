@@ -51,6 +51,18 @@ def update_order(payload: dict) -> dict:
     return _parse_response(response, action="update")
 
 
+def upsert_products(products: list[dict]) -> dict:
+    """POST /product-handler/ action=update (до 100 товарів за запит)."""
+    if not products:
+        return {"success": True, "data": []}
+    if len(products) > 100:
+        raise SalesDriveError("SalesDrive upsert_products: max 100 items per request")
+    url = f"{_base_url()}/product-handler/"
+    body = {"action": "update", "product": products}
+    response = requests.post(url, headers=_headers(), json=body, timeout=DEFAULT_TIMEOUT)
+    return _parse_response(response, action="product-upsert")
+
+
 def _parse_response(response: requests.Response, *, action: str) -> dict:
     try:
         data = response.json()

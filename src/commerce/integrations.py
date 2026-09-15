@@ -32,6 +32,7 @@ def _order_snapshot(order: Order) -> dict:
         "total": order.total,
         "promo_code": order.promo_code_snapshot,
         "comment": order.comment,
+        "ttn_number": order.ttn_number,
         "salesdrive_order_id": order.salesdrive_order_id,
         "items": [
             {

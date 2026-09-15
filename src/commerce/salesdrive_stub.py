@@ -84,4 +84,20 @@ def _dispatch(event: OrderIntegrationEvent) -> None:
         event.payload = payload
         return
 
+    if event.event_type == OrderIntegrationEvent.EventType.TTN_UPDATED:
+        ttn = str(payload.get("ttn_number") or order.ttn_number or "").strip()
+        if not ttn:
+            raise client.SalesDriveError("Порожній ТТН у події")
+        body = mapper.build_update_payload(
+            external_id=str(payload.get("number") or order.number),
+            salesdrive_order_id=order.salesdrive_order_id,
+            ttn_number=ttn,
+            delivery_method=str(payload.get("delivery_method") or order.delivery_method),
+        )
+        response = client.update_order(body)
+        payload = dict(payload)
+        payload["_salesdrive_receipt"] = {"ok": True, "response": response}
+        event.payload = payload
+        return
+
     raise client.SalesDriveError(f"Невідомий event_type={event.event_type}")

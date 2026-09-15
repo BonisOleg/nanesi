@@ -169,6 +169,8 @@ def build_update_payload(
     site_status: str | None = None,
     payment_method: str | None = None,
     comment: str | None = None,
+    ttn_number: str | None = None,
+    delivery_method: str | None = None,
 ) -> dict:
     data: dict = {}
     if site_status:
@@ -181,6 +183,17 @@ def build_update_payload(
             data["payment_method"] = pay
     if comment:
         data["comment"] = comment
+    if ttn_number:
+        ttn = str(ttn_number).strip()
+        method = str(delivery_method or "")
+        if method == "np_warehouse":
+            data["novaposhta"] = {"ttn": ttn}
+        elif method == "ukrposhta":
+            # Коли зʼявиться створення ТТН Укрпошти на сайті — той самий шлях.
+            data["ukrposhta"] = {"ttn": ttn}
+        else:
+            # Фолбек: передаємо як НП, якщо метод невідомий, але ТТН є.
+            data["novaposhta"] = {"ttn": ttn}
 
     body: dict = {"data": data}
     if salesdrive_order_id:
@@ -188,3 +201,21 @@ def build_update_payload(
     else:
         body["externalId"] = external_id
     return body
+
+
+def build_product_payload(variant) -> dict:
+    """Мінімальний upsert: id=sku, назва, ціна вітрини, залишок."""
+    product = variant.product
+    label = getattr(variant, "label", None) or " / ".join(
+        filter(None, [getattr(variant, "shade", None), getattr(variant, "volume", None)]),
+    )
+    name = product.name
+    if label:
+        name = f"{name} — {label}"
+    return {
+        "id": str(variant.sku),
+        "sku": str(variant.sku),
+        "name": name,
+        "costPerItem": float(variant.current_price),
+        "stockBalance": int(variant.stock_quantity or 0),
+    }
