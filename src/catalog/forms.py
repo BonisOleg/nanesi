@@ -1,8 +1,11 @@
 from django import forms
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
 
+from src.core.utils.images import MAX_UPLOAD_BYTES, validate_image
+
 MAX_REVIEW_PHOTOS = 5
-MAX_REVIEW_PHOTO_SIZE = 8 * 1024 * 1024
+MAX_REVIEW_PHOTO_SIZE = MAX_UPLOAD_BYTES
 
 
 def _widget(**attrs):
@@ -68,8 +71,13 @@ class ReviewForm(forms.Form):
         if len(files) > MAX_REVIEW_PHOTOS:
             raise forms.ValidationError(_("Не більше %(max)s фото") % {"max": MAX_REVIEW_PHOTOS})
         for f in files:
-            if f.size > MAX_REVIEW_PHOTO_SIZE:
-                raise forms.ValidationError(_("Кожне фото — не більше 8MB"))
+            size = getattr(f, "size", None)
+            if size is not None and size > MAX_REVIEW_PHOTO_SIZE:
+                raise forms.ValidationError(_("Кожне фото — не більше 5 МБ"))
+            try:
+                validate_image(f)
+            except DjangoValidationError as exc:
+                raise forms.ValidationError(exc.messages) from exc
         return files
 
 

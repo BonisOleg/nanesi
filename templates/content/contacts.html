@@ -2,6 +2,8 @@
 {% load i18n static %}
 {% block title %}{{ page.seo_title|default:page.title }} — {{ site_settings.site_name }}{% endblock %}
 {% block meta_description %}{% if page.seo_description %}<meta name="description" content="{{ page.seo_description }}">{% endif %}{% endblock %}
+{% block og_title %}{{ page.seo_title|default:page.title }}{% endblock %}
+{% block og_description %}{{ page.seo_description|default:page.title }}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/content.css' %}">{% endblock %}
 
 {% block content %}

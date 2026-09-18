@@ -1,10 +1,17 @@
 {% extends "base.html" %}
-{% load static i18n shop_extras %}
+{% load static i18n shop_extras seo_tags %}
 {% block main_class %}container{% endblock %}
 {% block title %}
-  {% if category %}{{ category.name }} — {% elif brand %}{{ brand.name }} — {% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %} — {% endif %}{% trans "Каталог" %} — {{ site_settings.site_name }}
+  {% if category %}{{ category.seo_title|default:category.name }} — {% elif brand %}{{ brand.seo_title|default:brand.name }} — {% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %} — {% endif %}{% trans "Каталог" %} — {{ site_settings.site_name }}
 {% endblock %}
+{% block meta_description %}
+  {% if category and category.seo_description %}<meta name="description" content="{{ category.seo_description }}">
+  {% elif brand and brand.seo_description %}<meta name="description" content="{{ brand.seo_description }}">
+  {% elif site_settings.tagline %}<meta name="description" content="{{ site_settings.tagline }}">{% endif %}
+{% endblock %}
+{% block og_title %}{% if category %}{{ category.seo_title|default:category.name }}{% elif brand %}{{ brand.seo_title|default:brand.name }}{% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %}{% else %}{% trans "Каталог" %}{% endif %}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/catalog.css' %}?v=filters-hide-desk">{% endblock %}
+{% block jsonld %}{% jsonld_breadcrumbs seo_breadcrumbs %}{% endblock %}
 
 {% block content %}
   <nav class="breadcrumbs" aria-label="{% trans 'Хлібні крихти' %}">
@@ -47,7 +54,7 @@
       <aside class="filters" data-filters>
         <div class="filters__head">
           <h1 class="filters__title">
-            {% if category %}{{ category.name }}{% elif brand %}{{ brand.name }}{% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %}{% else %}{% trans "Фільтри" %}{% endif %}
+            {% if category %}{{ category.name }}{% elif brand %}{{ brand.name }}{% elif query %}{% blocktrans %}Пошук «{{ query }}»{% endblocktrans %}{% else %}{% trans "Каталог" %}{% endif %}
           </h1>
         </div>
         <div class="filters__body"

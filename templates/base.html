@@ -1,12 +1,24 @@
-{% load static i18n %}
+{% load static i18n seo_tags %}
 <!DOCTYPE html>
 <html lang="{{ request.LANGUAGE_CODE|default:'uk' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>{% block title %}{{ site_settings.site_name }} — {{ site_settings.tagline }}{% endblock %}</title>
+  <title>{% block title %}{{ site_settings.site_name }}{% if site_settings.tagline %} — {{ site_settings.tagline }}{% endif %}{% endblock %}</title>
   {% block meta_description %}{% if site_settings.tagline %}<meta name="description" content="{{ site_settings.tagline }}">{% endif %}{% endblock %}
-  {% block meta_robots %}{% endblock %}
+  {% block meta_robots %}{% if seo_noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+  <link rel="canonical" href="{{ seo_canonical }}">
+  {% for lang_code, lang_url in seo_hreflangs.items %}
+  <link rel="alternate" hreflang="{{ lang_code }}" href="{{ lang_url }}">
+  {% endfor %}
+  <meta property="og:site_name" content="{{ site_settings.site_name }}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% filter striptags %}{% block og_title %}{{ site_settings.site_name }}{% if site_settings.tagline %} — {{ site_settings.tagline }}{% endif %}{% endblock %}{% endfilter %}">
+  <meta property="og:description" content="{% filter striptags|truncatechars:200 %}{% block og_description %}{{ site_settings.tagline }}{% endblock %}{% endfilter %}">
+  <meta property="og:url" content="{{ seo_canonical }}">
+  <meta property="og:locale" content="{{ seo_og_locale }}">
+  {% block og_image_tag %}{% if seo_og_image %}<meta property="og:image" content="{{ seo_og_image }}">{% endif %}{% endblock %}
+  <meta name="twitter:card" content="{% if seo_og_image %}summary_large_image{% else %}summary{% endif %}">
   <link rel="icon" href="{% static 'img/favicon/favicon.ico' %}" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon/favicon-32.png' %}">
   <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon/favicon-16.png' %}">
@@ -38,6 +50,8 @@
     ></script>
   {% endif %}
   {% block extra_js_head %}{% endblock %}
+  {% jsonld_organization %}
+  {% block jsonld %}{% endblock %}
 </head>
 <body>
   {% if site_settings.gtm_id %}

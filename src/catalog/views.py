@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.translation import get_language, gettext as _
 from src.core.views_i18n import localize_path
 from django.views.decorators.http import require_GET, require_POST
@@ -135,10 +136,23 @@ def catalog_list(request, category_slug=None, brand_slug=None):
     for group in filter_groups:
         group["selected_slugs"] = selected_attrs.get(group["attribute"].code, set())
 
+    crumbs = [(_("Головна"), reverse("catalog:home"))]
+    if category or brand or filters["query"]:
+        crumbs.append((_("Каталог"), reverse("catalog:catalog")))
+    if category:
+        crumbs.append((category.name, category.get_absolute_url()))
+    elif brand:
+        crumbs.append((brand.name, brand.get_absolute_url()))
+    elif filters["query"]:
+        crumbs.append((_("Пошук"), request.path))
+    else:
+        crumbs.append((_("Каталог"), reverse("catalog:catalog")))
+
     context = {
         "base_query_string": base_query.urlencode(),
         "category": category,
         "brand": brand,
+        "seo_breadcrumbs": crumbs,
         "products": page_obj,
         "page_obj": page_obj,
         "sort": sort,
@@ -162,7 +176,13 @@ def catalog_list(request, category_slug=None, brand_slug=None):
 
 
 def brand_list(request):
-    context = {"brands": selectors.active_brands()}
+    context = {
+        "brands": selectors.active_brands(),
+        "seo_breadcrumbs": [
+            (_("Головна"), reverse("catalog:home")),
+            (_("Бренди"), reverse("catalog:brand_list")),
+        ],
+    }
     return render(request, "catalog/brand_list.html", context)
 
 
@@ -184,6 +204,11 @@ def collection_detail(request, slug):
         "sort_options": selectors.SORT_OPTIONS,
         "total_count": paginator.count,
         "base_query_string": "",
+        "seo_breadcrumbs": [
+            (_("Головна"), reverse("catalog:home")),
+            (_("Каталог"), reverse("catalog:catalog")),
+            (collection.name, collection.get_absolute_url()),
+        ],
     }
     return render(request, "catalog/collection_detail.html", context)
 
@@ -226,6 +251,11 @@ def product_detail(request, slug):
         "bought_together_products": together,
         "review_form": ReviewForm(is_authenticated=request.user.is_authenticated),
         "pdp_attrs": selectors.pdp_attribute_groups(product),
+        "seo_breadcrumbs": [
+            (_("Головна"), reverse("catalog:home")),
+            (product.category.name, product.category.get_absolute_url()),
+            (product.name, product.get_absolute_url()),
+        ],
     }
     if current_variant:
         context["dl_events_json"] = analytics.events_json(analytics.build_event(
@@ -271,6 +301,11 @@ def review_create(request, slug):
         "related_products": selectors.related_products(product),
         "bought_together_products": selectors.bought_together(product),
         "review_form": form,
+        "seo_breadcrumbs": [
+            (_("Головна"), reverse("catalog:home")),
+            (product.category.name, product.category.get_absolute_url()),
+            (product.name, product.get_absolute_url()),
+        ],
     }
     return render(request, "catalog/product_detail.html", context)
 

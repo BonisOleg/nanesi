@@ -5,6 +5,7 @@ EAV-паттерн для фільтрів (тип шкіри, проблема,
 """
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 from src.core.models import TimeStampedModel
@@ -109,6 +110,9 @@ class Collection(TimeStampedModel):
         if not self.slug:
             self.slug = slugify(self.name, allow_unicode=True)
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self) -> str:
+        return reverse("catalog:collection_detail", kwargs={"slug": self.slug})
 
 
 class Review(TimeStampedModel):

@@ -1,9 +1,17 @@
 {% extends "base.html" %}
-{% load static shop_extras i18n %}
+{% load static shop_extras i18n seo_tags %}
 {% block main_class %}container product-page{% endblock %}
-{% block title %}{{ product.name }} — {{ site_settings.site_name }}{% endblock %}
-{% block meta_description %}{% if product.short_description %}<meta name="description" content="{{ product.short_description|striptags|truncatewords:30 }}">{% endif %}{% endblock %}
+{% block title %}{{ product.seo_title|default:product.name }} — {{ site_settings.site_name }}{% endblock %}
+{% block meta_description %}<meta name="description" content="{% firstof product.seo_description product.short_description|striptags|truncatewords:30 %}">{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.seo_title|default:product.name }}{% endblock %}
+{% block og_description %}{% firstof product.seo_description product.short_description %}{% endblock %}
+{% block og_image_tag %}{% with images=product.images.all %}{% if images %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ images.0.image.url }}">{% elif seo_og_image %}<meta property="og:image" content="{{ seo_og_image }}">{% endif %}{% endwith %}{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/product.css' %}?v=review-file">{% endblock %}
+{% block jsonld %}
+  {% jsonld_product product current_variant %}
+  {% jsonld_breadcrumbs seo_breadcrumbs %}
+{% endblock %}
 
 {% block content %}
   {% include "partials/_dl_events.html" %}

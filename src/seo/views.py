@@ -11,6 +11,8 @@ def render_landing(request: HttpRequest, page: SeoLandingPage) -> HttpResponse:
 
 
 def robots_txt(request: HttpRequest) -> HttpResponse:
+    from src.seo.utils import absolute_url
+
     lines = [
         "User-agent: *",
         "Disallow: /kabinet/",
@@ -19,7 +21,11 @@ def robots_txt(request: HttpRequest) -> HttpResponse:
         "Disallow: /admin/",
         "Disallow: /obrane/",
         "Disallow: /i18n/",
+        "Disallow: /poshuk/",
+        "Disallow: /ru/poshuk/",
+        "Disallow: /en/poshuk/",
+        "Disallow: /tovar/*/vidguk/",
         "",
-        f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}",
+        f"Sitemap: {absolute_url(request, '/sitemap.xml')}",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")

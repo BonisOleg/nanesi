@@ -5,8 +5,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from PIL import Image
 
+from src.catalog.forms import ReviewForm
 from src.catalog.models import Brand, Category, Product, ProductImage, Supplier
-from src.core.utils.images import validate_image
+from src.core.utils.images import MAX_UPLOAD_BYTES, validate_image
 from django.core.exceptions import ValidationError
 
 
@@ -24,6 +25,36 @@ class ValidateImageTests(TestCase):
 
     def test_accepts_png(self):
         validate_image(_make_png())
+
+    def test_rejects_over_5mb(self):
+        f = SimpleUploadedFile(
+            "huge.png",
+            b"x" * (MAX_UPLOAD_BYTES + 1),
+            content_type="image/png",
+        )
+        with self.assertRaises(ValidationError):
+            validate_image(f)
+
+
+class ReviewPhotoLimitTests(TestCase):
+    def test_form_rejects_over_5mb(self):
+        form = ReviewForm(
+            data={
+                "rating": "5",
+                "text": "Достатньо довгий текст відгуку",
+                "author_name": "Гість",
+            },
+            files={
+                "photos": SimpleUploadedFile(
+                    "huge.png",
+                    b"x" * (MAX_UPLOAD_BYTES + 1),
+                    content_type="image/png",
+                ),
+            },
+            is_authenticated=False,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("photos", form.errors)
 
 
 class WebpConvertOnSaveTests(TestCase):

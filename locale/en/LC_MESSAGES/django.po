@@ -129,8 +129,8 @@ msgstr "Photos (up to 5)"
 msgid "Не більше %(max)s фото"
 msgstr "No more than %(max)s photos"
 
-msgid "Кожне фото — не більше 8MB"
-msgstr "Each photo — up to 8MB"
+msgid "Кожне фото — не більше 5 МБ"
+msgstr "Each photo — up to 5 MB"
 
 msgid "За популярністю"
 msgstr "By popularity"

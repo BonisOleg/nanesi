@@ -7,6 +7,7 @@ import bleach
 from django.db import transaction
 
 from src.catalog.models import Product, Review, ReviewImage
+from src.core.utils.images import validate_image
 
 _ALLOWED_TAGS: list[str] = []  # відгук — лише текст, без HTML
 
@@ -35,5 +36,6 @@ def create_review(*, product: Product, user, author_name: str, rating: int, text
         is_approved=False,
     )
     for i, photo in enumerate(photos):
+        validate_image(photo)
         ReviewImage.objects.create(review=review, image=photo, sort_order=i)
     return review

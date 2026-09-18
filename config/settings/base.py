@@ -1,6 +1,7 @@
 """Базові налаштування Django, спільні для всіх середовищ."""
 from pathlib import Path
 
+from csp.constants import NONCE
 from decouple import Csv, config
 from django.urls import reverse_lazy
 
@@ -10,6 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config("SECRET_KEY")  # без default= — production падає без .env
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+CANONICAL_HOST = config("CANONICAL_HOST", default="")
+USE_HTTPS = config("USE_HTTPS", default=False, cast=bool)
 
 INSTALLED_APPS = [
     # 1. Unfold — обов'язково перед django.contrib.admin
@@ -43,6 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "src.seo.middleware.CanonicalHostMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -71,6 +75,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "src.commerce.context_processors.cart_badge",
                 "src.content.context_processors.site_settings",
+                "src.seo.context_processors.seo",
                 "src.catalog.context_processors.nav_context",
             ],
         },
@@ -212,6 +217,7 @@ CONTENT_SECURITY_POLICY = {
         "default-src": ["'self'"],
         "script-src": [
             "'self'",
+            NONCE,
             "https://www.googletagmanager.com",
             "https://connect.facebook.net",
             "https://analytics.tiktok.com",
