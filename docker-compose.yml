@@ -8,6 +8,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       # service_started (не healthy): ERR-52 — інакше recreate web лишає сайт без proxy
       backend:

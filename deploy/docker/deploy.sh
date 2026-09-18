@@ -8,6 +8,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
+if [[ -f /etc/letsencrypt/live/nanesi.com.ua/fullchain.pem ]]; then
+  COMPOSE+=(-f docker-compose.https.yml)
+fi
 SERVICES=(db backend nginx)
 
 free_host_ports() {
