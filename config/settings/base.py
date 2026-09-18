@@ -146,6 +146,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ADMIN_URL = config("ADMIN_URL", default="admin/")
+_ADMIN_CSP_PREFIX = ADMIN_URL if str(ADMIN_URL).startswith("/") else f"/{ADMIN_URL}"
+if not _ADMIN_CSP_PREFIX.endswith("/"):
+    _ADMIN_CSP_PREFIX += "/"
 
 # --- Нова Пошта (novaposhta_skill): порожній ключ = інтеграція вимкнена, без stub-даних ---
 NP_API_KEY = config("NP_API_KEY", default="")
@@ -212,7 +215,7 @@ TINYMCE_DEFAULT_CONFIG = {
 # ID у SiteSettings з адмінки не вимагало деплою; самі скрипти вантажаться лише якщо ID заданий
 # (static/js/analytics.js), а не інлайн — тож 'unsafe-inline' тут не потрібен.
 CONTENT_SECURITY_POLICY = {
-    "EXCLUDE_URL_PREFIXES": ("/admin/",),
+    "EXCLUDE_URL_PREFIXES": (_ADMIN_CSP_PREFIX, "/admin/"),
     "DIRECTIVES": {
         "default-src": ["'self'"],
         "script-src": [
