@@ -27,7 +27,8 @@
   <meta name="theme-color" content="#F8F6F2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" media="print" data-deferred-css>
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap"></noscript>
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% url 'theme_css' %}">
   <link rel="stylesheet" href="{% static 'css/base.css' %}?v=m321">
@@ -35,7 +36,6 @@
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v=grid-4desk">
   <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=summary-3col-c">
   <link rel="stylesheet" href="{% static 'css/cart-drawer.css' %}?v=1">
-  <link rel="stylesheet" href="{% static 'css/account.css' %}?v=wishlist-grid">
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=topbar-smooth" defer></script>
@@ -78,9 +78,9 @@
       </button>
       <a class="logo" href="{% url 'catalog:home' %}" aria-label="{{ site_settings.site_name }}">
         {% if site_settings.logo %}
-          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" width="180" height="90">
+          <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" width="216" height="67" decoding="async">
         {% else %}
-          <img src="{% static 'img/logo.png' %}" alt="{{ site_settings.site_name }}" width="180" height="90">
+          <img src="{% static 'img/logo.webp' %}" alt="{{ site_settings.site_name }}" width="216" height="67" decoding="async">
         {% endif %}
       </a>
       <button class="btn-catalog" type="button" data-catalog-toggle aria-expanded="false" aria-controls="catalog-mega" aria-haspopup="true">
@@ -209,7 +209,7 @@
         {% if site_settings.logo %}
           <img class="footer-brand__logo" src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" width="150" height="75">
         {% else %}
-          <img class="footer-brand__logo" src="{% static 'img/logo-footer.png' %}" alt="{{ site_settings.site_name }}" width="150" height="75">
+          <img class="footer-brand__logo" src="{% static 'img/logo-footer.webp' %}" alt="{{ site_settings.site_name }}" width="300" height="93" decoding="async">
         {% endif %}
         <p>{{ site_settings.hero_subtitle|striptags }}</p>
       </div>

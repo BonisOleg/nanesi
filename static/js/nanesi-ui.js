@@ -1,6 +1,10 @@
 /* Спільна UI-логіка сайту: мобільне меню, обране (гість → localStorage).
    Авторизовані користувачі — реальний сервер-синк додається в кабінеті (Підетап 2). */
 (function () {
+  document.querySelectorAll("link[data-deferred-css]").forEach(function (link) {
+    link.media = "all";
+  });
+
   var WISH_KEY = "nanesi_wishlist";
 
   function readWishlist() {

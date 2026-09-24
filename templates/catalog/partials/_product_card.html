@@ -9,9 +9,9 @@
     <a href="{{ product.get_absolute_url }}" aria-label="{{ product.name }}">
       {% with image=product.images.all|first %}
         {% if image %}
-          <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:product.name }}" loading="lazy" width="400" height="400">
+          <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:product.name }}" width="400" height="400" decoding="async" sizes="(max-width: 767px) 50vw, 372px"{% if card_eager and card_eager <= 4 %}{% if card_priority %} fetchpriority="high"{% endif %}{% else %} loading="lazy"{% endif %}>
         {% else %}
-          <img src="{% static 'img/products/pdrn-cream.png' %}" alt="{{ product.name }}" loading="lazy" width="400" height="400">
+          <img src="{% static 'img/products/pdrn-cream.png' %}" alt="{{ product.name }}" width="400" height="400" decoding="async" sizes="(max-width: 767px) 50vw, 372px"{% if card_eager and card_eager <= 4 %}{% if card_priority %} fetchpriority="high"{% endif %}{% else %} loading="lazy"{% endif %}>
         {% endif %}
       {% endwith %}
     </a>

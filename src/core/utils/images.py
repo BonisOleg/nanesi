@@ -20,14 +20,14 @@ MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 # (app_label.ModelName, field_name, max_long_side)
-# hero/blog — 1600; каталог/галерея/відгуки — 1200
+# hero/blog — 1600; картка товару на вітрині ~372px → 800 (2×); решта каталогу — 1200
 IMAGE_WEBP_SPECS: list[tuple[str, str, int]] = [
     ("content.SiteSettings", "hero_image", 1600),
     ("content.BlogPost", "cover_image", 1600),
     ("content.HeroBanner", "image", 1600),
     ("content.HeroBanner", "background_image", 1600),
     ("catalog.Category", "image", 1200),
-    ("catalog.ProductImage", "image", 1200),
+    ("catalog.ProductImage", "image", 800),
     ("catalog.ProductVariant", "shade_image", 1200),
     ("catalog.Collection", "image", 1200),
     ("catalog.ReviewImage", "image", 1200),

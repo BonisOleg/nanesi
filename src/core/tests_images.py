@@ -90,7 +90,7 @@ class WebpConvertOnSaveTests(TestCase):
         img.refresh_from_db()
         with Image.open(img.image.path) as opened:
             self.assertEqual(opened.format, "WEBP")
-            self.assertLessEqual(max(opened.size), 1200)
+            self.assertLessEqual(max(opened.size), 800)
 
     def test_brand_logo_not_converted(self):
         self.brand.logo = _make_png(200, 200)

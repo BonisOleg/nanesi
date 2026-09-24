@@ -6,7 +6,7 @@
 >
   {% for product in products %}
     <div class="product-grid__item">
-      {% include "catalog/partials/_product_card.html" %}
+      {% include "catalog/partials/_product_card.html" with card_eager=forloop.counter|default:9 card_priority=forloop.first %}
     </div>
   {% endfor %}
 </div>
