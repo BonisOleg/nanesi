@@ -46,7 +46,7 @@
           {% endfor %}
           <a class="cat-circle" href="{% url 'catalog:collection_detail' slug='aktsii' %}">
             <span class="cat-circle__media">
-              <img src="{% static 'img/categories/sale.png' %}" alt="" width="84" height="84" loading="lazy">
+              <img src="{% static 'img/categories/sale.webp' %}" alt="" width="84" height="84" loading="lazy">
             </span>
             {% trans "Акції" %}
           </a>
@@ -70,13 +70,13 @@
                 {% if collection.image %}
                   <img src="{{ collection.image.url }}" alt="" width="240" height="240" loading="lazy">
                 {% elif collection.kind == "hit" %}
-                  <img src="{% static 'img/products/centella-serum.png' %}" alt="" width="240" height="240" loading="lazy">
+                  <img src="{% static 'img/products/centella-serum.webp' %}" alt="" width="240" height="240" loading="lazy">
                 {% elif collection.kind == "new" %}
-                  <img src="{% static 'img/products/sunscreen.png' %}" alt="" width="240" height="240" loading="lazy">
+                  <img src="{% static 'img/products/sunscreen.webp' %}" alt="" width="240" height="240" loading="lazy">
                 {% elif collection.kind == "sale" %}
-                  <img src="{% static 'img/products/pdrn-cream.png' %}" alt="" width="240" height="240" loading="lazy">
+                  <img src="{% static 'img/products/pdrn-cream.webp' %}" alt="" width="240" height="240" loading="lazy">
                 {% else %}
-                  <img src="{% static 'img/products/bb-cushion.png' %}" alt="" width="240" height="240" loading="lazy">
+                  <img src="{% static 'img/products/bb-cushion.webp' %}" alt="" width="240" height="240" loading="lazy">
                 {% endif %}
               </div>
             </article>
@@ -109,9 +109,9 @@
         <h3>{% blocktrans with name=site_settings.site_name %}{{ name }} в Instagram{% endblocktrans %}</h3>
         <p>{% trans "Образи, ритуали догляду та новинки брендів." %}</p>
         <div class="ig-preview" aria-hidden="true">
-          <span><img src="{% static 'img/products/pdrn-cream.png' %}" alt="" width="120" height="120" loading="lazy"></span>
-          <span><img src="{% static 'img/products/centella-serum.png' %}" alt="" width="120" height="120" loading="lazy"></span>
-          <span><img src="{% static 'img/products/bb-cushion.png' %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% static 'img/products/pdrn-cream.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% static 'img/products/centella-serum.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% static 'img/products/bb-cushion.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
         </div>
         {% if site_settings.instagram_url %}
           <a class="btn--ghost" href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener">{% trans "Перейти в Instagram" %}</a>

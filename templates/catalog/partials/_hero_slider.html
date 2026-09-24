@@ -70,14 +70,16 @@
                 width="960"
                 height="540"
                 {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                decoding="async"
               >
             {% else %}
               <img
-                src="{% static 'img/hero.png' %}"
+                src="{% static 'img/hero.webp' %}"
                 alt="{{ banner.title }}"
-                width="960"
-                height="540"
+                width="1280"
+                height="853"
                 {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                decoding="async"
               >
             {% endif %}
           </div>

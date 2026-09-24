@@ -30,7 +30,7 @@
           {% if images %}
             <img src="{{ images.0.image.url }}" alt="{{ product.name }}" width="640" height="640" data-gallery-main>
           {% else %}
-            <img src="{% static 'img/products/pdrn-cream.png' %}" alt="{{ product.name }}" width="640" height="640" data-gallery-main>
+            <img src="{% static 'img/products/pdrn-cream.webp' %}" alt="{{ product.name }}" width="640" height="640" data-gallery-main>
           {% endif %}
         </div>
         {% if images|length > 1 %}

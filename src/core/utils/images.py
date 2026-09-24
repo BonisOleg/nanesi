@@ -24,8 +24,8 @@ ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 IMAGE_WEBP_SPECS: list[tuple[str, str, int]] = [
     ("content.SiteSettings", "hero_image", 1600),
     ("content.BlogPost", "cover_image", 1600),
-    ("content.HeroBanner", "image", 1600),
-    ("content.HeroBanner", "background_image", 1600),
+    ("content.HeroBanner", "image", 1280),
+    ("content.HeroBanner", "background_image", 1280),
     ("catalog.Category", "image", 1200),
     ("catalog.ProductImage", "image", 800),
     ("catalog.ProductVariant", "shade_image", 1200),
