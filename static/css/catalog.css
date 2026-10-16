@@ -420,6 +420,7 @@
   color: var(--color-muted);
 }
 
+/* .subcat-nav — блок підкатегорій прибрано з product_list.html
 .subcat-nav {
   display: flex;
   flex-wrap: wrap;
@@ -444,6 +445,7 @@
   border-color: var(--color-accent);
   color: var(--color-accent-hover);
 }
+*/
 
 .pagination {
   display: flex;

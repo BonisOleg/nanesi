@@ -36,18 +36,6 @@
     {% endif %}
   </nav>
 
-  {% if category %}
-    {% with children=category.children.all %}
-      {% if children %}
-        <nav class="subcat-nav" aria-label="{% trans 'Підкатегорії' %}">
-          {% for child in children %}
-            <a href="{% url 'catalog:category_detail' category_slug=child.slug %}">{{ child.name }}</a>
-          {% endfor %}
-        </nav>
-      {% endif %}
-    {% endwith %}
-  {% endif %}
-
   <div class="catalog-layout">
     <form method="get" id="catalog-filter-form" class="filters-form-wrap">
       {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
