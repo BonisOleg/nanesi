@@ -192,8 +192,11 @@ def collection_detail(request, slug):
         from django.http import Http404
         raise Http404
     qs = selectors.products_for_collection(collection)
-    sort = request.GET.get("sort", "popular")
-    qs = selectors.apply_sort(qs, sort)
+    sort = (request.GET.get("sort") or "").strip()
+    if sort:
+        qs = selectors.apply_sort(qs, sort)
+    else:
+        sort = "popular"
     paginator = Paginator(qs, 24)
     page_obj = paginator.get_page(request.GET.get("page"))
     context = {

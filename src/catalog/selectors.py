@@ -372,11 +372,13 @@ def collection_by_slug(slug: str) -> Collection | None:
 
 
 def products_for_collection(collection: Collection) -> QuerySet[Product]:
-    """Підбірка: ручний M2M, або авто за kind (hit/new/sale)."""
+    """Підбірка: ручний M2M за position, або авто за kind (hit/new/sale)."""
     qs = visible_products()
-    manual_ids = list(collection.products.values_list("pk", flat=True))
-    if manual_ids:
-        return qs.filter(pk__in=manual_ids).order_by("-created_at")
+    if collection.products.exists():
+        return qs.filter(collectionproduct__collection=collection).order_by(
+            "collectionproduct__position",
+            "-created_at",
+        )
     if collection.kind == Collection.Kind.HIT:
         return qs.filter(is_hit=True).order_by("-created_at")
     if collection.kind == Collection.Kind.NEW:

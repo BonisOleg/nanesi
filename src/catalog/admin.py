@@ -243,10 +243,9 @@ class AttributeValueAdmin(TabbedTranslationAdmin, ModelAdmin):
 class CollectionAdmin(TabbedTranslationAdmin, ModelAdmin):
     list_display = ("name", "kind", "is_active", "sort_order", "get_image_preview")
     list_filter = ("kind", "is_active")
-    filter_horizontal = ("products",)
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("get_image_preview",)
-    fields = ("name", "slug", "kind", "image", "get_image_preview", "products", "is_active", "sort_order")
+    fields = ("name", "slug", "kind", "image", "get_image_preview", "is_active", "sort_order")
 
     def get_image_preview(self, obj: Collection):
         if obj.pk and obj.image:
