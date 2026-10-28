@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (cityRefInput) cityRefInput.value = '';
       clearWarehouseSelection();
       clearTimeout(timer);
+      /* Латиницю не підміняємо на кирилицю: у запит іде рівно те, що набрано. */
       var query = cityInput.value.trim();
       timer = setTimeout(function () {
         if (!query) {

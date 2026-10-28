@@ -688,6 +688,38 @@
   }
 }
 
+/* Підказки міста НП: на вузькому екрані лишаються в ширині поля і не виходять за вʼюпорт. */
+#np-city-suggestions {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#np-city-suggestions .suggestions-list {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  #np-city-suggestions .suggestions-list {
+    max-height: min(260px, 50vh);
+    max-height: min(260px, 50dvh);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  #np-city-suggestions .suggestions-list__item {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 /* --- Дякуємо / оплата --- */
 .result-card {
   max-width: 560px;

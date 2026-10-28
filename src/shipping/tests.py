@@ -102,6 +102,31 @@ class NPCitySearchTests(TestCase):
         self.assertEqual(payload["results"][0]["name"], "Київ (Київська)")
         self.assertEqual(payload["results"][0]["ref"], "kyiv")
 
+    def test_latin_kyi_and_lviv_match_name_latin(self):
+        """«Kyi» / «lviv» знаходять місто по name_latin, без пошуку по кириличній name."""
+        kyiv = NPCity.objects.create(ref="kyiv", name="Київ", area="Київська")
+        lviv = NPCity.objects.create(ref="lviv", name="Львів", area="Львівська")
+        self.assertEqual(kyiv.name_latin, "kyiv")
+        self.assertEqual(lviv.name_latin, "lviv")
+
+        NPCity.objects.filter(pk=kyiv.pk).update(name_latin="")
+        self.assertEqual([city.ref for city in search_cities("Kyi")], [])
+        NPCity.objects.filter(pk=kyiv.pk).update(name_latin="kyiv")
+
+        NPCity.objects.filter(pk=lviv.pk).update(name_latin="")
+        self.assertEqual([city.ref for city in search_cities("lviv")], [])
+        NPCity.objects.filter(pk=lviv.pk).update(name_latin="lviv")
+
+        self.assertEqual([city.ref for city in search_cities("Kyi")], ["kyiv"])
+        self.assertEqual([city.ref for city in search_cities("lviv")], ["lviv"])
+
+        for query, ref in (("Kyi", "kyiv"), ("lviv", "lviv")):
+            response = self.client.get(reverse("shipping:np_cities"), {"q": query})
+            self.assertEqual(response.status_code, 200)
+            results = response.json()["results"]
+            self.assertEqual(results[0]["ref"], ref)
+            self.assertEqual(results[0]["name"].split(" (", 1)[0], "Київ" if ref == "kyiv" else "Львів")
+
     def test_migration_backfill_fills_name_latin(self):
         import importlib
 
@@ -255,3 +280,48 @@ class NovaPoshtaClientCallTests(TestCase):
                 with self.assertRaises(NovaPoshtaError):
                     client.call("Address", "getWarehouses", {"CityRef": "city-ref"})
         self.assertEqual(post.call_args.kwargs["timeout"], (5, 10))
+
+
+class CheckoutCityInputScriptTests(TestCase):
+    def test_served_checkout_js_does_not_rewrite_latin_city_input(self):
+        """Немає JS-раннера: віддана сторінка і checkout.js не транслітерують значення поля."""
+        from decimal import Decimal
+        from pathlib import Path
+
+        from django.contrib.staticfiles import finders
+
+        from src.catalog.models import Brand, Category, Product, ProductVariant
+
+        brand = Brand.objects.create(name="NPCity", slug="np-city-input-brand")
+        category = Category.objects.create(name="NPCity", slug="np-city-input-cat")
+        product = Product.objects.create(
+            name="NPCity", slug="np-city-input-product", brand=brand, category=category, is_active=True,
+        )
+        variant = ProductVariant.objects.create(
+            product=product, sku="SKU-NP-CITY-INPUT", retail_price=Decimal("100.00"),
+            stock_quantity=3, is_active=True,
+        )
+        self.client.post(reverse("commerce:cart_add", args=[variant.pk]), {"qty": 1})
+        page = self.client.get(reverse("commerce:checkout"))
+        self.assertEqual(page.status_code, 200)
+        html = page.content.decode()
+        self.assertIn("js/checkout.js", html)
+        self.assertIn('id="id_np_city_name"', html)
+        self.assertIn('id="np-city-suggestions"', html)
+        self.assertNotIn("йцукен", html)
+        self.assertNotIn("qwertyuiop", html.lower())
+
+        js_path = finders.find("js/checkout.js")
+        self.assertTrue(js_path)
+        source = Path(js_path).read_text(encoding="utf-8")
+        start = source.index("cityInput.addEventListener('input'")
+        end = source.index("timer = setTimeout", start)
+        handler = source[start:end]
+        self.assertIn("var query = cityInput.value.trim();", handler)
+        self.assertNotIn("cityInput.value =", handler)
+        lowered = source.lower()
+        for token in (
+            "qwertyuiop", "йцукен", "latintocyr", "tocyrillic",
+            "fixlayout", "convertlayout", "keyboardlayout",
+        ):
+            self.assertNotIn(token, lowered)
