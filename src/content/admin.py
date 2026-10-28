@@ -30,6 +30,9 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
                 "Seed також підставляє ці поля в перший слайд."
             ),
         }),
+        ("Головна — Instagram", {
+            "fields": ("ig_image_1", "ig_image_2", "ig_image_3"),
+        }),
         ("Кольори (акцент бренду)", {"fields": ("accent_color", "accent_hover_color")}),
         ("Доставка", {
             "fields": (

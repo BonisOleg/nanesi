@@ -109,9 +109,9 @@
         <h3>{% blocktrans with name=site_settings.site_name %}{{ name }} в Instagram{% endblocktrans %}</h3>
         <p>{% trans "Образи, ритуали догляду та новинки брендів." %}</p>
         <div class="ig-preview" aria-hidden="true">
-          <span><img src="{% static 'img/products/pdrn-cream.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
-          <span><img src="{% static 'img/products/centella-serum.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
-          <span><img src="{% static 'img/products/bb-cushion.webp' %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% if site_settings.ig_image_1 %}{{ site_settings.ig_image_1.url }}{% else %}{% static 'img/products/pdrn-cream.webp' %}{% endif %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% if site_settings.ig_image_2 %}{{ site_settings.ig_image_2.url }}{% else %}{% static 'img/products/centella-serum.webp' %}{% endif %}" alt="" width="120" height="120" loading="lazy"></span>
+          <span><img src="{% if site_settings.ig_image_3 %}{{ site_settings.ig_image_3.url }}{% else %}{% static 'img/products/bb-cushion.webp' %}{% endif %}" alt="" width="120" height="120" loading="lazy"></span>
         </div>
         {% if site_settings.instagram_url %}
           <a class="btn--ghost" href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener">{% trans "Перейти в Instagram" %}</a>

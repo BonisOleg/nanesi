@@ -28,6 +28,30 @@ class SiteSettings(SingletonModel):
     phone = models.CharField("Телефон", max_length=30, blank=True)
     email = models.EmailField("Email", blank=True)
     instagram_url = models.URLField("Instagram", blank=True)
+    ig_image_1 = models.ImageField(
+        "Фото Instagram 1",
+        upload_to="content/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+        help_text="Рекомендуємо квадратне зображення (1:1), від 600×600.",
+    )
+    ig_image_2 = models.ImageField(
+        "Фото Instagram 2",
+        upload_to="content/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+        help_text="Рекомендуємо квадратне зображення (1:1), від 600×600.",
+    )
+    ig_image_3 = models.ImageField(
+        "Фото Instagram 3",
+        upload_to="content/",
+        null=True,
+        blank=True,
+        validators=[validate_image],
+        help_text="Рекомендуємо квадратне зображення (1:1), від 600×600.",
+    )
     work_hours = models.CharField("Графік роботи", max_length=255, blank=True, default="Пн–Нд 10:00–20:00")
     address = models.CharField("Адреса / місто", max_length=255, blank=True, default="Київ, Україна")
 
