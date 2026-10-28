@@ -122,8 +122,12 @@ def catalog_list(request, category_slug=None, brand_slug=None):
         price_min=filters["price_min"],
         price_max=filters["price_max"],
     )
-    sort = request.GET.get("sort", "popular")
-    qs = selectors.apply_sort(qs, sort)
+    sort = selectors.resolve_catalog_sort(
+        request.GET.get("sort"),
+        category=category,
+        filters=filters,
+    )
+    qs = selectors.apply_sort(qs, sort, category=category)
 
     paginator = Paginator(qs, 24)
     page_obj = paginator.get_page(request.GET.get("page"))
