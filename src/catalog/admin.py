@@ -21,6 +21,7 @@ from .models import (
     CollectionProduct,
     Product,
     ProductAttributeValue,
+    ProductCrossSell,
     ProductImage,
     ProductVariant,
     Review,
@@ -109,6 +110,16 @@ class ProductAttributeValueInline(TabularInline):
     autocomplete_fields = ["attribute_value"]
 
 
+class ProductCrossSellInline(TabularInline):
+    model = ProductCrossSell
+    fk_name = "from_product"
+    extra = 1
+    autocomplete_fields = ["to_product"]
+    fields = ("to_product", "position")
+    verbose_name = "З цим купують"
+    verbose_name_plural = "З цим купують"
+
+
 @admin.register(ProductVariant)
 class ProductVariantAdmin(ModelAdmin):
     list_display = (
@@ -167,7 +178,12 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     autocomplete_fields = ["brand", "category", "supplier"]
     filter_horizontal = ("additional_categories",)
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [ProductVariantInline, ProductAttributeValueInline, ProductImageInline]
+    inlines = [
+        ProductVariantInline,
+        ProductAttributeValueInline,
+        ProductImageInline,
+        ProductCrossSellInline,
+    ]
     actions = ["apply_recommended_price_to_variants"]
     fieldsets = (
         (None, {"fields": ("name", "slug", "brand", "category", "additional_categories", "supplier")}),

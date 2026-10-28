@@ -15,6 +15,7 @@ from src.catalog.models import (
     CategoryProductPosition,
     Collection,
     Product,
+    ProductCrossSell,
     ProductVariant,
 )
 
@@ -375,11 +376,41 @@ def related_products(product: Product, limit: int = 4) -> QuerySet[Product]:
     return qs.order_by("-rating_avg", "-created_at")[:limit]
 
 
-def bought_together(product: Product, limit: int = 4) -> list[Product]:
-    """Товари, що найчастіше трапляються в одних замовленнях із цим (Nanesi п.6).
+def _manual_bought_together(product: Product, limit: int) -> list[Product]:
+    """Ручні супутні товари вітрини. Порожній список — фолбек на автодобір."""
+    capped = min(limit, 8)
+    if capped <= 0:
+        return []
+    link = ProductCrossSell.objects.filter(
+        from_product_id=product.pk,
+        to_product_id=OuterRef("pk"),
+    )
+    return list(
+        visible_products()
+        .filter(
+            pk__in=ProductCrossSell.objects.filter(from_product_id=product.pk)
+            .exclude(to_product_id=product.pk)
+            .values("to_product_id"),
+        )
+        .annotate(
+            _cs_position=Subquery(link.values("position")[:1]),
+            _cs_row=Subquery(link.values("pk")[:1]),
+        )
+        .order_by("_cs_position", "_cs_row")[:capped]
+    )
 
-    Якщо історії замовлень ще немає — фолбек на ту саму категорію / бренд.
+
+def bought_together(product: Product, limit: int = 4) -> list[Product]:
+    """Товари блоку «З цим купують».
+
+    Якщо ручні зв'язки після фільтра вітрини дали хоч один товар — лише вони
+    (position, потім id рядка), без домішування авто. Інакше як раніше:
+    сусіди в замовленнях або фолбек на категорію / бренд.
     """
+    manual = _manual_bought_together(product, limit)
+    if manual:
+        return manual
+
     from src.commerce.models import Order, OrderItem
 
     order_ids = (
