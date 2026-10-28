@@ -3,6 +3,7 @@ import re
 from datetime import timedelta
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
@@ -92,6 +93,11 @@ class CollectionProductOrderTests(TestCase):
         rows = CollectionProduct.objects.filter(collection=self.collection)
         self.assertEqual(rows.count(), 2)
         self.assertTrue(all(row.position == 0 for row in rows))
+        self.collection.products.set([self.middle])
+        self.assertEqual(
+            CollectionProduct.objects.get(collection=self.collection, product=self.middle).position,
+            0,
+        )
 
     def test_collection_lists_products_by_position(self):
         self.collection.products.add(self.oldest, self.middle, self.newest)
@@ -256,3 +262,23 @@ class ParentCategoryManualSortTests(TestCase):
             child_page.content.decode(),
             ["БезПозиціїБатька", "ЗПіддерева"],
         )
+
+
+class ManualOrderAdminTests(TestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_superuser("admin-order", "a@b.c", "pass")
+        self.client.force_login(user)
+        self.category = Category.objects.create(name="АдмінКатегорія", slug="admin-cat")
+        self.collection = Collection.objects.create(name="АдмінДобірка", slug="admin-col")
+
+    def test_category_and_collection_add_and_change_pages(self):
+        urls = (
+            reverse("admin:catalog_category_add"),
+            reverse("admin:catalog_category_change", args=[self.category.pk]),
+            reverse("admin:catalog_collection_add"),
+            reverse("admin:catalog_collection_change", args=[self.collection.pk]),
+        )
+        for url in urls:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200, url)
+            self.assertContains(response, "Позиція")
