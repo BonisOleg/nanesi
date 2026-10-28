@@ -265,7 +265,7 @@
 
   {% include "commerce/partials/_cart_drawer.html" %}
 
-  {% if site_settings.promo_popup_enabled %}
+  {% if site_settings.promo_popup_enabled and request.resolver_match.view_name != "commerce:cart" and request.resolver_match.view_name != "commerce:checkout" %}
     <div class="promo-popup" data-promo-popup hidden>
       <div class="promo-popup__backdrop" data-promo-popup-close></div>
       <div class="promo-popup__card" role="dialog" aria-modal="true" aria-label="{% trans 'Знижка за підписку' %}">

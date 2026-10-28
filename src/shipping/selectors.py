@@ -8,9 +8,12 @@ from django.db.models.expressions import RawSQL
 from django.db.models.functions import Length, Lower
 
 from src.shipping.models import NPCity, NPWarehouse
+from src.shipping.utils import APOSTROPHE_TO_ASCII, latin_city_needle
 
 # Checkout suggestions: без ліміту Київ віддає тисячі DOM-вузлів і «вбиває» мобільний Safari.
 SUGGESTIONS_LIMIT = 40
+# Міста на checkout: стеля 40, щоб відповідь лишалась ~40 КБ (P2). limit=None — без зрізу.
+CITY_SUGGESTIONS_LIMIT = 40
 
 # ctype=C: звичайний LOWER/ILIKE не згортає кирилицю («киї» ≠ «Киї»).
 # Alpine Postgres має ICU (und-x-icu), glibc-образи — часто C.UTF-8; hardcode одного ламає інший.
@@ -50,19 +53,20 @@ def register_sqlite_np_lower(sender, connection, **kwargs):
     )
 
 
-# ’ ‘ ʼ ` ´ → ASCII ', як у довіднику НП.
-_QUERY_APOSTROPHES = str.maketrans({
-    "\u2018": "'",
-    "\u2019": "'",
-    "\u02bc": "'",
-    "`": "'",
-    "\u00b4": "'",
-})
-
-
 def normalize_query(q: str) -> str:
     """strip + casefold + єдиний ASCII-апостроф для пошуку по довіднику НП."""
-    return (q or "").strip().casefold().translate(_QUERY_APOSTROPHES)
+    return (q or "").strip().casefold().translate(APOSTROPHE_TO_ASCII)
+
+
+def _is_latin_city_query(query: str) -> bool:
+    """Латиниця без кирилиці — шукаємо name_latin, інакше лишаємо кириличний шлях."""
+    has_latin = False
+    for ch in query or "":
+        if "A" <= ch <= "Z" or "a" <= ch <= "z":
+            has_latin = True
+        elif "\u0400" <= ch <= "\u04FF":
+            return False
+    return has_latin
 
 
 def _lower_ci(field: str):
@@ -77,26 +81,35 @@ def _lower_ci(field: str):
     return Lower(field)
 
 
-def search_cities(query: str):
-    """Усі активні збіги без [:N]. Порожній запит — без підказок.
+def search_cities(query: str, *, limit: int | None = CITY_SUGGESTIONS_LIMIT):
+    """Активні збіги. Порожній запит — без підказок.
 
-    Ранжування: точна назва → назва починається з запиту → містить у середині.
-    Інакше «киї» віддає села «… (Київська обл.)» раніше за «Київ» (алфавіт + старий limit).
+    Ранжування: точна назва → назва починається з запиту → містить у середині,
+    далі коротша назва. Інакше «киї» віддає села «… (Київська обл.)» раніше за «Київ».
+    Латиниця без кирилиці шукається по name_latin (КМУ 2010 + екзоніми).
+    UI ріжеться до CITY_SUGGESTIONS_LIMIT; limit=None — повний список.
     """
     qs = NPCity.objects.filter(is_active=True)
-    needle = normalize_query(query)
+    if _is_latin_city_query(query):
+        needle = latin_city_needle(query)
+        field = "name_latin"
+    else:
+        needle = normalize_query(query)
+        field = "name"
     if not needle:
         return qs.none()
 
-    qs = qs.annotate(name_lower=_lower_ci("name")).filter(name_lower__contains=needle).annotate(
+    qs = qs.annotate(name_lower=_lower_ci(field)).filter(name_lower__contains=needle).annotate(
         _rank=Case(
             When(name_lower=needle, then=Value(0)),
             When(name_lower__startswith=needle, then=Value(1)),
             default=Value(2),
             output_field=IntegerField(),
         ),
-    )
-    return qs.order_by("_rank", Length("name"), "name")
+    ).order_by("_rank", Length("name"), "name")
+    if limit is not None and limit >= 0:
+        return qs[:limit]
+    return qs
 
 
 def search_warehouses(city_id: int, query: str = "", *, limit: int = SUGGESTIONS_LIMIT):

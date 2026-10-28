@@ -818,6 +818,9 @@ msgstr "Email (optional)"
 msgid "Доставка"
 msgstr "Shipping"
 
+msgid "Вартість доставки не входить у суму до оплати — її сплачуєте при отриманні за тарифами перевізника."
+msgstr "Delivery cost is not included in the amount due — you pay it on receipt at the carrier's rates."
+
 msgid "Спосіб доставки"
 msgstr "Shipping method"
 

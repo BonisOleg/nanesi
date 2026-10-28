@@ -1,12 +1,13 @@
 from unittest.mock import patch
 
 import requests
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from src.shipping.client import NovaPoshtaClient, NovaPoshtaError
 from src.shipping.models import NPCity, NPWarehouse
-from src.shipping.selectors import search_cities, search_warehouses
+from src.shipping.selectors import CITY_SUGGESTIONS_LIMIT, search_cities, search_warehouses
+from src.shipping.utils import translit_kmu2010
 
 
 class NPCitySearchTests(TestCase):
@@ -24,9 +25,18 @@ class NPCitySearchTests(TestCase):
         self.assertLess(names.index("Київка"), names.index("Андріївка (Київська обл.)"))
 
     def test_city_search_returns_all_matches_without_cap(self):
+        # Вимога змінилась (P2, 40 КБ відповіді): UI-пошук міст ріжеться до 40.
+        # limit=None лишає повний список — на початкових 35 збігах це все ще 35.
         for i in range(35):
             NPCity.objects.create(ref=f"c-{i}", name=f"Тестмісто {i:02d}")
-        self.assertEqual(len(list(search_cities("тестмісто"))), 35)
+        self.assertEqual(len(list(search_cities("тестмісто", limit=None))), 35)
+
+        for i in range(35, 45):
+            NPCity.objects.create(ref=f"c-{i}", name=f"Тестмісто {i:02d}")
+        capped = list(search_cities("тестмісто"))
+        self.assertLessEqual(len(capped), 40)
+        self.assertEqual(len(capped), CITY_SUGGESTIONS_LIMIT)
+        self.assertEqual(len(list(search_cities("тестмісто", limit=None))), 45)
 
     def test_typographic_apostrophe_finds_kamianets(self):
         """НП зберігає ASCII ', користувач часто вводить ’ (U+2019) або ʼ (U+02BC)."""
@@ -35,6 +45,114 @@ class NPCitySearchTests(TestCase):
             with self.subTest(query=query):
                 names = [city.name for city in search_cities(query)]
                 self.assertIn("Кам'янець-Подільський", names)
+
+    def test_latin_exonyms_rank_major_cities_first(self):
+        samples = (
+            ("kyiv", "Київ"),
+            ("kyivka", "Київка"),
+            ("lviv", "Львів"),
+            ("odesa", "Одеса"),
+            ("kharkiv", "Харків"),
+            ("zaporizhzhia", "Запоріжжя"),
+            ("dnipro", "Дніпро"),
+            ("mykolaiv", "Миколаїв"),
+            ("rivne", "Рівне"),
+            ("chernihiv", "Чернігів"),
+            ("ivano", "Івано-Франківськ"),
+            ("khmel", "Хмельницький"),
+        )
+        for ref, name in samples:
+            NPCity.objects.create(ref=ref, name=name)
+
+        for query in ("Kyiv", "Kiev", "KYIV"):
+            with self.subTest(query=query):
+                names = [city.name for city in search_cities(query)]
+                self.assertEqual(names[0], "Київ")
+                self.assertIn("Київка", names)
+
+        expectations = {
+            "Lviv": "Львів",
+            "Lvov": "Львів",
+            "Odessa": "Одеса",
+            "Kharkov": "Харків",
+            "Zaporozhye": "Запоріжжя",
+            "Zaporozhe": "Запоріжжя",
+            "Zaporizhia": "Запоріжжя",
+            "Dnepr": "Дніпро",
+            "Dnipropetrovsk": "Дніпро",
+            "Nikolaev": "Миколаїв",
+            "Rovno": "Рівне",
+            "Chernigov": "Чернігів",
+            "Ivano-Frankovsk": "Івано-Франківськ",
+            "Khmelnitsky": "Хмельницький",
+        }
+        for query, expected in expectations.items():
+            with self.subTest(query=query):
+                names = [city.name for city in search_cities(query)]
+                self.assertTrue(names)
+                self.assertEqual(names[0], expected)
+
+    def test_np_cities_view_latin_kyiv(self):
+        NPCity.objects.create(ref="kyiv", name="Київ", area="Київська")
+        NPCity.objects.create(ref="kyivka", name="Київка", area="Полтавська")
+        response = self.client.get(reverse("shipping:np_cities"), {"q": "Kyiv"})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["configured"])
+        self.assertEqual(payload["results"][0]["name"], "Київ (Київська)")
+        self.assertEqual(payload["results"][0]["ref"], "kyiv")
+
+    def test_migration_backfill_fills_name_latin(self):
+        import importlib
+
+        from django.apps import apps
+
+        migration = importlib.import_module("src.shipping.migrations.0003_npcity_name_latin")
+        city = NPCity.objects.create(ref="backfill", name="Львів")
+        NPCity.objects.filter(pk=city.pk).update(name_latin="")
+        migration.backfill_name_latin(apps, None)
+        city.refresh_from_db()
+        self.assertEqual(city.name_latin, "lviv")
+
+
+class TranslitKmu2010Tests(SimpleTestCase):
+    def test_official_examples(self):
+        samples = {
+            "Київ": "kyiv",
+            "Львів": "lviv",
+            "Одеса": "odesa",
+            "Харків": "kharkiv",
+            "Запоріжжя": "zaporizhzhia",
+            "Ізмаїл": "izmail",
+            "Яремче": "yaremche",
+            "Згурівка": "zghurivka",
+            "Кам'янець-Подільський": "kamianets-podilskyi",
+            "Єнакієве": "yenakiieve",
+            "Ґалаґан": "galagan",
+        }
+        for name, latin in samples.items():
+            with self.subTest(name=name):
+                self.assertEqual(translit_kmu2010(name), latin)
+
+
+class SyncCitiesLatinTests(TestCase):
+    def test_sync_cities_fills_name_latin_without_live_api(self):
+        from src.shipping.services import sync_cities
+
+        with patch("src.shipping.services.get_client") as get_client:
+            get_client.return_value.get_cities.side_effect = [
+                [{
+                    "Ref": "kyiv-ref",
+                    "Description": "Київ",
+                    "AreaDescription": "Київська",
+                }],
+                [],
+            ]
+            saved = sync_cities()
+        self.assertEqual(saved, 1)
+        city = NPCity.objects.get(ref="kyiv-ref")
+        self.assertEqual(city.name_latin, "kyiv")
+        get_client.assert_called_once()
 
 
 class NPWarehouseDisplayTests(TestCase):
