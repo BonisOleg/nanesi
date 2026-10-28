@@ -84,6 +84,7 @@ def home(request):
         "categories": sections["categories"],
         "promo_collections": sections.get("promo_collections", []),
         "collection_product_sections": sections.get("collection_product_sections", []),
+        "aktsii_image_url": sections.get("aktsii_image_url", ""),
         "trust_badges": TrustBadge.objects.filter(is_active=True).order_by("sort_order", "pk"),
         "hero_banners": _hero_banners_for_home(),
     }
