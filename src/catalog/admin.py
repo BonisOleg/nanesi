@@ -16,7 +16,9 @@ from .models import (
     AttributeValue,
     Brand,
     Category,
+    CategoryProductPosition,
     Collection,
+    CollectionProduct,
     Product,
     ProductAttributeValue,
     ProductImage,
@@ -27,9 +29,18 @@ from .models import (
 )
 
 
+class CategoryProductPositionInline(TabularInline):
+    model = CategoryProductPosition
+    fields = ("product", "position")
+    autocomplete_fields = ["product"]
+    ordering = ("position", "pk")
+    extra = 1
+
+
 @admin.register(Category)
 class CategoryAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("description",)
+    inlines = [CategoryProductPositionInline]
     list_display = ("name", "parent", "is_active", "show_in_header", "sort_order")
     list_editable = ("show_in_header", "sort_order")
     list_filter = ("is_active", "show_in_header", "parent")
@@ -239,14 +250,22 @@ class AttributeValueAdmin(TabbedTranslationAdmin, ModelAdmin):
     search_fields = ("value",)
 
 
+class CollectionProductInline(TabularInline):
+    model = CollectionProduct
+    fields = ("product", "position")
+    autocomplete_fields = ["product"]
+    ordering = ("position", "pk")
+    extra = 1
+
+
 @admin.register(Collection)
 class CollectionAdmin(TabbedTranslationAdmin, ModelAdmin):
     list_display = ("name", "kind", "is_active", "sort_order", "get_image_preview")
     list_filter = ("kind", "is_active")
-    filter_horizontal = ("products",)
+    inlines = [CollectionProductInline]
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("get_image_preview",)
-    fields = ("name", "slug", "kind", "image", "get_image_preview", "products", "is_active", "sort_order")
+    fields = ("name", "slug", "kind", "image", "get_image_preview", "is_active", "sort_order")
 
     def get_image_preview(self, obj: Collection):
         if obj.pk and obj.image:

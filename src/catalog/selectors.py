@@ -3,7 +3,7 @@
 from decimal import Decimal
 from urllib.parse import urlencode
 
-from django.db.models import Avg, Count, Min, Prefetch, Q, QuerySet
+from django.db.models import Avg, Count, F, Min, OuterRef, Prefetch, Q, QuerySet, Subquery
 from django.utils.text import slugify
 from django.utils.translation import get_language, gettext_lazy as _
 
@@ -12,6 +12,7 @@ from src.catalog.models import (
     AttributeValue,
     Brand,
     Category,
+    CategoryProductPosition,
     Collection,
     Product,
     ProductVariant,
@@ -121,6 +122,7 @@ def active_brands() -> QuerySet[Brand]:
 
 
 SORT_OPTIONS = [
+    ("manual", _("Ручний порядок")),
     ("popular", _("За популярністю")),
     ("price-asc", _("Ціна: зростання")),
     ("price-desc", _("Ціна: спадання")),
@@ -128,14 +130,60 @@ SORT_OPTIONS = [
 ]
 
 
-def apply_sort(qs: QuerySet[Product], sort: str) -> QuerySet[Product]:
+def catalog_user_filters_active(filters: dict) -> bool:
+    """Пошук і фасети. Дефолтне «в наявності» на чистій категорії не є фасетом."""
+    if (filters.get("query") or "").strip():
+        return True
+    if filters.get("brand_slugs") or filters.get("category_slugs"):
+        return True
+    if filters.get("attr_filters") or filters.get("volume_slugs"):
+        return True
+    if filters.get("sale_only"):
+        return True
+    if filters.get("price_min") is not None or filters.get("price_max") is not None:
+        return True
+    return False
+
+
+def resolve_catalog_sort(explicit: str | None, *, category: Category | None, filters: dict) -> str:
+    """sort= з URL завжди виграє. Інакше manual лише на чистій сторінці категорії."""
+    raw = (explicit or "").strip()
+    if raw:
+        return raw
+    if category is not None and not catalog_user_filters_active(filters):
+        return "manual"
+    return "popular"
+
+
+def _popular_order(qs: QuerySet[Product]) -> QuerySet[Product]:
+    return qs.order_by("-rating_avg", "-reviews_count", "-created_at")
+
+
+def apply_sort(
+    qs: QuerySet[Product],
+    sort: str,
+    *,
+    category: Category | None = None,
+) -> QuerySet[Product]:
     if sort == "price-asc":
         return qs.order_by("min_price", "pk")
     if sort == "price-desc":
         return qs.order_by("-min_price", "pk")
     if sort == "name":
         return qs.order_by("name")
-    return qs.order_by("-rating_avg", "-reviews_count", "-created_at")
+    if sort == "manual" and category is not None:
+        position = (
+            CategoryProductPosition.objects.filter(category=category, product=OuterRef("pk"))
+            .values("position")[:1]
+        )
+        return qs.annotate(pos=Subquery(position)).order_by(
+            F("pos").asc(nulls_last=True),
+            "-rating_avg",
+            "-reviews_count",
+            "-created_at",
+            "id",
+        )
+    return _popular_order(qs)
 
 
 def parse_catalog_filters(request) -> dict:
@@ -372,11 +420,13 @@ def collection_by_slug(slug: str) -> Collection | None:
 
 
 def products_for_collection(collection: Collection) -> QuerySet[Product]:
-    """Підбірка: ручний M2M, або авто за kind (hit/new/sale)."""
+    """Підбірка: ручний M2M за position, або авто за kind (hit/new/sale)."""
     qs = visible_products()
-    manual_ids = list(collection.products.values_list("pk", flat=True))
-    if manual_ids:
-        return qs.filter(pk__in=manual_ids).order_by("-created_at")
+    if collection.products.exists():
+        return qs.filter(collectionproduct__collection=collection).order_by(
+            "collectionproduct__position",
+            "-created_at",
+        )
     if collection.kind == Collection.Kind.HIT:
         return qs.filter(is_hit=True).order_by("-created_at")
     if collection.kind == Collection.Kind.NEW:

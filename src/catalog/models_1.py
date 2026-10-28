@@ -299,3 +299,40 @@ class ProductImage(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Фото {self.product.name} #{self.sort_order}"
+
+
+class CategoryProductPosition(models.Model):
+    """Ручна позиція товару в конкретній категорії. Немає рядка — позиції немає."""
+
+    category = models.ForeignKey(
+        Category,
+        verbose_name="Категорія",
+        on_delete=models.CASCADE,
+        related_name="product_positions",
+    )
+    product = models.ForeignKey(
+        Product,
+        verbose_name="Товар",
+        on_delete=models.CASCADE,
+        related_name="category_positions",
+    )
+    position = models.PositiveIntegerField("Позиція", default=0)
+
+    class Meta:
+        verbose_name = "Позиція товару в категорії"
+        verbose_name_plural = "Позиції товарів у категорії"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["category", "product"],
+                name="uniq_category_product_position",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["category", "position", "product"],
+                name="idx_category_product_position",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.category}: {self.product} ({self.position})"

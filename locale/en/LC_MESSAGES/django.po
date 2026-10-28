@@ -144,6 +144,9 @@ msgstr "Price: high to low"
 msgid "За назвою"
 msgstr "By name"
 
+msgid "Ручний порядок"
+msgstr "Manual order"
+
 msgid "Дякуємо за відгук! Він з'явиться на сторінці після модерації."
 msgstr ""
 "Thank you for your review! It will appear on the page after moderation."

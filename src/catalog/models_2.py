@@ -94,7 +94,13 @@ class Collection(TimeStampedModel):
         blank=True,
         validators=[validate_image],
     )
-    products = models.ManyToManyField("catalog.Product", verbose_name="Товари", blank=True, related_name="collections")
+    products = models.ManyToManyField(
+        "catalog.Product",
+        verbose_name="Товари",
+        blank=True,
+        related_name="collections",
+        through="catalog.CollectionProduct",
+    )
     is_active = models.BooleanField("Активна", default=True)
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
@@ -113,6 +119,31 @@ class Collection(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse("catalog:collection_detail", kwargs={"slug": self.slug})
+
+
+class CollectionProduct(models.Model):
+    """Позиція товару в підбірці. Таблиця — існуючий авто-M2M catalog_collection_products."""
+
+    collection = models.ForeignKey(
+        Collection,
+        verbose_name="Підбірка",
+        on_delete=models.CASCADE,
+    )
+    product = models.ForeignKey(
+        "catalog.Product",
+        verbose_name="Товар",
+        on_delete=models.CASCADE,
+    )
+    position = models.PositiveIntegerField("Позиція", default=0)
+
+    class Meta:
+        db_table = "catalog_collection_products"
+        unique_together = (("collection", "product"),)
+        verbose_name = "Товар у підбірці"
+        verbose_name_plural = "Товари у підбірці"
+
+    def __str__(self) -> str:
+        return f"{self.collection}: {self.product} ({self.position})"
 
 
 class Review(TimeStampedModel):

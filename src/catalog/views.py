@@ -123,8 +123,12 @@ def catalog_list(request, category_slug=None, brand_slug=None):
         price_min=filters["price_min"],
         price_max=filters["price_max"],
     )
-    sort = request.GET.get("sort", "popular")
-    qs = selectors.apply_sort(qs, sort)
+    sort = selectors.resolve_catalog_sort(
+        request.GET.get("sort"),
+        category=category,
+        filters=filters,
+    )
+    qs = selectors.apply_sort(qs, sort, category=category)
 
     paginator = Paginator(qs, 24)
     page_obj = paginator.get_page(request.GET.get("page"))
@@ -193,8 +197,11 @@ def collection_detail(request, slug):
         from django.http import Http404
         raise Http404
     qs = selectors.products_for_collection(collection)
-    sort = request.GET.get("sort", "popular")
-    qs = selectors.apply_sort(qs, sort)
+    sort = (request.GET.get("sort") or "").strip()
+    if sort:
+        qs = selectors.apply_sort(qs, sort)
+    else:
+        sort = "popular"
     paginator = Paginator(qs, 24)
     page_obj = paginator.get_page(request.GET.get("page"))
     context = {
