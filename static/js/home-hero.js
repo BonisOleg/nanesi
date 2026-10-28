@@ -39,6 +39,8 @@
   function initSlider(root) {
     var slides = Array.prototype.slice.call(root.querySelectorAll("[data-hero-slide]"));
     slides.forEach(applySlideFx);
+    /* Усі слайди в одній grid-клітинці: підігнати заголовок до показу, інакше висота стрибне */
+    slides.forEach(fitSlideTitle);
     if (slides.length < 2) return;
 
     var intervalMs = parseInt(root.getAttribute("data-interval"), 10) || 5000;
@@ -181,7 +183,7 @@
 
     setDotState(index);
     start();
-    fitSlideTitle(slides[index]);
+    slides.forEach(fitSlideTitle);
   }
 
   var TITLE_MIN_PX = 18;
@@ -237,7 +239,7 @@
 
   function fitHeroTitles(root) {
     var scope = root || document;
-    scope.querySelectorAll("[data-hero-slide].is-active, [data-hero-slide].is-entering").forEach(fitSlideTitle);
+    scope.querySelectorAll("[data-hero-slide]").forEach(fitSlideTitle);
   }
 
   function initHeroTitleFit() {
