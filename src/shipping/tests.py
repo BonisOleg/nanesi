@@ -127,6 +127,29 @@ class NPCitySearchTests(TestCase):
             self.assertEqual(results[0]["ref"], ref)
             self.assertEqual(results[0]["name"].split(" (", 1)[0], "Київ" if ref == "kyiv" else "Львів")
 
+    def test_latin_kyi_ranks_kyiv_above_skyi_towns(self):
+        """«Kyi» віддає Київ першим, навіть якщо «kyi» є всередині -skyi."""
+        NPCity.objects.create(ref="kyiv", name="Київ", area="Київська")
+        NPCity.objects.create(ref="kp", name="Кам'янець-Подільський", area="Хмельницька")
+        NPCity.objects.create(ref="khm", name="Хмельницький", area="Хмельницька")
+        NPCity.objects.create(ref="nv", name="Новоград-Волинський", area="Житомирська")
+
+        names = [city.name for city in search_cities("Kyi")]
+        self.assertEqual(names[0], "Київ")
+        for town in ("Кам'янець-Подільський", "Хмельницький", "Новоград-Волинський"):
+            self.assertIn(town, names)
+            self.assertLess(names.index("Київ"), names.index(town))
+
+    def test_cyrillic_word_start_ranks_above_midword(self):
+        """«Цер»: початок слова після пробілу вище за «цер» всередині слова."""
+        NPCity.objects.create(ref="bts", name="Біла Церква", area="Київська")
+        NPCity.objects.create(ref="mats", name="Мацерівка", area="Київська")
+
+        names = [city.name for city in search_cities("Цер")]
+        self.assertIn("Біла Церква", names)
+        self.assertIn("Мацерівка", names)
+        self.assertLess(names.index("Біла Церква"), names.index("Мацерівка"))
+
     def test_migration_backfill_fills_name_latin(self):
         import importlib
 
@@ -158,6 +181,30 @@ class TranslitKmu2010Tests(SimpleTestCase):
         for name, latin in samples.items():
             with self.subTest(name=name):
                 self.assertEqual(translit_kmu2010(name), latin)
+
+    def test_frozen_migration_translit_matches_live(self):
+        """Знімок у міграції збігається з живою translit_kmu2010 на контрольному списку."""
+        import importlib
+
+        migration = importlib.import_module("src.shipping.migrations.0003_npcity_name_latin")
+        names = (
+            "Київ",
+            "Львів",
+            "Харків",
+            "Біла Церква",
+            "Запоріжжя",
+            "Кам'янець-Подільський",
+            "Їжакевичі",
+            "Ґалаґани",
+            "Знам'янка",
+            "Щорс",
+            "Яготин",
+            "Юріївка",
+            "Згурівка",
+        )
+        for name in names:
+            with self.subTest(name=name):
+                self.assertEqual(migration.translit_kmu2010(name), translit_kmu2010(name))
 
 
 class SyncCitiesLatinTests(TestCase):

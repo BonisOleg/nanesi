@@ -47,15 +47,24 @@ document.addEventListener('DOMContentLoaded', function () {
       li.textContent = row.name;
       li.addEventListener('click', function () {
         onPick(row);
-        list.innerHTML = '';
+        clearList(list);
       });
       ul.appendChild(li);
     });
     list.appendChild(ul);
+    if (list.id === 'np-city-suggestions') placeNpCitySuggestions();
   }
 
+  var placeNpCitySuggestions = function () {};
+  var silenceNpCityDrop = function () {};
+
   function clearList(el) {
-    if (el) el.innerHTML = '';
+    if (!el) return;
+    el.innerHTML = '';
+    if (el.id === 'np-city-suggestions') {
+      el.classList.remove('is-above');
+      silenceNpCityDrop();
+    }
   }
 
   var selectedCityId = null;
@@ -124,7 +133,105 @@ document.addEventListener('DOMContentLoaded', function () {
     var list = document.getElementById('np-city-suggestions');
     if (!cityInput) return;
     var timer = null;
+    var listening = false;
+    var rafId = 0;
+    var capKey = '';
+    var capPx = 280;
+    var dropMargin = 16;
+    var minBelow = 200;
     cityInput.setAttribute('autocomplete', 'off');
+
+    function dropFrame() {
+      var vv = window.visualViewport;
+      var top = vv ? vv.offsetTop : 0;
+      var bottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      var chrome = document.querySelector('.site-chrome');
+      if (chrome) {
+        var chromeBottom = chrome.getBoundingClientRect().bottom;
+        if (chromeBottom > top) top = chromeBottom;
+      }
+      return { top: top, bottom: bottom };
+    }
+
+    function cssCap(menu) {
+      var vv = window.visualViewport;
+      /* Крок 16px: на iOS висота visualViewport стрибає разом із панеллю Safari. */
+      var height = vv ? Math.round(vv.height / 16) * 16 : window.innerHeight;
+      var key = window.innerWidth + 'x' + height;
+      if (key === capKey) return capPx;
+      var prev = menu.style.maxHeight;
+      menu.style.maxHeight = '';
+      var parsed = parseFloat(window.getComputedStyle(menu).maxHeight);
+      menu.style.maxHeight = prev;
+      if (!isFinite(parsed) || parsed <= 0) parsed = 280;
+      capKey = key;
+      capPx = parsed;
+      return parsed;
+    }
+
+    function onViewport() {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(function () {
+        rafId = 0;
+        placeNpCitySuggestions();
+      });
+    }
+
+    function listenDrop() {
+      if (listening) return;
+      listening = true;
+      window.addEventListener('resize', onViewport);
+      window.addEventListener('orientationchange', onViewport);
+      window.addEventListener('scroll', onViewport, { capture: true, passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onViewport);
+        window.visualViewport.addEventListener('scroll', onViewport);
+      }
+    }
+
+    silenceNpCityDrop = function () {
+      if (!listening) return;
+      listening = false;
+      window.removeEventListener('resize', onViewport);
+      window.removeEventListener('orientationchange', onViewport);
+      window.removeEventListener('scroll', onViewport, true);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', onViewport);
+        window.visualViewport.removeEventListener('scroll', onViewport);
+      }
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    };
+
+    placeNpCitySuggestions = function () {
+      var menu = list.querySelector('.suggestions-list');
+      if (!menu) {
+        list.classList.remove('is-above');
+        silenceNpCityDrop();
+        return;
+      }
+      listenDrop();
+      /* <=480px лишається на CSS: ширина поля, max-height min(260px, 50vh), overflow-y auto. */
+      if (window.matchMedia('(max-width: 480px)').matches) {
+        list.classList.remove('is-above');
+        menu.style.maxHeight = '';
+        return;
+      }
+      var field = cityInput.closest ? (cityInput.closest('.field') || cityInput) : cityInput;
+      var rect = cityInput.getBoundingClientRect();
+      var box = dropFrame();
+      var spaceBelow = box.bottom - rect.bottom;
+      var spaceAbove = field.getBoundingClientRect().top - box.top;
+      var openUp = spaceBelow < minBelow && spaceAbove > spaceBelow;
+      if (openUp) list.classList.add('is-above');
+      else list.classList.remove('is-above');
+      var room = openUp ? spaceAbove : spaceBelow;
+      var maxH = Math.min(cssCap(menu), Math.max(0, room - dropMargin));
+      var next = Math.floor(maxH) + 'px';
+      if (menu.style.maxHeight !== next) menu.style.maxHeight = next;
+    };
 
     cityInput.addEventListener('focus', function () {
       warehouseListOpen = false;

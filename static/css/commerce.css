@@ -720,6 +720,28 @@
   }
 }
 
+/* Десктоп і планшет: список міста може відкритись над полем, щоб не виходити за вʼюпорт. */
+.field:has(#np-city-suggestions) {
+  position: relative;
+}
+
+#np-city-suggestions.is-above {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: auto;
+  bottom: 100%;
+  width: 100%;
+  max-width: 100%;
+}
+
+#np-city-suggestions.is-above .suggestions-list {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* --- Дякуємо / оплата --- */
 .result-card {
   max-width: 560px;

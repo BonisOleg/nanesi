@@ -81,11 +81,46 @@ def _lower_ci(field: str):
     return Lower(field)
 
 
+# Межа слова: пробіл, дефіс (включно з типографськими, як у latin_city_needle)
+# або апостроф (ASCII і символи з APOSTROPHE_TO_ASCII).
+_WORD_BOUNDARIES = (
+    " ",
+    "-",
+    "\u2010",
+    "\u2011",
+    "\u2013",
+    "\u2014",
+    "\u2212",
+    "'",
+    "`",
+    "\u00b4",
+    "\u2018",
+    "\u2019",
+    "\u02bc",
+)
+
+
+def _city_name_rank(needle: str) -> Case:
+    """0 — назва з початку запиту, 1 — слово з межі, 2 — інший підрядок.
+
+    Порівняння йде по вже зниженому name_lower (NP_LOWER / LOWER COLLATE).
+    Запит нормалізований раніше: casefold і єдиний ASCII-апостроф.
+    """
+    whens = [When(name_lower__startswith=needle, then=Value(0))]
+    whens.extend(
+        When(name_lower__contains=f"{mark}{needle}", then=Value(1))
+        for mark in _WORD_BOUNDARIES
+    )
+    return Case(*whens, default=Value(2), output_field=IntegerField())
+
+
 def search_cities(query: str, *, limit: int | None = CITY_SUGGESTIONS_LIMIT):
     """Активні збіги. Порожній запит — без підказок.
 
-    Ранжування: точна назва → назва починається з запиту → містить у середині,
-    далі коротша назва. Інакше «киї» віддає села «… (Київська обл.)» раніше за «Київ».
+    Ранжування: назва з початку запиту, далі слово після пробілу, дефіса
+    чи апострофа, потім інший підрядок; далі коротша назва.
+    Інакше «киї» віддає села «… (Київська обл.)» раніше за «Київ»,
+    а «Kyi» програє містам на -skyi.
     Латиниця без кирилиці шукається по name_latin (КМУ 2010 + екзоніми).
     UI ріжеться до CITY_SUGGESTIONS_LIMIT; limit=None — повний список.
     """
@@ -100,12 +135,7 @@ def search_cities(query: str, *, limit: int | None = CITY_SUGGESTIONS_LIMIT):
         return qs.none()
 
     qs = qs.annotate(name_lower=_lower_ci(field)).filter(name_lower__contains=needle).annotate(
-        _rank=Case(
-            When(name_lower=needle, then=Value(0)),
-            When(name_lower__startswith=needle, then=Value(1)),
-            default=Value(2),
-            output_field=IntegerField(),
-        ),
+        _rank=_city_name_rank(needle),
     ).order_by("_rank", Length("name"), "name")
     if limit is not None and limit >= 0:
         return qs[:limit]
