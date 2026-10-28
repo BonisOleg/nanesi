@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.test import TestCase
+from django.urls import reverse
 
 from src.commerce.models import Order
 from src.commerce.selectors import format_uah_amount, free_shipping_progress
@@ -457,4 +458,43 @@ class CartDrawerAndContactsTests(TestCase):
         self.assertEqual(cart.contact_full_name, "Аня")
         self.assertEqual(Cart.objects.get(pk=cart.pk).contact_phone, "380671112233")
         self.assertEqual(cart.contact_email, "a@test.test")
+
+
+class CheckoutChromeTests(TestCase):
+    NOTE_UK = "Вартість доставки не входить у суму до оплати — її сплачуєте при отриманні за тарифами перевізника."
+    NOTE_RU = "Стоимость доставки не входит в сумму к оплате — вы оплачиваете её при получении по тарифам перевозчика."
+
+    def setUp(self):
+        from src.catalog.models import Brand, Category, Product, ProductVariant
+        site = SiteSettings.load()
+        site.promo_popup_enabled = site.ru_enabled = True
+        site.save(update_fields=["promo_popup_enabled", "ru_enabled"])
+        brand = Brand.objects.create(name="Chrome", slug="chrome-brand")
+        category = Category.objects.create(name="Chrome", slug="chrome-cat")
+        product = Product.objects.create(name="Chrome", slug="chrome-product", brand=brand, category=category, is_active=True)
+        self.variant = ProductVariant.objects.create(
+            product=product, sku="SKU-CHROME-1", retail_price=Decimal("200.00"), stock_quantity=5, is_active=True,
+        )
+
+    def test_promo_popup_hidden_on_cart_and_checkout(self):
+        home = self.client.get(reverse("catalog:home"))
+        self.assertContains(home, "data-promo-popup")
+        self.assertContains(home, "popup.js")
+        self.client.post(reverse("commerce:cart_add", args=[self.variant.pk]), {"qty": 1})
+        pages = (self.client.get(reverse("commerce:cart")), self.client.get(reverse("commerce:checkout")))
+        for response in pages:
+            self.assertNotContains(response, "data-promo-popup")
+            self.assertNotContains(response, "popup.js")
+
+    def test_delivery_cost_note_uk_and_ru(self):
+        from django.utils import translation
+
+        self.client.post(reverse("commerce:cart_add", args=[self.variant.pk]), {"qty": 1})
+        uk = self.client.get(reverse("commerce:checkout"))
+        self.assertContains(uk, self.NOTE_UK)
+        self.assertNotContains(uk, self.NOTE_RU)
+        with translation.override("ru"):
+            ru = self.client.get(reverse("commerce:checkout"))
+        self.assertContains(ru, self.NOTE_RU)
+        self.assertNotContains(ru, self.NOTE_UK)
 

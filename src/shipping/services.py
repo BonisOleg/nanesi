@@ -11,7 +11,7 @@ from django.db import transaction
 
 from src.shipping.client import NovaPoshtaClient, NovaPoshtaError
 from src.shipping.models import NPCity, NPWarehouse
-from src.shipping.utils import normalize_phone, split_full_name
+from src.shipping.utils import normalize_phone, split_full_name, translit_kmu2010
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,14 @@ def sync_cities() -> int:
         if not rows:
             break
         for row in rows:
+            name = row["Description"]
             NPCity.objects.update_or_create(
                 ref=row["Ref"],
-                defaults={"name": row["Description"], "area": row.get("AreaDescription", "")},
+                defaults={
+                    "name": name,
+                    "area": row.get("AreaDescription", ""),
+                    "name_latin": translit_kmu2010(name),
+                },
             )
             total += 1
         page += 1

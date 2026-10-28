@@ -6,10 +6,19 @@ checkout падає назад на текстові поля Order.np_city_name
 """
 from django.db import models
 
+from src.shipping.utils import translit_kmu2010
+
 
 class NPCity(models.Model):
     ref = models.CharField("Ref (API)", max_length=64, unique=True)
     name = models.CharField("Назва", max_length=255, db_index=True)
+    name_latin = models.CharField(
+        "Назва латиницею",
+        max_length=255,
+        blank=True,
+        default="",
+        db_index=True,
+    )
     area = models.CharField("Область", max_length=255, blank=True)
     is_active = models.BooleanField("Активне", default=True)
 
@@ -17,6 +26,13 @@ class NPCity(models.Model):
         verbose_name = "Місто (НП)"
         verbose_name_plural = "Міста (НП)"
         ordering = ["name"]
+
+    def save(self, *args, **kwargs):
+        self.name_latin = translit_kmu2010(self.name)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            kwargs["update_fields"] = set(update_fields) | {"name_latin"}
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.area})" if self.area else self.name
