@@ -6,6 +6,7 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from src.shipping.client import NovaPoshtaError
 from src.shipping.models import NPCity
 from src.shipping.selectors import is_reference_data_available, search_cities, search_warehouses
 from src.shipping.services import ShippingConfigError, ensure_warehouses_synced
@@ -41,6 +42,13 @@ def np_warehouses(request):
         configured = True
     except ShippingConfigError:
         configured = False
+    except NovaPoshtaError:
+        if not city.warehouses.exists():
+            return JsonResponse(
+                {"configured": True, "results": [], "error": "np_unavailable"},
+                status=200,
+            )
+        configured = True
 
     warehouses = search_warehouses(city.pk, query) if configured else []
     return JsonResponse({

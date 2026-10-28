@@ -1,5 +1,10 @@
-from django.test import TestCase
+from unittest.mock import patch
 
+import requests
+from django.test import TestCase, override_settings
+from django.urls import reverse
+
+from src.shipping.client import NovaPoshtaClient, NovaPoshtaError
 from src.shipping.models import NPCity, NPWarehouse
 from src.shipping.selectors import search_cities, search_warehouses
 
@@ -22,6 +27,14 @@ class NPCitySearchTests(TestCase):
         for i in range(35):
             NPCity.objects.create(ref=f"c-{i}", name=f"Тестмісто {i:02d}")
         self.assertEqual(len(list(search_cities("тестмісто"))), 35)
+
+    def test_typographic_apostrophe_finds_kamianets(self):
+        """НП зберігає ASCII ', користувач часто вводить ’ (U+2019) або ʼ (U+02BC)."""
+        NPCity.objects.create(ref="kp", name="Кам'янець-Подільський", area="Хмельницька")
+        for query in ("Кам\u2019янець", "Кам\u02bcянець"):
+            with self.subTest(query=query):
+                names = [city.name for city in search_cities(query)]
+                self.assertIn("Кам'янець-Подільський", names)
 
 
 class NPWarehouseDisplayTests(TestCase):
@@ -85,3 +98,42 @@ class NPWarehouseDisplayTests(TestCase):
             )
         self.assertEqual(len(list(search_warehouses(self.city.pk))), 40)
         self.assertEqual(len(list(search_warehouses(self.city.pk, limit=None))), 55)
+
+
+@override_settings(NP_API_KEY="test-only-np-key")
+class NPWarehousesTimeoutTests(TestCase):
+    def test_timeout_without_warehouses_returns_unavailable(self):
+        city = NPCity.objects.create(ref="empty-city", name="Порожнє")
+        with patch("src.shipping.client.requests.post", side_effect=requests.Timeout("timeout")):
+            response = self.client.get(reverse("shipping:np_warehouses"), {"city": city.pk})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"configured": True, "results": [], "error": "np_unavailable"},
+        )
+
+    def test_timeout_with_warehouses_returns_cached(self):
+        """Порожня category змушує повторний синк: таймаут не має ховати вже збережені відділення."""
+        city = NPCity.objects.create(ref="cached-city", name="Київ")
+        NPWarehouse.objects.create(
+            ref="w-cached", city=city, number="5",
+            description="Відділення №5", category="",
+        )
+        with patch("src.shipping.client.requests.post", side_effect=requests.Timeout("timeout")) as post:
+            response = self.client.get(reverse("shipping:np_warehouses"), {"city": city.pk})
+        self.assertTrue(post.called)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["configured"])
+        self.assertEqual([row["ref"] for row in payload["results"]], ["w-cached"])
+        self.assertNotIn("error", payload)
+
+
+class NovaPoshtaClientCallTests(TestCase):
+    def test_call_wraps_timeout_into_nova_poshta_error(self):
+        client = NovaPoshtaClient("test-key")
+        with patch("src.shipping.client.requests.post", side_effect=requests.Timeout("timeout")) as post:
+            with self.assertLogs("src.shipping.client", level="WARNING"):
+                with self.assertRaises(NovaPoshtaError):
+                    client.call("Address", "getWarehouses", {"CityRef": "city-ref"})
+        self.assertEqual(post.call_args.kwargs["timeout"], (5, 10))

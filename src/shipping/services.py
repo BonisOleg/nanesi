@@ -61,22 +61,24 @@ def ensure_warehouses_synced(city: NPCity, *, force: bool = False) -> int:
             return 0
         raise
     page, total = 1, 0
-    while True:
-        rows = client.get_warehouses(city.ref, page=page)
-        if not rows:
-            break
-        for row in rows:
-            NPWarehouse.objects.update_or_create(
-                ref=row["Ref"],
-                defaults={
-                    "city": city,
-                    "number": row.get("Number", ""),
-                    "description": row.get("Description", ""),
-                    "category": row.get("CategoryOfWarehouse") or "",
-                },
-            )
-            total += 1
-        page += 1
+    # Одна транзакція на місто: обрив на наступній сторінці не лишає частину відділень.
+    with transaction.atomic():
+        while True:
+            rows = client.get_warehouses(city.ref, page=page)
+            if not rows:
+                break
+            for row in rows:
+                NPWarehouse.objects.update_or_create(
+                    ref=row["Ref"],
+                    defaults={
+                        "city": city,
+                        "number": row.get("Number", ""),
+                        "description": row.get("Description", ""),
+                        "category": row.get("CategoryOfWarehouse") or "",
+                    },
+                )
+                total += 1
+            page += 1
     return total
 
 
