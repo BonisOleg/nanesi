@@ -1,4 +1,4 @@
-"""Core-сутності каталогу: Category / Brand / Supplier / Product / ProductVariant / ProductImage.
+"""Core-сутності каталогу: Category / Brand / Supplier / Product / ProductCrossSell / ProductVariant / ProductImage.
 
 Product = вітринна картка; ProductVariant = одиниця кошика/складу (відтінок/об'єм,
 власний SKU/залишок/ціна) — лист Nanesi п.12: кушон №13/21/23 = 1 product + 3 variants.
@@ -147,6 +147,15 @@ class Product(TimeStampedModel, SeoFieldsMixin):
     is_active = models.BooleanField("Активний (видимий на сайті)", default=True)
     is_hit = models.BooleanField("Хіт продажів", default=False)
     is_new = models.BooleanField("Новинка", default=False)
+    cross_sell = models.ManyToManyField(
+        "self",
+        verbose_name="З цим купують",
+        through="catalog.ProductCrossSell",
+        through_fields=("from_product", "to_product"),
+        symmetrical=False,
+        related_name="cross_sold_in",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Товар"
@@ -299,3 +308,42 @@ class ProductImage(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Фото {self.product.name} #{self.sort_order}"
+
+
+class ProductCrossSell(models.Model):
+    """Ручний блок «З цим купують»: from_product → to_product, без зворотного зв'язку."""
+
+    from_product = models.ForeignKey(
+        Product,
+        verbose_name="Товар",
+        on_delete=models.CASCADE,
+        related_name="cross_sell_links",
+    )
+    to_product = models.ForeignKey(
+        Product,
+        verbose_name="Супутній товар",
+        on_delete=models.CASCADE,
+        related_name="cross_sell_targets",
+    )
+    position = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "З цим купують"
+        verbose_name_plural = "З цим купують"
+        ordering = ["position", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_product", "to_product"],
+                name="uniq_product_cross_sell_pair",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(from_product=models.F("to_product")),
+                name="product_cross_sell_not_self",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["from_product", "position"], name="product_cross_sell_from_pos"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.from_product} → {self.to_product}"
