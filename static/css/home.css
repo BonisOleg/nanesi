@@ -8,7 +8,7 @@
 
 .hero__viewport {
   position: relative;
-  /* Mobile: auto — без обрізання. ≥768: фіксована висота без стрибків */
+  /* Mobile: auto — без обрізання. ≥768: min-height, усі слайди в одній клітинці */
   height: auto;
   overflow: hidden;
 }
@@ -200,53 +200,97 @@
   outline-offset: 3px;
 }
 
-/* Планшет+: дві колонки; copy = grid: тексти зверху, кнопка+dots знизу */
+/* Планшет+: дві колонки; тексти зверху, кнопка знизу; висота = найвищий слайд */
 @media (min-width: 768px) {
   .hero__viewport {
-    height: 500px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 500px;
+  }
+
+  .hero__slide,
+  .hero__slide.is-active,
+  .hero__slide.is-entering,
+  .hero__slide.is-leaving {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr);
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: min-content;
+    align-self: stretch;
+    justify-self: stretch;
+  }
+
+  .hero__slide {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .hero__slide.is-active,
+  .hero__slide.is-entering,
+  .hero__slide.is-leaving {
+    visibility: visible;
+  }
+
+  .hero__slide.is-active {
+    pointer-events: auto;
+    z-index: 2;
+  }
+
   .hero__slide.is-entering {
-    height: 100%;
+    z-index: 2;
+  }
+
+  .hero__slide.is-leaving {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    height: auto;
+    pointer-events: none;
   }
 
   .hero__inner {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr);
     gap: 28px;
-    height: 100%;
+    height: auto;
+    min-height: min-content;
     padding: 32px 0 28px;
     align-items: stretch;
   }
 
   .hero__copy {
     order: 1;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "main"
-      "foot";
-    height: 100%;
-    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-width: 0;
+    height: auto;
+    min-height: min-content;
     align-self: stretch;
   }
 
   .hero__copy-main {
-    grid-area: main;
+    flex: 0 0 auto;
     align-self: stretch;
     min-width: 0;
-    min-height: 0;
-    overflow: hidden;
+    min-height: min-content;
+    overflow: visible;
   }
 
   .hero__copy-foot {
-    grid-area: foot;
-    margin-top: 0;
+    flex: 0 0 auto;
+    margin-top: auto;
     padding-top: 16px;
-    align-self: end;
+    align-self: stretch;
   }
 
   .hero__media {
+    position: relative;
     order: 2;
     width: auto;
     max-width: none;
@@ -254,9 +298,15 @@
     margin-right: 0;
     aspect-ratio: auto;
     max-height: none;
-    height: 100%;
+    height: auto;
+    min-height: 0;
     align-self: stretch;
     border-radius: var(--radius-lg);
+  }
+
+  .hero__media img {
+    position: absolute;
+    inset: 0;
   }
 
   .hero__title {
@@ -271,7 +321,8 @@
 
 @media (min-width: 900px) {
   .hero__viewport {
-    height: 520px;
+    height: auto;
+    min-height: 520px;
   }
 
   .hero__inner {
@@ -291,16 +342,20 @@
   }
 }
 
+/* Підлога та сама, що й була висота (не більша за 52dvh). height: auto — довгий
+   підзаголовок росте і не обрізається. На iOS панель Safari не ріже текст. */
 @supports (height: 100dvh) {
   @media (min-width: 768px) and (max-width: 899px) {
     .hero__viewport {
-      height: min(500px, 52dvh);
+      height: auto;
+      min-height: min(500px, 52dvh);
     }
   }
 
   @media (min-width: 900px) {
     .hero__viewport {
-      height: min(520px, 52dvh);
+      height: auto;
+      min-height: min(520px, 52dvh);
     }
   }
 }
