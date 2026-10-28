@@ -429,10 +429,19 @@ def home_collection_product_sections(*, limit: int = 8) -> list[dict]:
     return sections
 
 
+def home_aktsii_image_url() -> str:
+    """Плитка «Акції»: одне читання Collection.image, без фолбеку в шарі даних."""
+    collection = Collection.objects.filter(slug="aktsii").only("image").first()
+    if collection is None or not collection.image:
+        return ""
+    return collection.image.url
+
+
 def home_sections() -> dict:
     return {
         "categories": home_category_circles(),
         # Макет: 4 промо-картки (хіти/новинки/акції + кастомна)
         "promo_collections": Collection.objects.filter(is_active=True).order_by("sort_order", "name")[:4],
         "collection_product_sections": home_collection_product_sections(),
+        "aktsii_image_url": home_aktsii_image_url(),
     }

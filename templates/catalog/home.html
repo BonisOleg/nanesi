@@ -46,7 +46,7 @@
           {% endfor %}
           <a class="cat-circle" href="{% url 'catalog:collection_detail' slug='aktsii' %}">
             <span class="cat-circle__media">
-              <img src="{% static 'img/categories/sale.webp' %}" alt="" width="84" height="84" loading="lazy">
+              <img src="{% if aktsii_image_url %}{{ aktsii_image_url }}{% else %}{% static 'img/categories/sale.webp' %}{% endif %}" alt="" width="84" height="84" loading="lazy">
             </span>
             {% trans "Акції" %}
           </a>
