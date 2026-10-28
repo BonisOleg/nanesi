@@ -400,14 +400,17 @@ def _manual_bought_together(product: Product, limit: int) -> list[Product]:
     )
 
 
-def bought_together(product: Product, limit: int = 4) -> list[Product]:
+def bought_together(
+    product: Product, limit: int = 4, manual_limit: int = 8,
+) -> list[Product]:
     """Товари блоку «З цим купують».
 
-    Якщо ручні зв'язки після фільтра вітрини дали хоч один товар — лише вони
-    (position, потім id рядка), без домішування авто. Інакше як раніше:
-    сусіди в замовленнях або фолбек на категорію / бренд.
+    Ручні зв'язки — до manual_limit (типово 8). Якщо після фільтра вітрини
+    лишився хоч один товар — лише вони (position, потім id рядка), без
+    домішування авто. Інакше сусіди в замовленнях або фолбек на категорію /
+    бренд, не більше limit (типово 4).
     """
-    manual = _manual_bought_together(product, limit)
+    manual = _manual_bought_together(product, manual_limit)
     if manual:
         return manual
 

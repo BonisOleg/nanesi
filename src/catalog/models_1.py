@@ -3,6 +3,7 @@
 Product = вітринна картка; ProductVariant = одиниця кошика/складу (відтінок/об'єм,
 власний SKU/залишок/ціна) — лист Nanesi п.12: кушон №13/21/23 = 1 product + 3 variants.
 """
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
@@ -384,3 +385,14 @@ class ProductCrossSell(models.Model):
 
     def __str__(self) -> str:
         return f"{self.from_product} → {self.to_product}"
+
+    def clean(self):
+        super().clean()
+        if (
+            self.from_product_id is not None
+            and self.to_product_id is not None
+            and self.from_product_id == self.to_product_id
+        ):
+            raise ValidationError({
+                "to_product": "Супутній товар не може збігатися з поточним товаром.",
+            })

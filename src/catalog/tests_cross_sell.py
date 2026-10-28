@@ -2,12 +2,15 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.forms.models import inlineformset_factory
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from src.catalog.admin import ProductCrossSellInlineFormSet
 from src.catalog.models import Brand, Category, Product, ProductCrossSell, ProductVariant
 from src.catalog.selectors import bought_together, visible_products
 
@@ -130,10 +133,14 @@ class CrossSellTests(TestCase):
             ProductCrossSell.objects.create(
                 from_product=anchor, to_product=targets[index], position=index,
             )
-        self.assertEqual(bought_together(anchor, limit=4), targets[:4])
-        capped = bought_together(anchor, limit=100)
+        self.assertEqual(bought_together(anchor), targets[:8])
+        self.assertEqual(bought_together(anchor, limit=4), targets[:8])
+        self.assertEqual(bought_together(anchor, manual_limit=4), targets[:4])
+        capped = bought_together(anchor, manual_limit=100)
         self.assertEqual(capped, targets[:8])
         self.assertEqual(len(capped), 8)
+        self.assertEqual(len(bought_together(self.anchor)), 4)
+        self.assertEqual(len(bought_together(self.anchor, limit=2)), 2)
 
     def test_asymmetry(self):
         brand_a = Brand.objects.create(name="Brand A", slug="brand-a")
@@ -150,6 +157,49 @@ class CrossSellTests(TestCase):
         self.assertEqual(bought_together(product_b), [])
         self.assertFalse(
             ProductCrossSell.objects.filter(from_product=product_b, to_product=product_a).exists()
+        )
+
+    def test_self_link_clean_raises_validation_error(self):
+        link = ProductCrossSell(from_product=self.anchor, to_product=self.anchor)
+        with self.assertRaises(ValidationError) as caught:
+            link.clean()
+        self.assertIn("to_product", caught.exception.message_dict)
+        self.assertIn(
+            "не може збігатися",
+            caught.exception.message_dict["to_product"][0],
+        )
+
+    def test_inline_formset_rejects_self_link(self):
+        formset_class = inlineformset_factory(
+            Product,
+            ProductCrossSell,
+            formset=ProductCrossSellInlineFormSet,
+            fk_name="from_product",
+            fields=("to_product", "position"),
+            extra=0,
+        )
+        prefix = "cross_sell_links"
+        data = {
+            f"{prefix}-TOTAL_FORMS": "1",
+            f"{prefix}-INITIAL_FORMS": "0",
+            f"{prefix}-MIN_NUM_FORMS": "0",
+            f"{prefix}-MAX_NUM_FORMS": "1000",
+            f"{prefix}-0-to_product": str(self.anchor.pk),
+            f"{prefix}-0-position": "0",
+            f"{prefix}-0-id": "",
+            f"{prefix}-0-from_product": str(self.anchor.pk),
+        }
+        formset = formset_class(data, instance=self.anchor, prefix=prefix)
+        self.assertFalse(formset.is_valid())
+        self.assertIn("to_product", formset.forms[0].errors)
+        self.assertIn(
+            "не може збігатися",
+            formset.forms[0].errors["to_product"][0],
+        )
+        self.assertFalse(
+            ProductCrossSell.objects.filter(
+                from_product=self.anchor, to_product=self.anchor,
+            ).exists()
         )
 
     def test_self_link_raises_integrity_error(self):
