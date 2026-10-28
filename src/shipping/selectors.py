@@ -3,7 +3,7 @@
 from functools import lru_cache
 
 from django.db import connection
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import Case, CharField, Func, IntegerField, Q, Value, When
 from django.db.models.expressions import RawSQL
 from django.db.models.functions import Length, Lower
 
@@ -34,6 +34,37 @@ def _pg_cyrillic_lower_collation() -> str | None:
     return row[0] if row else None
 
 
+def _sqlite_np_lower(value):
+    """Unicode-lower: вбудований SQLite LOWER() згортає лише ASCII."""
+    if value is None:
+        return None
+    return str(value).lower()
+
+
+def register_sqlite_np_lower(sender, connection, **kwargs):
+    """NP_LOWER на кожному новому SQLite-з'єднанні (тести і локальний sqlite)."""
+    if connection.vendor != "sqlite" or connection.connection is None:
+        return
+    connection.connection.create_function(
+        "NP_LOWER", 1, _sqlite_np_lower, deterministic=True,
+    )
+
+
+# ’ ‘ ʼ ` ´ → ASCII ', як у довіднику НП.
+_QUERY_APOSTROPHES = str.maketrans({
+    "\u2018": "'",
+    "\u2019": "'",
+    "\u02bc": "'",
+    "`": "'",
+    "\u00b4": "'",
+})
+
+
+def normalize_query(q: str) -> str:
+    """strip + casefold + єдиний ASCII-апостроф для пошуку по довіднику НП."""
+    return (q or "").strip().casefold().translate(_QUERY_APOSTROPHES)
+
+
 def _lower_ci(field: str):
     """Case-insensitive lower для кирилиці (Postgres ctype=C + SQLite у тестах)."""
     if connection.vendor == "postgresql":
@@ -41,6 +72,8 @@ def _lower_ci(field: str):
         if coll:
             return RawSQL(f'LOWER(({field})::text COLLATE "{coll}")', [])
         return Lower(field)
+    if connection.vendor == "sqlite":
+        return Func(field, function="NP_LOWER", output_field=CharField())
     return Lower(field)
 
 
@@ -51,7 +84,7 @@ def search_cities(query: str):
     Інакше «киї» віддає села «… (Київська обл.)» раніше за «Київ» (алфавіт + старий limit).
     """
     qs = NPCity.objects.filter(is_active=True)
-    needle = (query or "").casefold().strip()
+    needle = normalize_query(query)
     if not needle:
         return qs.none()
 
@@ -94,6 +127,7 @@ def search_warehouses(city_id: int, query: str = "", *, limit: int = SUGGESTIONS
             ),
         ).order_by("_rank", "_kind", "number", "description")
     elif needle:
+        needle = normalize_query(needle)
         qs = qs.annotate(desc_lower=_lower_ci("description")).filter(
             desc_lower__contains=needle,
         ).order_by("_kind", "number", "description")

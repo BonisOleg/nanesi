@@ -25,9 +25,16 @@ class NovaPoshtaClient:
             "calledMethod": called_method,
             "methodProperties": method_properties or {},
         }
-        response = requests.post(NP_API_URL, json=payload, timeout=30)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.post(NP_API_URL, json=payload, timeout=(5, 10))
+            response.raise_for_status()
+            data = response.json()
+        except ValueError as exc:
+            logger.exception("NovaPoshta %s.%s: невалідний JSON", model_name, called_method)
+            raise NovaPoshtaError("Нова Пошта повернула невалідну відповідь") from exc
+        except requests.RequestException as exc:
+            logger.warning("NovaPoshta %s.%s: %s", model_name, called_method, exc)
+            raise NovaPoshtaError("Нова Пошта тимчасово недоступна") from exc
         if not data.get("success"):
             errors = data.get("errors") or ["Невідома помилка Нової Пошти"]
             logger.error("NovaPoshta %s.%s failed: %s | props=%s", model_name, called_method, errors, method_properties)
