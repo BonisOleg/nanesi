@@ -138,6 +138,9 @@ class SavedWarehouseForm(forms.ModelForm):
             "saved_np_warehouse_name": _("Відділення / поштомат"),
             "saved_ukrposhta_index": _("Індекс Укрпошти"),
             "saved_ukrposhta_address": _("Адреса / відділення Укрпошти"),
+            # Приховані ref: verbose_name в адмінці змінено, на сайті лишається попередній підпис.
+            "saved_np_city_ref": "Ref міста (НП)",
+            "saved_np_warehouse_ref": "Ref відділення / поштомату (НП)",
         }
         fields = [
             "saved_np_city_name", "saved_np_city_ref",

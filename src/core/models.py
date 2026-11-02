@@ -19,9 +19,25 @@ class TimeStampedModel(models.Model):
 class SeoFieldsMixin(models.Model):
     """SEO override на сутності: title/description/keywords."""
 
-    seo_title = models.CharField("SEO-заголовок", max_length=512, null=True, blank=True)
-    seo_description = models.TextField("SEO-опис", null=True, blank=True)
-    seo_keywords = models.CharField("SEO-ключові слова", max_length=512, null=True, blank=True)
+    seo_title = models.CharField(
+        "SEO-заголовок (title)",
+        max_length=512,
+        null=True,
+        blank=True,
+        help_text="Заголовок сторінки для пошукових систем, до ~60 символів",
+    )
+    seo_description = models.TextField(
+        "SEO-опис (description)",
+        null=True,
+        blank=True,
+        help_text="Опис сторінки у видачі пошукових систем, до ~160 символів",
+    )
+    seo_keywords = models.CharField(
+        "Ключові слова (keywords)",
+        max_length=512,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         abstract = True

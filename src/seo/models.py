@@ -18,8 +18,17 @@ class SeoLandingPage(TimeStampedModel):
         "Адреса (без слешів)", max_length=255, unique=True, allow_unicode=True,
         help_text="Частина URL після домену, напр. permanentnyj-makiyazh — сторінка відкриється на /permanentnyj-makiyazh/",
     )
-    meta_title = models.CharField("SEO title", max_length=512, blank=True)
-    meta_description = models.TextField("SEO description", blank=True)
+    meta_title = models.CharField(
+        "SEO-заголовок (title)",
+        max_length=512,
+        blank=True,
+        help_text="Заголовок сторінки для пошукових систем, до ~60 символів",
+    )
+    meta_description = models.TextField(
+        "SEO-опис (description)",
+        blank=True,
+        help_text="Опис сторінки у видачі пошукових систем, до ~160 символів",
+    )
     body = models.TextField(
         "Текст сторінки", blank=True,
         help_text="HTML дозволено (той самий редактор, що й для сторінок/блогу).",

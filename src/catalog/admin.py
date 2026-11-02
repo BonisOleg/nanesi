@@ -193,6 +193,31 @@ class ProductVariantAdmin(TopFiltersAdminMixin, ModelAdmin):
         self.message_user(request, f"Ціну оновлено: {applied}, пропущено: {failed}")
 
 
+class CountryProducerFilter(admin.SimpleListFilter):
+    """Країна виробник — Attribute code=country. У варіантів атрибутів немає."""
+
+    title = "Країна виробник"
+    parameter_name = "country"
+
+    def lookups(self, request, model_admin):
+        values = AttributeValue.objects.filter(attribute__code="country").order_by("sort_order", "value")
+        return [(item.pk, item.value) for item in values]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+        if not str(value).isdigit():
+            return queryset.none()
+        return queryset.filter(
+            attribute_values__attribute__code="country",
+            attribute_values=value,
+        ).distinct()
+
+    def has_output(self):
+        return bool(self.lookup_choices)
+
+
 @admin.register(Product)
 class ProductAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     """modeltranslation вкладки uk/ru/en + TinyMCE на текстових описах (admin_skill)."""
@@ -218,7 +243,10 @@ class ProductAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdm
     )
     list_display_links = ("name_cell",)
     list_editable = ("priority",)
-    list_filter = ("is_active", "is_hit", "is_new", "category", "brand", "supplier")
+    list_filter = (
+        "is_active", "is_hit", "is_new",
+        "category", "brand", CountryProducerFilter, "supplier",
+    )
     list_select_related = ("brand", "category", "supplier")
     search_fields = ("name", "variants__sku", "variants__barcode")
     autocomplete_fields = ["brand", "category", "supplier"]
