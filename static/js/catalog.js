@@ -7,9 +7,39 @@
   var applyBtn = form && form.querySelector("[data-filters-apply]");
   var resetLink = form && form.querySelector("[data-filters-reset]");
   var appliedState = null;
+  var allowSortSubmit = false;
 
   function isDesktopFilters() {
     return window.matchMedia(DESKTOP_MQ).matches;
+  }
+
+  function submitCatalogForm() {
+    if (!form) return;
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+      return;
+    }
+    form.submit();
+  }
+
+  /* sort завжди відправляє форму. На мобільному — з applied-фільтрами, не з draft. */
+  function submitSortChange() {
+    if (!form) return;
+    var mobile = !isDesktopFilters();
+    if (mobile) {
+      restoreAppliedState();
+      syncFilterActions();
+    }
+    if (typeof form.requestSubmit !== "function") {
+      form.submit();
+      return;
+    }
+    if (mobile) allowSortSubmit = true;
+    try {
+      form.requestSubmit();
+    } finally {
+      allowSortSubmit = false;
+    }
   }
 
   function serializeFilters(root) {
@@ -171,7 +201,7 @@
       var target = e.target;
       if (target.matches('input[type="checkbox"]')) {
         syncFilterActions();
-        if (isDesktopFilters()) form.requestSubmit();
+        if (isDesktopFilters()) submitCatalogForm();
       }
     });
 
@@ -181,6 +211,7 @@
 
     form.addEventListener("submit", function (e) {
       if (isDesktopFilters()) return;
+      if (allowSortSubmit) return;
       if (!hasDraftChanges()) e.preventDefault();
     });
 
@@ -189,12 +220,12 @@
         if (e.key !== "Enter") return;
         e.preventDefault();
         if (!isDesktopFilters() && !hasDraftChanges()) return;
-        form.requestSubmit();
+        submitCatalogForm();
       });
       input.addEventListener("blur", function () {
         if (!isDesktopFilters()) return;
         if (input.defaultValue === input.value) return;
-        form.requestSubmit();
+        submitCatalogForm();
       });
     });
 
@@ -252,7 +283,7 @@
       if (sortCurrent) sortCurrent.textContent = option.textContent.trim();
       sortNative.value = value;
       closeSort();
-      form.requestSubmit();
+      submitSortChange();
     }
 
     if (sortTrigger && sortMenu) {
