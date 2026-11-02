@@ -256,9 +256,35 @@ def _unfold_admin_stylesheet(_request):
     return static("admin/css/admin_changelist.css")
 
 
+def _unfold_site_favicons():
+    from django.templatetags.static import static
+
+    return [
+        {"rel": "icon", "sizes": "any", "href": lambda request: static("img/favicon/favicon.ico")},
+        {
+            "rel": "icon",
+            "type": "image/png",
+            "sizes": "32x32",
+            "href": lambda request: static("img/favicon/favicon-32.png"),
+        },
+        {
+            "rel": "icon",
+            "type": "image/png",
+            "sizes": "16x16",
+            "href": lambda request: static("img/favicon/favicon-16.png"),
+        },
+        {
+            "rel": "apple-touch-icon",
+            "sizes": "180x180",
+            "href": lambda request: static("img/favicon/apple-touch-icon.png"),
+        },
+    ]
+
+
 # --- django-unfold ---
 UNFOLD = {
     "STYLES": [_unfold_admin_stylesheet],
+    "SITE_FAVICONS": _unfold_site_favicons(),
     "SITE_TITLE": "NANESI",
     "SITE_HEADER": "NANESI — Адмінпанель",
     "SITE_SYMBOL": "storefront",
