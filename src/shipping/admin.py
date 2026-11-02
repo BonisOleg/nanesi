@@ -1,6 +1,8 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
+from src.core.admin import TopFiltersAdminMixin
+
 from .models import NPCity, NPWarehouse
 
 
@@ -13,7 +15,7 @@ class NPCityAdmin(ModelAdmin):
 
 
 @admin.register(NPWarehouse)
-class NPWarehouseAdmin(ModelAdmin):
+class NPWarehouseAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = ("description", "category", "city", "number", "is_active")
     list_filter = ("category", "is_active")
     search_fields = ("description", "number", "city__name")

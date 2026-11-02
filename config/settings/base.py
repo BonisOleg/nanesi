@@ -50,6 +50,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "src.core.middleware.AdminUkrainianLocaleMiddleware",
     "src.content.middleware.DisabledLanguageRedirectMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -249,8 +250,15 @@ CONTENT_SECURITY_POLICY = {
     },
 }
 
+def _unfold_admin_stylesheet(_request):
+    from django.templatetags.static import static
+
+    return static("admin/css/admin_changelist.css")
+
+
 # --- django-unfold ---
 UNFOLD = {
+    "STYLES": [_unfold_admin_stylesheet],
     "SITE_TITLE": "NANESI",
     "SITE_HEADER": "NANESI — Адмінпанель",
     "SITE_SYMBOL": "storefront",
@@ -298,7 +306,7 @@ UNFOLD = {
                     {"title": "Банери головної", "icon": "view_carousel", "link": reverse_lazy("admin:content_herobanner_changelist")},
                     {"title": "Сторінки", "icon": "description", "link": reverse_lazy("admin:content_staticpage_changelist")},
                     {"title": "Блог", "icon": "article", "link": reverse_lazy("admin:content_blogpost_changelist")},
-                    {"title": "Email-ліди (підписки)", "icon": "mail", "link": reverse_lazy("admin:content_newsletterlead_changelist")},
+                    {"title": "Підписки", "icon": "mail", "link": reverse_lazy("admin:content_newsletterlead_changelist")},
                     {"title": "Переваги (головна)", "icon": "verified", "link": reverse_lazy("admin:content_trustbadge_changelist")},
                 ],
             },

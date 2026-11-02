@@ -8,6 +8,8 @@ from django.http import HttpRequest
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
+from src.core.admin import TopFiltersAdminMixin
+
 from .models import User, Wishlist
 
 if admin.site.is_registered(Group):
@@ -21,7 +23,7 @@ class WishlistInline(TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin, ModelAdmin):
+class UserAdmin(TopFiltersAdminMixin, BaseUserAdmin, ModelAdmin):
     """Unfold auth admin (unfold_auth_admin_skill): Base*Admin першим у MRO."""
 
     form = UserChangeForm

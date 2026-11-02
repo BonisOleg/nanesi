@@ -1,0 +1,14 @@
+{% if cl.has_filters %}
+<div class="admin-top-filters" role="region" aria-label="Фільтри">
+    {% for spec in cl.filter_specs %}
+        <label class="admin-top-filters__field">
+            <span class="admin-top-filters__label">{{ spec.title }}</span>
+            <select class="admin-top-filters__select" onchange="window.location.assign(this.value || window.location.pathname);">
+                {% for choice in spec.top_choices %}
+                    <option value="{{ choice.query_string|iriencode }}"{% if choice.selected %} selected{% endif %}>{{ choice.display }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    {% endfor %}
+</div>
+{% endif %}

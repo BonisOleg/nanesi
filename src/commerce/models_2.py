@@ -44,29 +44,29 @@ class Order(TimeStampedModel):
     stock_restored = models.BooleanField(
         "Залишок повернуто на склад",
         default=False,
-        help_text="True після скасування — щоб не повернути qty двічі",
+        help_text="Після скасування позначено — щоб не повернути кількість двічі.",
     )
 
     # Контакт (гість-checkout, Відповіді п.6): телефон та/або email
     full_name = models.CharField("ПІБ", max_length=255)
     phone = models.CharField("Телефон", max_length=20)
-    email = models.EmailField("Email", blank=True)
+    email = models.EmailField("Ел. пошта", blank=True)
 
     # Доставка — снепшот (не FK на мутабельний довідник НП)
     delivery_method = models.CharField("Спосіб доставки", max_length=20, choices=DeliveryMethod.choices)
     np_city_name = models.CharField("Місто (НП)", max_length=255, blank=True)
-    np_city_ref = models.CharField("Ref міста (НП)", max_length=64, blank=True)
+    np_city_ref = models.CharField("Ідентифікатор міста (НП)", max_length=64, blank=True)
     np_warehouse_name = models.CharField("Відділення / поштомат (НП)", max_length=255, blank=True)
-    np_warehouse_ref = models.CharField("Ref відділення / поштомату (НП)", max_length=64, blank=True)
+    np_warehouse_ref = models.CharField("Ідентифікатор відділення (НП)", max_length=64, blank=True)
     ukrposhta_index = models.CharField("Індекс (Укрпошта)", max_length=5, blank=True)
     ukrposhta_address = models.CharField("Адреса (Укрпошта)", max_length=512, blank=True)
 
     # Оплата
     payment_method = models.CharField("Спосіб оплати", max_length=20, choices=PaymentMethod.choices)
     payment_status = models.CharField("Статус оплати", max_length=20, choices=PaymentStatus.choices, default=PaymentStatus.UNPAID)
-    payment_intent_id = models.CharField("ID транзакції платіжки", max_length=100, blank=True)
+    payment_intent_id = models.CharField("Ідентифікатор транзакції", max_length=100, blank=True)
     payment_idempotency_key = models.CharField(
-        "Idempotency-ключ webhook", max_length=100, blank=True, null=True, unique=True,
+        "Ключ ідемпотентності вебхука", max_length=100, blank=True, null=True, unique=True,
     )
     paid_at = models.DateTimeField("Дата оплати", null=True, blank=True)
 
@@ -86,11 +86,11 @@ class Order(TimeStampedModel):
 
     # Логістика — діагностика (novaposhta_skill, Фаза 4.3)
     ttn_number = models.CharField("ТТН", max_length=32, blank=True)
-    shipping_error = models.TextField("Помилка доставки (API)", blank=True)
+    shipping_error = models.TextField("Помилка доставки", blank=True)
 
     # SalesDrive — id заявки після успішного create через outbox
     salesdrive_order_id = models.PositiveIntegerField(
-        "ID заявки SalesDrive", null=True, blank=True, db_index=True,
+        "Ідентифікатор заявки SalesDrive", null=True, blank=True, db_index=True,
     )
 
     class Meta:
@@ -116,7 +116,7 @@ class OrderItem(models.Model):
         on_delete=models.SET_NULL, related_name="order_items",
     )
     product_name = models.CharField("Назва товару (знімок)", max_length=512)
-    sku = models.CharField("SKU (знімок)", max_length=100)
+    sku = models.CharField("Артикул (знімок)", max_length=100)
     unit_price = models.DecimalField("Ціна за одиницю (знімок)", max_digits=10, decimal_places=2)
     qty = models.PositiveIntegerField("Кількість")
     line_total = models.DecimalField("Сума рядка", max_digits=10, decimal_places=2)

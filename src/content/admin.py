@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin
 
-from src.core.admin import TinyMCEAdminMixin
+from src.core.admin import TinyMCEAdminMixin, TopFiltersAdminMixin
 
 from . import translation  # noqa: F401 — MT registry до TabbedTranslationAdmin
 from .models import BlogPost, HeroBanner, NewsletterLead, SiteSettings, StaticPage, TrustBadge
@@ -48,7 +48,7 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
             ),
         }),
         ("Мови", {"fields": ("ru_enabled", "en_enabled")}),
-        ("Popup зі знижкою", {
+        ("Спливне вікно зі знижкою", {
             "fields": (
                 "promo_popup_enabled",
                 "promo_popup_title",
@@ -94,7 +94,7 @@ class SiteSettingsAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(StaticPage)
-class StaticPageAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class StaticPageAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("body",)
     list_display = ("title", "slug", "is_published", "updated_at")
     list_filter = ("is_published",)
@@ -108,7 +108,7 @@ class StaticPageAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(BlogPost)
-class BlogPostAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class BlogPostAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("body",)
     list_display = ("title", "get_cover_preview", "is_published", "published_at")
     list_filter = ("is_published",)
@@ -137,7 +137,7 @@ class BlogPostAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(HeroBanner)
-class HeroBannerAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class HeroBannerAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("subtitle",)
     list_display = (
         "title", "get_image_preview", "get_bg_preview",
@@ -192,7 +192,7 @@ class HeroBannerAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(TrustBadge)
-class TrustBadgeAdmin(TabbedTranslationAdmin, ModelAdmin):
+class TrustBadgeAdmin(TopFiltersAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     list_display = ("title", "icon_label", "is_active", "sort_order")
     list_editable = ("icon_label", "sort_order", "is_active")
     list_filter = ("is_active",)
@@ -200,7 +200,7 @@ class TrustBadgeAdmin(TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(NewsletterLead)
-class NewsletterLeadAdmin(ModelAdmin):
+class NewsletterLeadAdmin(TopFiltersAdminMixin, ModelAdmin):
     """Лише перегляд лідів — створюються сайтом, не руками (popup/інлайн)."""
 
     list_display = ("email", "source", "promo_code", "created_at")

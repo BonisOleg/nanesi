@@ -1,0 +1,417 @@
+# Ukrainian translations for NANESI admin (Unfold 0.41 has no uk catalog).
+msgid ""
+msgstr ""
+"Project-Id-Version: nanesi\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-02 12:00+0200\n"
+"PO-Revision-Date: 2026-11-02 12:00+0200\n"
+"Last-Translator: NANESI\n"
+"Language-Team: Ukrainian\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != 11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || (n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+
+
+msgid "Type to search"
+msgstr "Введіть для пошуку"
+
+msgid "Select action"
+msgstr "Оберіть дію"
+
+msgid "Select action to run"
+msgstr "Оберіть дію для виконання"
+
+msgid "Select record"
+msgstr "Обрати запис"
+
+msgid "Select value"
+msgstr "Оберіть значення"
+
+msgid "Select currency"
+msgstr "Оберіть валюту"
+
+msgid "Select all objects on this page for an action"
+msgstr "Обрати всі об’єкти на цій сторінці для дії"
+
+msgid "Select all rows"
+msgstr "Обрати всі рядки"
+
+msgid "Filters"
+msgstr "Фільтри"
+
+msgid "Filter"
+msgstr "Фільтр"
+
+msgid "Apply Filters"
+msgstr "Застосувати"
+
+msgid "Clear all filters"
+msgstr "Скинути фільтри"
+
+msgid "Hide counts"
+msgstr "Сховати лічильники"
+
+msgid "Show counts"
+msgstr "Показати лічильники"
+
+msgid "Run"
+msgstr "Виконати"
+
+msgid "Run the selected action"
+msgstr "Виконати обрану дію"
+
+msgid "Go"
+msgstr "Виконати"
+
+msgid "Search"
+msgstr "Пошук"
+
+msgid "Save"
+msgstr "Зберегти"
+
+msgid "Save and continue editing"
+msgstr "Зберегти і продовжити"
+
+msgid "Save and view"
+msgstr "Зберегти і переглянути"
+
+msgid "Save and add another"
+msgstr "Зберегти і додати ще"
+
+msgid "Save as new"
+msgstr "Зберегти як новий"
+
+msgid "Close"
+msgstr "Закрити"
+
+msgid "Delete"
+msgstr "Видалити"
+
+msgid "Delete?"
+msgstr "Видалити?"
+
+msgid "Remove"
+msgstr "Прибрати"
+
+msgid "History"
+msgstr "Історія"
+
+msgid "Change"
+msgstr "Змінити"
+
+msgid "View"
+msgstr "Переглянути"
+
+msgid "View on site"
+msgstr "Переглянути на сайті"
+
+msgid "View site"
+msgstr "Переглянути сайт"
+
+msgid "Return to site"
+msgstr "Повернутися на сайт"
+
+msgid "Log out"
+msgstr "Вийти"
+
+msgid "Log in"
+msgstr "Увійти"
+
+msgid "Log in again"
+msgstr "Увійти знову"
+
+msgid "Home"
+msgstr "Головна"
+
+msgid "Dashboard"
+msgstr "Панель"
+
+msgid "All"
+msgstr "Усі"
+
+msgid "Yes"
+msgstr "Так"
+
+msgid "No"
+msgstr "Ні"
+
+msgid "Unknown"
+msgstr "Невідомо"
+
+msgid "True"
+msgstr "Так"
+
+msgid "False"
+msgstr "Ні"
+
+msgid "Show all"
+msgstr "Показати всі"
+
+msgid "Clear selection"
+msgstr "Скасувати вибір"
+
+msgid "Add"
+msgstr "Додати"
+
+msgid "Menu"
+msgstr "Меню"
+
+msgid "General"
+msgstr "Загальне"
+
+msgid "Dark"
+msgstr "Темна"
+
+msgid "Light"
+msgstr "Світла"
+
+msgid "System"
+msgstr "Системна"
+
+msgid "Welcome,"
+msgstr "Вітаємо,"
+
+msgid "Welcome back to"
+msgstr "З поверненням до"
+
+msgid "Date"
+msgstr "Дата"
+
+msgid "Time"
+msgstr "Час"
+
+msgid "Date/time"
+msgstr "Дата і час"
+
+msgid "User"
+msgstr "Користувач"
+
+msgid "Action"
+msgstr "Дія"
+
+msgid "From"
+msgstr "Від"
+
+msgid "To"
+msgstr "До"
+
+msgid "Value"
+msgstr "Значення"
+
+msgid "Date from"
+msgstr "Дата від"
+
+msgid "Date to"
+msgstr "Дата до"
+
+msgid "Summary"
+msgstr "Підсумок"
+
+msgid "Objects"
+msgstr "Об’єкти"
+
+msgid "Delete multiple objects"
+msgstr "Видалити кілька об’єктів"
+
+msgid "Recent actions"
+msgstr "Останні дії"
+
+msgid "Unknown content"
+msgstr "Невідомий вміст"
+
+msgid "All applications"
+msgstr "Усі розділи"
+
+msgid "More actions"
+msgstr "Інші дії"
+
+msgid "Search apps and models..."
+msgstr "Пошук розділів і моделей..."
+
+msgid "Filter navigation items"
+msgstr "Фільтр пунктів меню"
+
+msgid "Choose file to upload"
+msgstr "Оберіть файл"
+
+msgid "Image preview"
+msgstr "Попередній перегляд"
+
+msgid "Record picture"
+msgstr "Зображення запису"
+
+msgid "Change password"
+msgstr "Змінити пароль"
+
+msgid "Your password was changed."
+msgstr "Пароль змінено."
+
+msgid "Forgotten your password or username?"
+msgstr "Забули пароль або ім’я користувача?"
+
+msgid "You have been successfully logged out from the administration"
+msgstr "Ви вийшли з адмінки"
+
+msgid "Thanks for spending some quality time with the web site today."
+msgstr "Дякуємо, що завітали сьогодні."
+
+msgid "Toggle sorting"
+msgstr "Змінити напрям сортування"
+
+msgid "Remove from sorting"
+msgstr "Прибрати з сортування"
+
+msgid "Click here to select the objects across all pages"
+msgstr "Натисніть, щоб обрати об’єкти на всіх сторінках"
+
+msgid "Please correct the error below."
+msgstr "Виправте помилку нижче."
+
+msgid "Please correct the errors below."
+msgstr "Виправте помилки нижче."
+
+msgid "This object doesn’t have a change history. It probably wasn’t added via this admin site."
+msgstr "В цього об’єкта немає історії змін. Ймовірно, його додали не через цю адмінку."
+
+msgid "You don’t have permission to view or edit anything."
+msgstr "У вас немає прав переглядати чи редагувати."
+
+msgid "Please enter your old password, for security’s sake, and then enter your new password twice so we can verify you typed it in correctly."
+msgstr "Введіть старий пароль, а потім новий двічі — щоб перевірити, що ви не помилилися."
+
+msgid "First, enter a username and password. Then, you’ll be able to edit more user options."
+msgstr "Спочатку введіть ім’я користувача і пароль. Потім можна буде змінити інші параметри."
+
+msgid "Enter a username and password."
+msgstr "Введіть ім’я користувача і пароль."
+
+msgid "No, take me back"
+msgstr "Ні, повернутися"
+
+msgid "Yes, I’m sure"
+msgstr "Так, я впевнений"
+
+msgid "By {}"
+msgstr "{}"
+
+msgid "and"
+msgstr "та"
+
+msgid "email address"
+msgstr "електронна адреса"
+
+msgid "0 of %(cnt)s selected"
+msgstr "Обрано 0 з %(cnt)s"
+
+msgid "Add %(name)s"
+msgstr "Додати %(name)s"
+
+msgid "Change selected %(model)s"
+msgstr "Змінити обране: %(model)s"
+
+msgid "Add another %(model)s"
+msgstr "Додати ще %(model)s"
+
+msgid "View selected %(model)s"
+msgstr "Переглянути обране: %(model)s"
+
+msgid "Delete selected %(model)s"
+msgstr "Видалити обране: %(model)s"
+
+msgid "%(full_result_count)s total"
+msgstr "Усього %(full_result_count)s"
+
+msgid "Select all %(total_count)s %(module_name)s"
+msgstr "Обрати всі %(total_count)s %(module_name)s"
+
+msgid "Sorting priority: %(priority_number)s"
+msgstr "Пріоритет сортування: %(priority_number)s"
+
+msgid "Models in the %(name)s application"
+msgstr "Моделі розділу %(name)s"
+
+msgid "%(class_name)s %(instance)s"
+msgstr "%(class_name)s %(instance)s"
+
+msgid " By %(filter_title)s "
+msgstr "%(filter_title)s"
+
+msgid "Add new item"
+msgstr "Додати елемент"
+
+msgid "Paragraph"
+msgstr "Абзац"
+
+msgid "Underlined"
+msgstr "Підкреслений"
+
+msgid "Bold"
+msgstr "Жирний"
+
+msgid "Italic"
+msgstr "Курсив"
+
+msgid "Strike"
+msgstr "Закреслений"
+
+msgid "Link"
+msgstr "Посилання"
+
+msgid "Heading"
+msgstr "Заголовок"
+
+msgid "Quote"
+msgstr "Цитата"
+
+msgid "Code"
+msgstr "Код"
+
+msgid "Unordered list"
+msgstr "Маркований список"
+
+msgid "Ordered list"
+msgstr "Нумерований список"
+
+msgid "Indent increase"
+msgstr "Збільшити відступ"
+
+msgid "Indent decrease"
+msgstr "Зменшити відступ"
+
+msgid "Undo"
+msgstr "Скасувати"
+
+msgid "Redo"
+msgstr "Повторити"
+
+msgid "Enter an URL"
+msgstr "Введіть посилання"
+
+msgid "Unlink"
+msgstr "Прибрати посилання"
+
+msgid "Not enough data."
+msgstr "Недостатньо даних."
+
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "%(counter)s результат"
+msgstr[1] "%(counter)s результати"
+msgstr[2] "%(counter)s результатів"
+msgstr[3] "%(counter)s результату"
+
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] "запис"
+msgstr[1] "записи"
+msgstr[2] "записів"
+msgstr[3] "запису"
+
+msgid "%(sel)s of %(cnt)s selected"
+msgid_plural "%(sel)s of %(cnt)s selected"
+msgstr[0] "Обрано %(sel)s з %(cnt)s"
+msgstr[1] "Обрано %(sel)s з %(cnt)s"
+msgstr[2] "Обрано %(sel)s з %(cnt)s"
+msgstr[3] "Обрано %(sel)s з %(cnt)s"

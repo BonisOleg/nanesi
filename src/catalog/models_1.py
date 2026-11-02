@@ -8,7 +8,6 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-from django.utils.translation import gettext_lazy as _
 
 from src.core.models import SeoFieldsMixin, TimeStampedModel
 from src.core.utils.images import validate_image
@@ -19,7 +18,7 @@ SHADE_PREVIEW_LIMIT = 5
 
 class Category(TimeStampedModel, SeoFieldsMixin):
     name = models.CharField("Назва", max_length=255)
-    slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     parent = models.ForeignKey(
         "self", verbose_name="Батьківська категорія", null=True, blank=True,
         on_delete=models.CASCADE, related_name="children",
@@ -59,7 +58,7 @@ class Category(TimeStampedModel, SeoFieldsMixin):
 
 class Brand(TimeStampedModel, SeoFieldsMixin):
     name = models.CharField("Назва", max_length=255, unique=True)
-    slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     logo = models.ImageField("Логотип", upload_to="catalog/brands/", null=True, blank=True)
     show_name = models.BooleanField(
         "Показувати назву на вітрині",
@@ -93,7 +92,7 @@ class Supplier(TimeStampedModel):
     name = models.CharField("Назва", max_length=255, unique=True)
     contact_person = models.CharField("Контактна особа", max_length=255, blank=True)
     phone = models.CharField("Телефон", max_length=30, blank=True)
-    email = models.EmailField("Email", blank=True)
+    email = models.EmailField("Ел. пошта", blank=True)
     notes = models.TextField("Примітки", blank=True)
     external_id = models.CharField(
         "Зовнішній ID (майбутній синк)", max_length=100, blank=True,
@@ -114,7 +113,7 @@ class Product(TimeStampedModel, SeoFieldsMixin):
     """Вітринна картка товару. Ціна/залишок/SKU — на ProductVariant."""
 
     name = models.CharField("Назва", max_length=512)
-    slug = models.SlugField("URL", max_length=512, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=512, unique=True, blank=True)
     brand = models.ForeignKey(
         Brand, verbose_name="Бренд", on_delete=models.PROTECT, related_name="products",
     )
@@ -146,14 +145,22 @@ class Product(TimeStampedModel, SeoFieldsMixin):
         through="catalog.ProductAttributeValue", related_name="products",
     )
 
-    is_active = models.BooleanField("Активний (видимий на сайті)", default=True)
-    is_hit = models.BooleanField("Хіт продажів", default=False)
+    is_active = models.BooleanField(
+        "Активний",
+        default=True,
+        help_text="Видимий на сайті.",
+    )
+    is_hit = models.BooleanField(
+        "Хіт",
+        default=False,
+        help_text="Позначка «хіт продажів» на вітрині.",
+    )
     is_new = models.BooleanField("Новинка", default=False)
     priority = models.PositiveIntegerField(
-        _("Пріоритет у каталозі"),
+        "Пріоритет у каталозі",
         default=0,
         db_index=False,
-        help_text=_("Більше число — вище в списку. 0 — звичайний порядок"),
+        help_text="Більше число — вище в списку. 0 — звичайний порядок",
     )
     cross_sell = models.ManyToManyField(
         "self",
@@ -215,12 +222,12 @@ class ProductVariant(TimeStampedModel):
     """Одиниця кошика/складу: власний SKU, залишок, ціна. shade/volume — з листа п.12."""
 
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE, related_name="variants")
-    sku = models.CharField("Артикул / SKU", max_length=100, unique=True)
-    barcode = models.CharField("Штрихкод (EAN)", max_length=64, blank=True)
+    sku = models.CharField("Артикул", max_length=100, unique=True)
+    barcode = models.CharField("Штрихкод", max_length=64, blank=True)
 
     shade = models.CharField("Відтінок", max_length=255, blank=True)
     shade_hex = models.CharField(
-        "Колір відтінку (HEX)",
+        "Колір відтінку",
         max_length=7,
         blank=True,
         validators=[RegexValidator(SHADE_HEX_RE, "Формат #RGB або #RRGGBB")],
@@ -231,7 +238,7 @@ class ProductVariant(TimeStampedModel):
         upload_to="catalog/shades/",
         blank=True,
         validators=[validate_image],
-        help_text="Для перламутру, глітеру, duo-chrome — коли HEX не передає колір.",
+        help_text="Для перламутру, блиску чи подвійного кольору — коли код кольору не передає відтінок.",
     )
     volume = models.CharField("Об'єм / варіант", max_length=100, blank=True)
 
@@ -308,7 +315,7 @@ class ProductImage(TimeStampedModel):
         upload_to="catalog/products/",
         validators=[validate_image],
     )
-    alt_text = models.CharField("Alt-текст", max_length=255, blank=True)
+    alt_text = models.CharField("Альтернативний текст", max_length=255, blank=True)
     is_main = models.BooleanField("Головне фото", default=False)
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 

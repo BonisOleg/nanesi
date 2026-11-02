@@ -1,0 +1,10 @@
+{% load i18n %}
+<span class="admin-bool" role="img" aria-label="{% if value == '' or value == None %}{% trans 'Unknown' %}{% elif value %}{% trans 'Yes' %}{% else %}{% trans 'No' %}{% endif %}">
+    {% if value == '' or value == None %}
+        <span class="material-symbols-outlined admin-bool__icon admin-bool__icon--unknown" aria-hidden="true">help</span>
+    {% elif value %}
+        <span class="material-symbols-outlined admin-bool__icon admin-bool__icon--yes" aria-hidden="true">check</span>
+    {% else %}
+        <span class="material-symbols-outlined admin-bool__icon admin-bool__icon--no" aria-hidden="true">close</span>
+    {% endif %}
+</span>

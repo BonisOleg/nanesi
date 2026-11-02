@@ -44,7 +44,7 @@ class Cart(TimeStampedModel):
     )
     contact_full_name = models.CharField("Контакт: ПІБ", max_length=255, blank=True)
     contact_phone = models.CharField("Контакт: телефон", max_length=20, blank=True)
-    contact_email = models.EmailField("Контакт: email", blank=True)
+    contact_email = models.EmailField("Контакт: ел. пошта", blank=True)
 
     class Meta:
         verbose_name = "Кошик"

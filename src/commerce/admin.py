@@ -1,6 +1,8 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
+from src.core.admin import TopFiltersAdminMixin
+
 from src.commerce.models import (
     Cart, CartItem, Order, OrderIntegrationEvent, OrderItem, OrderStatusLog, PromoCode,
 )
@@ -15,7 +17,7 @@ class CartItemInline(TabularInline):
 
 
 @admin.register(Cart)
-class CartAdmin(ModelAdmin):
+class CartAdmin(TopFiltersAdminMixin, ModelAdmin):
     """Довідково/дебаг — кошики створюються автоматично на вітрині."""
 
     list_display = ("pk", "user", "session_key", "status", "contact_phone", "updated_at")
@@ -36,7 +38,7 @@ class CartAdmin(ModelAdmin):
 
 
 @admin.register(PromoCode)
-class PromoCodeAdmin(ModelAdmin):
+class PromoCodeAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = ("code", "discount_type", "discount_value", "used_count", "max_uses", "is_active")
     list_filter = ("discount_type", "is_active")
     search_fields = ("code",)
@@ -77,7 +79,7 @@ class OrderIntegrationEventInline(TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(ModelAdmin):
+class OrderAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = (
         "number", "full_name", "phone", "status", "payment_status",
         "payment_method", "delivery_method", "salesdrive_order_id", "total", "created_at",
@@ -179,7 +181,7 @@ class OrderAdmin(ModelAdmin):
 
 
 @admin.register(OrderIntegrationEvent)
-class OrderIntegrationEventAdmin(ModelAdmin):
+class OrderIntegrationEventAdmin(TopFiltersAdminMixin, ModelAdmin):
     """Черга подій SalesDrive (create/update). Лише перегляд — пише queue_order_event()."""
 
     list_display = ("order", "event_type", "status", "created_at", "sent_at")

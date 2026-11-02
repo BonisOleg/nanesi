@@ -2,14 +2,14 @@ from django.contrib import admin
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin
 
-from src.core.admin import TinyMCEAdminMixin
+from src.core.admin import TinyMCEAdminMixin, TopFiltersAdminMixin
 
 from . import translation  # noqa: F401 — MT registry до TabbedTranslationAdmin
 from .models import SeoLandingPage
 
 
 @admin.register(SeoLandingPage)
-class SeoLandingPageAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class SeoLandingPageAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("body",)
     list_display = ("title", "path", "is_active", "is_indexed", "updated_at")
     list_filter = ("is_active", "is_indexed")

@@ -1,0 +1,211 @@
+.admin-top-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0 0 0.75rem;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+.admin-top-filters__field {
+    display: flex;
+    flex: 1 1 9.5rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-width: 14rem;
+    min-width: 0;
+}
+
+.admin-top-filters__label {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+.admin-top-filters__select {
+    appearance: auto;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+    color: #111827;
+    font-size: 16px;
+    line-height: 1.2;
+    max-width: 100%;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.6rem;
+    width: 100%;
+}
+
+html.dark .admin-top-filters__select {
+    background-color: #111827;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+.admin-bool {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    line-height: 1;
+}
+
+.admin-bool__icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.admin-bool__icon--yes {
+    color: #15803d;
+}
+
+.admin-bool__icon--no {
+    color: #b91c1c;
+}
+
+.admin-bool__icon--unknown {
+    color: #6b7280;
+}
+
+@media (max-width: 767px) {
+    .admin-top-filters__field {
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    body.model-product.change-list #result_list {
+        max-width: 100%;
+        table-layout: auto;
+        width: 100%;
+    }
+
+    body.model-product.change-list #result_list .action-checkbox-column,
+    body.model-product.change-list #result_list td.action-checkbox {
+        width: 2.25rem;
+    }
+
+    body.model-product.change-list #result_list .column-brand_col,
+    body.model-product.change-list #result_list .field-brand_col,
+    body.model-product.change-list #result_list .column-category_col,
+    body.model-product.change-list #result_list .field-category_col {
+        max-width: 8rem;
+        width: 8%;
+    }
+
+    body.model-product.change-list #result_list th.field-name_cell,
+    body.model-product.change-list #result_list td.field-name_cell {
+        max-width: 14rem;
+        width: auto;
+    }
+
+    body.model-product.change-list #result_list .column-col_active,
+    body.model-product.change-list #result_list .field-col_active,
+    body.model-product.change-list #result_list .column-col_hit,
+    body.model-product.change-list #result_list .field-col_hit,
+    body.model-product.change-list #result_list .column-col_new,
+    body.model-product.change-list #result_list .field-col_new {
+        width: 2.75rem;
+    }
+
+    body.model-product.change-list #result_list .column-priority,
+    body.model-product.change-list #result_list .field-priority {
+        width: 4.5rem;
+    }
+}
+
+body.model-product.change-list #result_list th {
+    overflow-wrap: normal;
+    padding-bottom: 0.35rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.35rem;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+body.model-product.change-list #result_list td {
+    padding-bottom: 0.35rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.35rem;
+}
+
+body.model-product.change-list #result_list th.field-name_cell,
+body.model-product.change-list #result_list td.field-name_cell {
+    overflow-wrap: break-word;
+    white-space: normal;
+    word-break: normal;
+}
+
+body.model-product.change-list #result_list th.column-brand_col,
+body.model-product.change-list #result_list td.field-brand_col,
+body.model-product.change-list #result_list th.column-category_col,
+body.model-product.change-list #result_list td.field-category_col {
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
+}
+
+body.model-product.change-list #result_list th.column-get_price_display,
+body.model-product.change-list #result_list td.field-get_price_display,
+body.model-product.change-list #result_list th.column-get_stock_display,
+body.model-product.change-list #result_list td.field-get_stock_display {
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+    width: 1%;
+}
+
+body.model-product.change-list #result_list td.field-priority,
+body.model-product.change-list #result_list th.column-priority {
+    width: 4.5rem;
+}
+
+body.model-product.change-list #result_list th.column-priority {
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
+}
+
+body.model-product.change-list #result_list .field-name_cell a,
+body.model-product.change-list #result_list th.field-name_cell a {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+    white-space: normal;
+}
+
+body.model-product.change-list #result_list .product-name-cell {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+body.model-product.change-list #result_list .product-thumb {
+    border-radius: 0.25rem;
+    flex: 0 0 auto;
+    height: 28px;
+    object-fit: cover;
+    width: 28px;
+}
+
+body.model-product.change-list #result_list .product-name-text {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+}
+
+body.model-product.change-list #result_list td.field-priority input {
+    box-sizing: border-box;
+    font-size: 16px;
+    max-width: 4rem;
+    padding: 0.2rem 0.25rem;
+    width: 4rem;
+}

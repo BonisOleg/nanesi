@@ -26,7 +26,7 @@ class SiteSettings(SingletonModel):
     logo = models.ImageField("Логотип", upload_to="content/", null=True, blank=True)
 
     phone = models.CharField("Телефон", max_length=30, blank=True)
-    email = models.EmailField("Email", blank=True)
+    email = models.EmailField("Ел. пошта", blank=True)
     instagram_url = models.URLField("Instagram", blank=True)
     ig_image_1 = models.ImageField(
         "Фото Instagram 1",
@@ -112,26 +112,26 @@ class SiteSettings(SingletonModel):
     # рендериться в /theme.css (CSS custom properties), base.css лише задає fallback-дефолт.
     accent_color = models.CharField(
         "Колір акценту", max_length=7, blank=True, validators=[_hex_color_validator],
-        help_text="HEX, напр. #C99B9B. Порожнє — використовується дефолт з мокапу.",
+        help_text="Наприклад #C99B9B. Порожнє — використовується колір з макета.",
     )
     accent_hover_color = models.CharField(
-        "Колір акценту (hover)", max_length=7, blank=True, validators=[_hex_color_validator],
-        help_text="HEX, напр. #A97878. Порожнє — використовується дефолт з мокапу.",
+        "Колір акценту при наведенні", max_length=7, blank=True, validators=[_hex_color_validator],
+        help_text="Наприклад #A97878. Порожнє — використовується колір з макета.",
     )
 
     # Popup −10% за email (лист Nanesi п.10) — керування текстом/знижкою з адмінки
-    promo_popup_enabled = models.BooleanField("Popup зі знижкою увімкнено", default=True)
-    promo_popup_title = models.CharField("Заголовок popup", max_length=255, blank=True)
-    promo_popup_text = models.TextField("Текст popup", blank=True)
+    promo_popup_enabled = models.BooleanField("Спливне вікно зі знижкою увімкнено", default=True)
+    promo_popup_title = models.CharField("Заголовок спливного вікна", max_length=255, blank=True)
+    promo_popup_text = models.TextField("Текст спливного вікна", blank=True)
     promo_popup_discount_percent = models.PositiveSmallIntegerField(
         "Знижка, %", default=10,
     )
 
     # Пікселі (Доповнення §1) — поля готові, підключення трекінгу — Етап E
-    ga4_id = models.CharField("GA4 ID", max_length=50, blank=True)
-    gtm_id = models.CharField("GTM ID", max_length=50, blank=True)
-    meta_pixel_id = models.CharField("Meta Pixel ID", max_length=50, blank=True)
-    tiktok_pixel_id = models.CharField("TikTok Pixel ID", max_length=50, blank=True)
+    ga4_id = models.CharField("Ідентифікатор GA4", max_length=50, blank=True)
+    gtm_id = models.CharField("Ідентифікатор GTM", max_length=50, blank=True)
+    meta_pixel_id = models.CharField("Ідентифікатор Meta Pixel", max_length=50, blank=True)
+    tiktok_pixel_id = models.CharField("Ідентифікатор TikTok Pixel", max_length=50, blank=True)
 
     # Способи доставки/оплати — «вмикаються в адмінці» (лист Nanesi, карта v4.1)
     nova_poshta_enabled = models.BooleanField("Нова Пошта увімкнена", default=True)
@@ -255,7 +255,7 @@ class StaticPage(TimeStampedModel, SeoFieldsMixin):
     """Про нас / Доставка і оплата / Обмін та повернення / Оферта / Політика / Контакти."""
 
     title = models.CharField("Заголовок", max_length=255)
-    slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     body = models.TextField("Текст", blank=True)
     is_published = models.BooleanField("Опубліковано", default=True)
 
@@ -279,12 +279,12 @@ class StaticPage(TimeStampedModel, SeoFieldsMixin):
 class BlogPost(TimeStampedModel, SeoFieldsMixin):
     title = models.CharField("Заголовок", max_length=255)
     h1 = models.CharField(
-        "H1",
+        "Головний заголовок",
         max_length=255,
         blank=True,
         help_text="Якщо порожнє — на сторінці показується Заголовок.",
     )
-    slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     cover_image = models.ImageField(
         "Обкладинка",
         upload_to="content/blog/",
@@ -328,10 +328,10 @@ class NewsletterLead(TimeStampedModel):
     згенерований одноразовий PromoCode для знижки за першу підписку."""
 
     class Source(models.TextChoices):
-        POPUP = "popup", "Popup"
+        POPUP = "popup", "Спливне вікно"
         INLINE = "inline", "Інлайн-блок на головній"
 
-    email = models.EmailField("Email", unique=True)
+    email = models.EmailField("Ел. пошта", unique=True)
     source = models.CharField("Джерело", max_length=20, choices=Source.choices, default=Source.POPUP)
     promo_code = models.ForeignKey(
         "commerce.PromoCode", verbose_name="Виданий промокод", null=True, blank=True,
@@ -339,8 +339,8 @@ class NewsletterLead(TimeStampedModel):
     )
 
     class Meta:
-        verbose_name = "Email-лід (підписка)"
-        verbose_name_plural = "Email-ліди (підписки)"
+        verbose_name = "Підписка на розсилку"
+        verbose_name_plural = "Підписки на розсилку"
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -361,7 +361,7 @@ class HeroBanner(TimeStampedModel):
         max_length=512,
         blank=True,
         default="/katalog/",
-        help_text="Відносний шлях або повний URL, напр. /katalog/ чи /dobirka/aktsii/",
+        help_text="Відносний шлях або повне посилання, напр. /katalog/ чи /dobirka/aktsii/",
     )
     image = models.ImageField(
         "Зображення справа",
@@ -376,7 +376,7 @@ class HeroBanner(TimeStampedModel):
         null=True,
         blank=True,
         validators=[validate_image],
-        help_text="На весь слайд (desktop і mobile). Порожнє — бежевий фон.",
+        help_text="На весь слайд (комп’ютер і телефон). Порожнє — бежевий фон.",
     )
     overlay_color = models.CharField(
         "Колір підложки",
@@ -385,8 +385,8 @@ class HeroBanner(TimeStampedModel):
         default="#EFE9E1",
         validators=[_hex_color_validator],
         help_text=(
-            "HEX, напр. #EFE9E1. Видно лише коли «Прозорість підложки» > 0. "
-            "При 0% колір повністю прозорий — зміна HEX нічого не змінить на вітрині."
+            "Наприклад #EFE9E1. Видно лише коли «Прозорість підложки» > 0. "
+            "При 0% колір повністю прозорий — зміна кольору нічого не змінить на вітрині."
         ),
     )
     overlay_opacity = models.PositiveSmallIntegerField(
@@ -450,7 +450,7 @@ class TrustBadge(TimeStampedModel):
         "Ключ іконки",
         max_length=32,
         blank=True,
-        help_text="leaf / truck / award / refresh / headset — SVG у блоці переваг",
+        help_text="Ключ іконки блоку переваг: leaf, truck, award, refresh або headset.",
     )
     title = models.CharField("Заголовок", max_length=255)
     text = models.CharField("Текст", max_length=255, blank=True)

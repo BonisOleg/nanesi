@@ -35,7 +35,7 @@ class Attribute(models.Model):
 class AttributeValue(models.Model):
     attribute = models.ForeignKey(Attribute, verbose_name="Атрибут", on_delete=models.CASCADE, related_name="values")
     value = models.CharField("Значення", max_length=255)
-    slug = models.SlugField("URL", max_length=255, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, blank=True)
     is_umbrella = models.BooleanField(
         "Покриває всі значення групи",
         default=False,
@@ -61,8 +61,18 @@ class AttributeValue(models.Model):
 
 
 class ProductAttributeValue(models.Model):
-    product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, related_name="product_attribute_values")
-    attribute_value = models.ForeignKey(AttributeValue, on_delete=models.CASCADE, related_name="product_links")
+    product = models.ForeignKey(
+        "catalog.Product",
+        verbose_name="Товар",
+        on_delete=models.CASCADE,
+        related_name="product_attribute_values",
+    )
+    attribute_value = models.ForeignKey(
+        AttributeValue,
+        verbose_name="Значення атрибута",
+        on_delete=models.CASCADE,
+        related_name="product_links",
+    )
 
     class Meta:
         verbose_name = "Атрибут товару"
@@ -85,7 +95,7 @@ class Collection(TimeStampedModel):
         CUSTOM = "custom", "Довільна підбірка"
 
     name = models.CharField("Назва", max_length=255)
-    slug = models.SlugField("URL", max_length=255, unique=True, blank=True)
+    slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     kind = models.CharField("Тип", max_length=20, choices=Kind.choices, default=Kind.CUSTOM)
     image = models.ImageField(
         "Зображення (промо на головній)",

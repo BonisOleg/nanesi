@@ -9,7 +9,7 @@ from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.decorators import action
 
-from src.core.admin import TinyMCEAdminMixin
+from src.core.admin import TinyMCEAdminMixin, TopFiltersAdminMixin
 
 from . import translation  # noqa: F401 — реєстрація MT до TabbedTranslationAdmin.__init__
 from .forms import SupplierImportForm
@@ -32,6 +32,19 @@ from .models import (
 )
 
 
+def _product_list_thumb(obj) -> str:
+    images = list(obj.images.all())
+    chosen = next((img for img in images if img.is_main and img.image), None)
+    if chosen is None:
+        chosen = next((img for img in images if img.image), None)
+    if chosen is None:
+        return ""
+    try:
+        return chosen.image.url
+    except ValueError:
+        return ""
+
+
 class CategoryProductPositionInline(TabularInline):
     model = CategoryProductPosition
     fields = ("product", "position")
@@ -41,7 +54,7 @@ class CategoryProductPositionInline(TabularInline):
 
 
 @admin.register(Category)
-class CategoryAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class CategoryAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("description",)
     inlines = [CategoryProductPositionInline]
     list_display = ("name", "parent", "is_active", "show_in_header", "sort_order")
@@ -59,7 +72,7 @@ class CategoryAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
 
 
 @admin.register(Brand)
-class BrandAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class BrandAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     tinymce_fields = ("description",)
     list_display = ("name", "get_logo_preview", "show_name", "is_active")
     list_filter = ("is_active", "show_name")
@@ -142,7 +155,7 @@ class ProductCrossSellInline(TabularInline):
 
 
 @admin.register(ProductVariant)
-class ProductVariantAdmin(ModelAdmin):
+class ProductVariantAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = (
         "sku", "product", "shade", "volume",
         "cost_price", "retail_price", "sale_price", "stock_quantity", "is_active",
@@ -181,9 +194,18 @@ class ProductVariantAdmin(ModelAdmin):
 
 
 @admin.register(Product)
-class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
+class ProductAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     """modeltranslation вкладки uk/ru/en + TinyMCE на текстових описах (admin_skill)."""
 
+    change_list_template = "admin/catalog/product/change_list.html"
+    filter_title_overrides = {
+        "is_active": "Активний",
+        "is_hit": "Хіт",
+        "is_new": "Новинка",
+        "category": "Категорія",
+        "brand": "Бренд",
+        "supplier": "Постачальник",
+    }
     tinymce_fields = (
         "short_description",
         "description",
@@ -191,11 +213,13 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         "actives",
     )
     list_display = (
-        "name", "brand", "category", "get_price_display",
-        "get_stock_display", "is_active", "is_hit", "is_new", "priority",
+        "name_cell", "brand_col", "category_col", "get_price_display",
+        "get_stock_display", "col_active", "col_hit", "col_new", "priority",
     )
+    list_display_links = ("name_cell",)
     list_editable = ("priority",)
     list_filter = ("is_active", "is_hit", "is_new", "category", "brand", "supplier")
+    list_select_related = ("brand", "category", "supplier")
     search_fields = ("name", "variants__sku", "variants__barcode")
     autocomplete_fields = ["brand", "category", "supplier"]
     filter_horizontal = ("additional_categories",)
@@ -247,6 +271,38 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
             if ids:
                 schedule_sync_variant_ids(ids)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("images")
+
+    def get_changelist_form(self, request, **kwargs):
+        form_class = super().get_changelist_form(request, **kwargs)
+        priority = form_class.base_fields.get("priority")
+        if priority is not None:
+            priority.widget.attrs["inputmode"] = "numeric"
+        return form_class
+
+    @admin.display(description="Назва", ordering="name")
+    def name_cell(self, obj: Product):
+        thumb = _product_list_thumb(obj)
+        if not thumb:
+            return obj.name
+        return format_html(
+            '<span class="product-name-cell">'
+            '<img class="product-thumb" src="{}" alt="" width="28" height="28" loading="lazy">'
+            '<span class="product-name-text">{}</span></span>',
+            thumb,
+            obj.name,
+        )
+
+    @admin.display(description="Бренд", ordering="brand__name")
+    def brand_col(self, obj: Product):
+        return obj.brand
+
+    @admin.display(description="Категорія", ordering="category__name")
+    def category_col(self, obj: Product):
+        return obj.category
+
+    @admin.display(description="Ціна")
     def get_price_display(self, obj: Product):
         variant = obj.default_variant
         if not variant:
@@ -259,8 +315,7 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
             )
         return format_html('{}&nbsp;грн', variant.retail_price)
 
-    get_price_display.short_description = "Ціна"
-
+    @admin.display(description="Зал.")
     def get_stock_display(self, obj: Product):
         variant = obj.default_variant
         if not variant:
@@ -269,11 +324,21 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
         label = f"{variant.stock_quantity} шт." if variant.in_stock else "Немає"
         return format_html('<span style="color:{}">{}</span>', color, label)
 
-    get_stock_display.short_description = "Залишок"
+    @admin.display(description="Акт.", ordering="is_active", boolean=True)
+    def col_active(self, obj: Product):
+        return obj.is_active
+
+    @admin.display(description="Хіт", ordering="is_hit", boolean=True)
+    def col_hit(self, obj: Product):
+        return obj.is_hit
+
+    @admin.display(description="Нов.", ordering="is_new", boolean=True)
+    def col_new(self, obj: Product):
+        return obj.is_new
 
 
 @admin.register(Attribute)
-class AttributeAdmin(ModelAdmin):
+class AttributeAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = ("name", "code", "is_filterable", "show_on_pdp", "sort_order")
     list_editable = ("is_filterable", "show_on_pdp", "sort_order")
     list_filter = ("is_filterable", "show_on_pdp")
@@ -281,7 +346,7 @@ class AttributeAdmin(ModelAdmin):
 
 
 @admin.register(AttributeValue)
-class AttributeValueAdmin(TabbedTranslationAdmin, ModelAdmin):
+class AttributeValueAdmin(TopFiltersAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     list_display = ("value", "attribute", "is_umbrella", "sort_order")
     list_editable = ("is_umbrella", "sort_order")
     list_filter = ("attribute", "is_umbrella")
@@ -297,7 +362,7 @@ class CollectionProductInline(TabularInline):
 
 
 @admin.register(Collection)
-class CollectionAdmin(TabbedTranslationAdmin, ModelAdmin):
+class CollectionAdmin(TopFiltersAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     list_display = ("name", "kind", "is_active", "sort_order", "get_image_preview")
     list_filter = ("kind", "is_active")
     inlines = [CollectionProductInline]
@@ -319,7 +384,7 @@ class ReviewImageInline(TabularInline):
 
 
 @admin.register(Review)
-class ReviewAdmin(ModelAdmin):
+class ReviewAdmin(TopFiltersAdminMixin, ModelAdmin):
     """Модерація перед публікацією (Відповіді п.8) — is_approved за замовчуванням False."""
 
     list_display = ("product", "display_name", "rating", "is_verified_purchase", "is_approved", "created_at")
