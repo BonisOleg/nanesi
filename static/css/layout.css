@@ -595,6 +595,11 @@
   margin-top: 24px;
 }
 
+/* Без щілини між home-subscribe і футером на головній */
+main:has(> .home-subscribe:last-child) + .site-footer {
+  margin-top: 0;
+}
+
 .site-footer a {
   color: #cfc7bf;
 }
