@@ -8,6 +8,7 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 from src.core.models import SeoFieldsMixin, TimeStampedModel
 from src.core.utils.images import validate_image
@@ -148,6 +149,12 @@ class Product(TimeStampedModel, SeoFieldsMixin):
     is_active = models.BooleanField("Активний (видимий на сайті)", default=True)
     is_hit = models.BooleanField("Хіт продажів", default=False)
     is_new = models.BooleanField("Новинка", default=False)
+    priority = models.PositiveIntegerField(
+        _("Пріоритет у каталозі"),
+        default=0,
+        db_index=False,
+        help_text=_("Більше число — вище в списку. 0 — звичайний порядок"),
+    )
     cross_sell = models.ManyToManyField(
         "self",
         verbose_name="З цим купують",
@@ -162,6 +169,9 @@ class Product(TimeStampedModel, SeoFieldsMixin):
         verbose_name = "Товар"
         verbose_name_plural = "Товари"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-priority"], name="catalog_product_priority_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.name

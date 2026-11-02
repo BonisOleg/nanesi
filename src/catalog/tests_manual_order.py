@@ -194,14 +194,19 @@ class ManualCatalogSortTests(TestCase):
         self.assertContains(response, "Ручний порядок")
         _assert_name_order(self, html, self.manual_names)
 
-    def test_query_and_brand_filter_keep_popular_default(self):
+    def test_query_and_brand_filter_default_to_manual(self):
+        """Порожній sort= лишається manual навіть з пошуком і фільтром бренда.
+
+        Раніше дефолт з фасетами був popular. Тепер «Ручний порядок» — це
+        порядок адміна на будь-якій сторінці каталогу без явного sort=.
+        """
         by_query = self.client.get(self.category.get_absolute_url(), {"q": "Nane"})
-        self.assertEqual(_selected_sort(by_query.content.decode()), "popular")
-        _assert_name_order(self, by_query.content.decode(), self.popular_names)
+        self.assertEqual(_selected_sort(by_query.content.decode()), "manual")
+        _assert_name_order(self, by_query.content.decode(), self.manual_names)
 
         by_brand = self.client.get(self.category.get_absolute_url(), {"brand": "nane"})
-        self.assertEqual(_selected_sort(by_brand.content.decode()), "popular")
-        _assert_name_order(self, by_brand.content.decode(), self.popular_names)
+        self.assertEqual(_selected_sort(by_brand.content.decode()), "manual")
+        _assert_name_order(self, by_brand.content.decode(), self.manual_names)
 
     def test_explicit_sort_manual_wins_with_filter(self):
         response = self.client.get(
@@ -224,7 +229,8 @@ class ManualCatalogSortTests(TestCase):
             ["АльфаПоз", "БетаПоз", "НічияДва", "НічияОдин", "РейтингТоп"],
         )
 
-    def test_manual_without_category_behaves_as_popular(self):
+    def test_manual_without_category_matches_popular_when_priority_is_zero(self):
+        """У фікстурі priority=0, тож manual на /katalog/ збігається з popular."""
         response = self.client.get(reverse("catalog:catalog"), {"sort": "manual"})
         html = response.content.decode()
         self.assertEqual(_selected_sort(html), "manual")

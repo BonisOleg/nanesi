@@ -131,29 +131,17 @@ SORT_OPTIONS = [
 ]
 
 
-def catalog_user_filters_active(filters: dict) -> bool:
-    """Пошук і фасети. Дефолтне «в наявності» на чистій категорії не є фасетом."""
-    if (filters.get("query") or "").strip():
-        return True
-    if filters.get("brand_slugs") or filters.get("category_slugs"):
-        return True
-    if filters.get("attr_filters") or filters.get("volume_slugs"):
-        return True
-    if filters.get("sale_only"):
-        return True
-    if filters.get("price_min") is not None or filters.get("price_max") is not None:
-        return True
-    return False
-
-
 def resolve_catalog_sort(explicit: str | None, *, category: Category | None, filters: dict) -> str:
-    """sort= з URL завжди виграє. Інакше manual лише на чистій сторінці категорії."""
+    """Порожній sort= завжди «manual»: порядок, заданий адміном.
+
+    Однаково для категорії, /katalog/, пошуку й сторінки з активними фільтрами.
+    Непорожнє sort= з URL повертається як є. category і filters лишаються
+    в сигнатурі catalog_list і на вибір значення не впливають.
+    """
     raw = (explicit or "").strip()
     if raw:
         return raw
-    if category is not None and not catalog_user_filters_active(filters):
-        return "manual"
-    return "popular"
+    return "manual"
 
 
 def _popular_order(qs: QuerySet[Product]) -> QuerySet[Product]:
@@ -166,19 +154,32 @@ def apply_sort(
     *,
     category: Category | None = None,
 ) -> QuerySet[Product]:
+    """manual з категорією: позиція, потім priority. Без категорії: priority, потім рейтинг.
+
+    popular, price-asc, price-desc і name поле priority не враховують.
+    """
     if sort == "price-asc":
         return qs.order_by("min_price", "pk")
     if sort == "price-desc":
         return qs.order_by("-min_price", "pk")
     if sort == "name":
         return qs.order_by("name")
-    if sort == "manual" and category is not None:
-        position = (
-            CategoryProductPosition.objects.filter(category=category, product=OuterRef("pk"))
-            .values("position")[:1]
-        )
-        return qs.annotate(pos=Subquery(position)).order_by(
-            F("pos").asc(nulls_last=True),
+    if sort == "manual":
+        if category is not None:
+            position = (
+                CategoryProductPosition.objects.filter(category=category, product=OuterRef("pk"))
+                .values("position")[:1]
+            )
+            return qs.annotate(pos=Subquery(position)).order_by(
+                F("pos").asc(nulls_last=True),
+                "-priority",
+                "-rating_avg",
+                "-reviews_count",
+                "-created_at",
+                "id",
+            )
+        return qs.order_by(
+            "-priority",
             "-rating_avg",
             "-reviews_count",
             "-created_at",

@@ -192,8 +192,9 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     )
     list_display = (
         "name", "brand", "category", "get_price_display",
-        "get_stock_display", "is_active", "is_hit", "is_new",
+        "get_stock_display", "is_active", "is_hit", "is_new", "priority",
     )
+    list_editable = ("priority",)
     list_filter = ("is_active", "is_hit", "is_new", "category", "brand", "supplier")
     search_fields = ("name", "variants__sku", "variants__barcode")
     autocomplete_fields = ["brand", "category", "supplier"]
@@ -209,7 +210,7 @@ class ProductAdmin(TinyMCEAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     fieldsets = (
         (None, {"fields": ("name", "slug", "brand", "category", "additional_categories", "supplier")}),
         ("Опис", {"fields": ("short_description", "description", "usage_instructions", "actives", "inci")}),
-        ("Статус", {"fields": ("is_active", "is_hit", "is_new")}),
+        ("Статус", {"fields": ("is_active", "is_hit", "is_new", "priority")}),
         ("SEO", {"fields": ("seo_title", "seo_description", "seo_keywords"), "classes": ("collapse",)}),
     )
 
