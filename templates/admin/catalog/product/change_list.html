@@ -1,1 +1,16 @@
 {% extends "admin/top_filters_change_list.html" %}
+
+{% block top_filters_extrastyle %}
+    <style>
+        body.model-product.change-list #result_list {
+            max-width: 100%;
+            table-layout: auto;
+            width: 100%;
+        }
+
+        body.model-product.change-list .changelist-form-container {
+            max-width: 100%;
+            min-width: 0;
+        }
+    </style>
+{% endblock %}

@@ -114,6 +114,12 @@ class ProductAdminUxTests(TestCase):
         )
         self.assertEqual(self.client.cookies["django_language"].value, "en")
         self.assertNotIn("changelist-filter", html)
+        self.assertIn("admin/css/admin_changelist.css", html)
+        self.assertRegex(
+            html,
+            r"admin-top-filters__select[\s\S]{0,400}appearance\s*:\s*none",
+            msg="Верхні select-фільтри мають приховувати нативну стрілку (один шеврон Unfold)",
+        )
 
         filtered = self.client.get(url + "?is_active__exact=1", HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(filtered.status_code, 200)
