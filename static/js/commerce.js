@@ -82,11 +82,50 @@ function flashCartButton(form) {
   }, 1200);
 }
 
+var CART_DRAWER_MQ = "(max-width: 959px)";
+var cartDrawerScrollY = 0;
+
+function isCartDrawerMobile() {
+  return window.matchMedia && window.matchMedia(CART_DRAWER_MQ).matches;
+}
+
+function ensureCartDrawerInBody() {
+  var drawer = document.querySelector("[data-cart-drawer]");
+  if (!drawer) return null;
+  if (drawer.parentElement !== document.body) {
+    document.body.appendChild(drawer);
+  }
+  return drawer;
+}
+
+function lockCartDrawerScroll() {
+  document.body.classList.add("has-open-cart-drawer");
+  if (!isCartDrawerMobile()) return;
+  cartDrawerScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.position = "fixed";
+  document.body.style.top = "-" + cartDrawerScrollY + "px";
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+
+function unlockCartDrawerScroll() {
+  var locked = document.body.style.position === "fixed";
+  document.body.classList.remove("has-open-cart-drawer");
+  if (!locked) return;
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  window.scrollTo(0, cartDrawerScrollY);
+}
+
 function closeCartDrawer() {
   var drawer = document.querySelector("[data-cart-drawer]");
   if (!drawer || drawer.hidden) return;
   drawer.hidden = true;
-  document.body.classList.remove("has-open-cart-drawer");
+  unlockCartDrawerScroll();
 }
 
 function refreshCartDrawerBody() {
@@ -105,10 +144,10 @@ function refreshCartDrawerBody() {
 }
 
 function openCartDrawer() {
-  var drawer = document.querySelector("[data-cart-drawer]");
+  var drawer = ensureCartDrawerInBody();
   if (!drawer) return;
   drawer.hidden = false;
-  document.body.classList.add("has-open-cart-drawer");
+  lockCartDrawerScroll();
   refreshCartDrawerBody();
   var closeBtn = drawer.querySelector(".cart-drawer__close");
   if (closeBtn) closeBtn.focus();
@@ -173,6 +212,7 @@ function submitCartForm(form) {
 
 document.addEventListener("DOMContentLoaded", function () {
   applyShippingFill(document);
+  ensureCartDrawerInBody();
 });
 
 document.addEventListener("htmx:afterSwap", function (event) {

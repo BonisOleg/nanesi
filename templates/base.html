@@ -35,12 +35,12 @@
   <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=footer-row600">
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v=grid-4desk">
   <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=np-city-viewport">
-  <link rel="stylesheet" href="{% static 'css/cart-drawer.css' %}?v=1">
+  <link rel="stylesheet" href="{% static 'css/cart-drawer.css' %}?v=2">
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=topbar-smooth" defer></script>
   <script src="{% static 'js/search-suggest.js' %}?v=1" defer></script>
-  <script src="{% static 'js/commerce.js' %}?v=cart-drawer1" defer></script>
+  <script src="{% static 'js/commerce.js' %}?v=cart-drawer2" defer></script>
   {% if site_settings.gtm_id or site_settings.ga4_id or site_settings.meta_pixel_id or site_settings.tiktok_pixel_id %}
     <script src="{% static 'js/analytics.js' %}" defer
       {% if site_settings.gtm_id %}data-gtm-id="{{ site_settings.gtm_id }}"{% endif %}
