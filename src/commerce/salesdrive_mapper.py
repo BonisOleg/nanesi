@@ -1,7 +1,7 @@
 """Мапінг полів сайту → SalesDrive (довідники nanesi.salesdrive.me, зняті по API).
 
 Оплата (parameter):
-  card_online → tocard (Картка Приватбанку) — найближчий до онлайн-оплати
+  card_online → tocard (онлайн-оплата Monobank; у SD — найближчий параметр картки)
   cod → postpay
   bank_transfer → noncash
 

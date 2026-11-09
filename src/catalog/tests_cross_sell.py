@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from src.catalog.admin import ProductCrossSellInlineFormSet
+from src.catalog.admin_inlines_1 import ProductCrossSellInlineFormSet
 from src.catalog.models import Brand, Category, Product, ProductCrossSell, ProductVariant
 from src.catalog.selectors import bought_together, visible_products
 

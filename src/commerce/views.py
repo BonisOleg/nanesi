@@ -21,7 +21,11 @@ from src.commerce import selectors, services
 from src.commerce.forms import CheckoutForm
 from src.commerce.models import Order
 from src.commerce.models_1 import money
-from src.commerce.payments.liqpay import get_liqpay_service
+from src.commerce.payments.monobank import (
+    MonobankError,
+    get_monobank_service,
+    webhook_idempotency_key,
+)
 from src.content.models import SiteSettings
 from src.core import analytics
 
@@ -309,7 +313,7 @@ class ThankYouView(View):
             "show_payment_pending": show_payment_pending,
             "payment_pending_title": site.payment_pending_title_display(),
             "payment_pending_body": site.payment_pending_body_display(),
-            "can_retry_payment": show_payment_pending and get_liqpay_service() is not None,
+            "can_retry_payment": show_payment_pending and get_monobank_service() is not None,
             "alternate_payment_methods": (
                 selectors.alternate_payment_methods_after_card() if show_payment_pending else []
             ),
@@ -331,54 +335,89 @@ class PaymentInitView(View):
             messages.error(request, _("Замовлення не знайдено"))
             return redirect("commerce:cart")
 
-        liqpay = get_liqpay_service()
-        if liqpay is None:
-            messages.warning(request, _("Оплата карткою тимчасово недоступна — оберіть інший спосіб або зверніться до нас"))
+        mono = get_monobank_service()
+        if mono is None:
+            messages.warning(
+                request,
+                _("Оплата карткою тимчасово недоступна — оберіть інший спосіб або зверніться до нас"),
+            )
             return redirect("commerce:thank_you", order_number=order.number)
 
-        result_url = request.build_absolute_uri(reverse("commerce:payment_callback", kwargs={"order_number": order.number}))
-        checkout_data = liqpay.create_checkout_data(
-            order_number=order.number,
-            amount=float(order.total),
-            description=f"Замовлення {order.number}",
-            result_url=result_url,
-            server_url=settings.LIQPAY_SERVER_URL,
+        redirect_url = request.build_absolute_uri(
+            reverse("commerce:payment_callback", kwargs={"order_number": order.number}),
         )
-        return render(request, "commerce/payment_init.html", {"order": order, "checkout": checkout_data})
+        webhook_url = (getattr(settings, "MONOBANK_WEBHOOK_URL", "") or "").strip()
+        if not webhook_url:
+            webhook_url = request.build_absolute_uri(reverse("commerce:payment_webhook"))
+
+        try:
+            checkout = mono.create_invoice(
+                order_number=order.number,
+                amount=order.total,
+                description=f"Замовлення {order.number}",
+                redirect_url=redirect_url,
+                webhook_url=webhook_url,
+            )
+        except MonobankError:
+            logger.exception("Monobank create_invoice failed for %s", order.number)
+            messages.error(request, _("Не вдалося створити оплату. Спробуйте пізніше."))
+            return redirect("commerce:thank_you", order_number=order.number)
+
+        Order.objects.filter(pk=order.pk).update(
+            payment_intent_id=checkout["invoice_id"],
+            updated_at=timezone.now(),
+        )
+        return redirect(checkout["page_url"])
 
 
 @csrf_exempt
 @require_POST
 def payment_webhook(request):
-    """SEC-07: єдине джерело істини для статусу оплати — підписаний server callback."""
-    liqpay = get_liqpay_service()
-    if liqpay is None:
-        return HttpResponse("LiqPay not configured", status=503)
+    """SEC-07: єдине джерело істини — webhook Monobank з X-Sign (ECDSA)."""
+    mono = get_monobank_service()
+    if mono is None:
+        return HttpResponse("Monobank not configured", status=503)
 
-    data_b64 = request.POST.get("data", "")
-    signature = request.POST.get("signature", "")
-    if not data_b64 or not signature or not liqpay.verify_callback(data_b64, signature):
+    x_sign = request.headers.get("X-Sign") or request.META.get("HTTP_X_SIGN", "")
+    body = request.body or b""
+    if not x_sign or not mono.verify_webhook(body, x_sign):
         return HttpResponse("Invalid signature", status=403)
 
-    payload = liqpay.decode_data(data_b64)
-    order_number = payload.get("order_id", "")
-    status = payload.get("status", "")
-    payment_id = str(payload.get("payment_id", ""))
-    if not order_number:
-        return HttpResponse("Missing order_id", status=400)
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError, TypeError):
+        return HttpResponse("Invalid JSON", status=400)
+
+    if not isinstance(payload, dict):
+        return HttpResponse("Invalid payload", status=400)
+
+    invoice_id = str(payload.get("invoiceId") or "")
+    status = str(payload.get("status") or "")
+    reference = str(payload.get("reference") or "")
+    if not reference:
+        paym_info = payload.get("merchantPaymInfo")
+        if isinstance(paym_info, dict):
+            reference = str(paym_info.get("reference") or "")
+    if not invoice_id and not reference:
+        return HttpResponse("Missing invoice/reference", status=400)
 
     with transaction.atomic():
-        order = Order.objects.select_for_update().filter(number=order_number).first()
+        order_qs = Order.objects.select_for_update()
+        order = None
+        if invoice_id:
+            order = order_qs.filter(payment_intent_id=invoice_id).first()
+        if order is None and reference:
+            order = order_qs.filter(number=reference).first()
         if order is None:
             return HttpResponse("Order not found", status=404)
 
-        idem_key = f"liqpay_{payment_id}_{status}"
+        idem_key = webhook_idempotency_key(payload)
         if order.payment_idempotency_key == idem_key:
             return HttpResponse("OK (idempotent)", status=200)
 
-        if status in ("success", "sandbox"):
+        if status == "success":
             order.payment_status = Order.PaymentStatus.PAID
-            order.payment_intent_id = payment_id
+            order.payment_intent_id = invoice_id or order.payment_intent_id
             order.payment_idempotency_key = idem_key
             order.paid_at = timezone.now()
             order.save()
@@ -386,9 +425,13 @@ def payment_webhook(request):
                 services.change_order_status(order, Order.Status.PAID)
             except services.OrderStatusError:
                 pass
-        elif status in ("failure", "error", "reversed"):
+        elif status in ("failure", "reversed", "expired"):
             order.payment_idempotency_key = idem_key
-            order.save(update_fields=["payment_idempotency_key", "updated_at"])
+            if invoice_id and not order.payment_intent_id:
+                order.payment_intent_id = invoice_id
+                order.save(update_fields=["payment_idempotency_key", "payment_intent_id", "updated_at"])
+            else:
+                order.save(update_fields=["payment_idempotency_key", "updated_at"])
 
     return HttpResponse("OK", status=200)
 

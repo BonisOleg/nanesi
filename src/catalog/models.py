@@ -7,6 +7,7 @@ from src.catalog.models_1 import (
     Product,
     ProductCrossSell,
     ProductImage,
+    ProductSimilar,
     ProductVariant,
     Supplier,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "Supplier",
     "Product",
     "ProductCrossSell",
+    "ProductSimilar",
     "ProductVariant",
     "ProductImage",
     "Attribute",

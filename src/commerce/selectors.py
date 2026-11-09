@@ -174,7 +174,7 @@ def available_payment_methods() -> list[tuple[str, str]]:
 
     settings_obj = SiteSettings.load()
     methods = []
-    if settings_obj.card_payment_enabled and dj_settings.LIQPAY_PUBLIC_KEY:
+    if settings_obj.card_payment_enabled and getattr(dj_settings, "MONOBANK_TOKEN", ""):
         methods.append((Order.PaymentMethod.CARD_ONLINE, Order.PaymentMethod.CARD_ONLINE.label))
     if settings_obj.cash_on_delivery_enabled:
         methods.append((Order.PaymentMethod.CASH_ON_DELIVERY, Order.PaymentMethod.CASH_ON_DELIVERY.label))

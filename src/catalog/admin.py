@@ -1,6 +1,4 @@
 from django.contrib import admin
-from django.core.exceptions import ValidationError
-from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
@@ -12,6 +10,13 @@ from unfold.decorators import action
 from src.core.admin import TinyMCEAdminMixin, TopFiltersAdminMixin
 
 from . import translation  # noqa: F401 — реєстрація MT до TabbedTranslationAdmin.__init__
+from .admin_inlines_1 import (
+    ProductAttributeValueInline,
+    ProductCrossSellInline,
+    ProductImageInline,
+    ProductSimilarInline,
+    ProductVariantInline,
+)
 from .forms import SupplierImportForm
 from .models import (
     Attribute,
@@ -23,8 +28,6 @@ from .models import (
     CollectionProduct,
     Product,
     ProductAttributeValue,
-    ProductCrossSell,
-    ProductImage,
     ProductVariant,
     Review,
     ReviewImage,
@@ -91,67 +94,6 @@ class BrandAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdmin
         return "—"
 
     get_logo_preview.short_description = "Логотип"
-
-
-class ProductImageInline(TabularInline):
-    model = ProductImage
-    extra = 1
-    fields = ("image", "get_preview", "alt_text", "is_main", "sort_order")
-    readonly_fields = ("get_preview",)
-
-    def get_preview(self, obj: ProductImage):
-        if obj.pk and obj.image:
-            return format_html('<img src="{}" style="height:48px">', obj.image.url)
-        return "—"
-
-    get_preview.short_description = "Прев'ю"
-
-
-class ProductVariantInline(TabularInline):
-    model = ProductVariant
-    extra = 1
-    fields = (
-        "sku", "barcode", "shade", "shade_hex", "shade_image", "volume",
-        "cost_price", "retail_price", "sale_price",
-        "stock_quantity", "is_active", "sort_order",
-    )
-
-
-class ProductAttributeValueInline(TabularInline):
-    """attribute_values — M2M через through-модель, тому керується лише інлайном (admin.E013)."""
-
-    model = ProductAttributeValue
-    extra = 1
-    autocomplete_fields = ["attribute_value"]
-
-
-class ProductCrossSellInlineFormSet(BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        parent = self.instance
-        for form in self.forms:
-            cleaned = getattr(form, "cleaned_data", None) or {}
-            if cleaned.get("DELETE"):
-                continue
-            to_product = cleaned.get("to_product")
-            if to_product is not None and to_product == parent:
-                form.add_error(
-                    "to_product",
-                    ValidationError(
-                        "Супутній товар не може збігатися з поточним товаром.",
-                    ),
-                )
-
-
-class ProductCrossSellInline(TabularInline):
-    model = ProductCrossSell
-    fk_name = "from_product"
-    formset = ProductCrossSellInlineFormSet
-    extra = 1
-    autocomplete_fields = ["to_product"]
-    fields = ("to_product", "position")
-    verbose_name = "З цим купують"
-    verbose_name_plural = "З цим купують"
 
 
 @admin.register(ProductVariant)
@@ -257,6 +199,7 @@ class ProductAdmin(TopFiltersAdminMixin, TinyMCEAdminMixin, TabbedTranslationAdm
         ProductAttributeValueInline,
         ProductImageInline,
         ProductCrossSellInline,
+        ProductSimilarInline,
     ]
     actions = ["apply_recommended_price_to_variants"]
     fieldsets = (
@@ -396,7 +339,10 @@ class CollectionAdmin(TopFiltersAdminMixin, TabbedTranslationAdmin, ModelAdmin):
     inlines = [CollectionProductInline]
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("get_image_preview",)
-    fields = ("name", "slug", "kind", "image", "get_image_preview", "is_active", "sort_order")
+    fields = (
+        "name", "slug", "kind", "home_teaser",
+        "image", "get_image_preview", "is_active", "sort_order",
+    )
 
     def get_image_preview(self, obj: Collection):
         if obj.pk and obj.image:

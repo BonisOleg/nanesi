@@ -140,14 +140,32 @@ class Command(BaseCommand):
     def _seed_collections(self) -> None:
         # Підбірки для головної /dobirka/ — 4 промо як у макеті
         specs = (
-            (Collection.Kind.HIT, "Хіти продажів", "hity", 1),
-            (Collection.Kind.NEW, "Новинки", "novynky", 2),
-            (Collection.Kind.SALE, "Акції", "aktsii", 3),
-            (Collection.Kind.CUSTOM, "Макіяж з SPF", "makiyazh-z-spf", 4),
+            (
+                Collection.Kind.HIT, "Хіти продажів", "hity", 1,
+                Collection.DEFAULT_HOME_TEASERS["hit"],
+            ),
+            (
+                Collection.Kind.NEW, "Новинки", "novynky", 2,
+                Collection.DEFAULT_HOME_TEASERS["new"],
+            ),
+            (
+                Collection.Kind.SALE, "Акції", "aktsii", 3,
+                Collection.DEFAULT_HOME_TEASERS["sale"],
+            ),
+            (
+                Collection.Kind.CUSTOM, "Макіяж з SPF", "makiyazh-z-spf", 4,
+                Collection.DEFAULT_HOME_TEASERS["custom"],
+            ),
         )
-        for kind, name, slug, order in specs:
+        for kind, name, slug, order, home_teaser in specs:
             defaults = merge_i18n(
-                {"name": name, "kind": kind, "is_active": True, "sort_order": order},
+                {
+                    "name": name,
+                    "kind": kind,
+                    "home_teaser": home_teaser,
+                    "is_active": True,
+                    "sort_order": order,
+                },
                 COLLECTIONS_I18N.get(slug),
             )
             col, _ = Collection.objects.update_or_create(slug=slug, defaults=defaults)

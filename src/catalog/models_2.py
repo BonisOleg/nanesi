@@ -94,9 +94,22 @@ class Collection(TimeStampedModel):
         SALE = "sale", "Акція"
         CUSTOM = "custom", "Довільна підбірка"
 
+    DEFAULT_HOME_TEASERS = {
+        "hit": "Найпопулярніші засоби догляду цього місяця.",
+        "new": "Свіжі надходження для щоденного ритуалу.",
+        "sale": "Акційні позиції.",
+        "custom": "Підбірка від NANESI.",
+    }
+
     name = models.CharField("Назва", max_length=255)
     slug = models.SlugField("Адреса", max_length=255, unique=True, blank=True)
     kind = models.CharField("Тип", max_length=20, choices=Kind.choices, default=Kind.CUSTOM)
+    home_teaser = models.CharField(
+        "Опис на головній",
+        max_length=255,
+        blank=True,
+        help_text="Текст під назвою промо-картки на головній. Порожнє — підставиться типовий опис за типом підбірки.",
+    )
     image = models.ImageField(
         "Зображення (промо на головній)",
         upload_to="catalog/collections/",
@@ -129,6 +142,15 @@ class Collection(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse("catalog:collection_detail", kwargs={"slug": self.slug})
+
+    def home_teaser_display(self) -> str:
+        text = (self.home_teaser or "").strip()
+        if text:
+            return text
+        return self.DEFAULT_HOME_TEASERS.get(
+            self.kind,
+            self.DEFAULT_HOME_TEASERS["custom"],
+        )
 
 
 class CollectionProduct(models.Model):

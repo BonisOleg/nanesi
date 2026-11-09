@@ -159,11 +159,10 @@ NP_SENDER_CITY_REF = config("NP_SENDER_CITY_REF", default="")
 NP_SENDER_ADDRESS_REF = config("NP_SENDER_ADDRESS_REF", default="")
 NP_SENDER_PHONE = config("NP_SENDER_PHONE", default="")
 
-# --- LiqPay (liqpay_skill) — порожні ключі = "оплата карткою" прибирається з checkout ---
-LIQPAY_PUBLIC_KEY = config("LIQPAY_PUBLIC_KEY", default="")
-LIQPAY_PRIVATE_KEY = config("LIQPAY_PRIVATE_KEY", default="")
-LIQPAY_SERVER_URL = config("LIQPAY_SERVER_URL", default="")
-LIQPAY_SANDBOX = config("LIQPAY_SANDBOX", default=True, cast=bool)
+# --- Monobank Acquiring — порожній токен = «оплата карткою» прибирається з checkout ---
+MONOBANK_TOKEN = config("MONOBANK_TOKEN", default="")
+# Абсолютний URL webhook (якщо порожній — PaymentInitView підставить SITE_URL/payment/webhook/)
+MONOBANK_WEBHOOK_URL = config("MONOBANK_WEBHOOK_URL", default="")
 
 # --- SalesDrive CRM: порожні = outbox лишається PENDING ---
 SALESDRIVE_API_URL = config("SALESDRIVE_API_URL", default="")

@@ -143,10 +143,30 @@ BRANDS_I18N = {
 }
 
 COLLECTIONS_I18N = {
-    "hity": {"name_ru": "Хиты продаж", "name_en": "Bestsellers"},
-    "novynky": {"name_ru": "Новинки", "name_en": "New arrivals"},
-    "aktsii": {"name_ru": "Акции", "name_en": "Sale"},
-    "makiyazh-z-spf": {"name_ru": "Макияж с SPF", "name_en": "Makeup with SPF"},
+    "hity": {
+        "name_ru": "Хиты продаж",
+        "name_en": "Bestsellers",
+        "home_teaser_ru": "Самые популярные средства ухода этого месяца.",
+        "home_teaser_en": "The most popular skincare picks this month.",
+    },
+    "novynky": {
+        "name_ru": "Новинки",
+        "name_en": "New arrivals",
+        "home_teaser_ru": "Свежие поступления для ежедневного ритуала.",
+        "home_teaser_en": "Fresh arrivals for your daily ritual.",
+    },
+    "aktsii": {
+        "name_ru": "Акции",
+        "name_en": "Sale",
+        "home_teaser_ru": "Акционные позиции.",
+        "home_teaser_en": "Sale items.",
+    },
+    "makiyazh-z-spf": {
+        "name_ru": "Макияж с SPF",
+        "name_en": "Makeup with SPF",
+        "home_teaser_ru": "Подборка от NANESI.",
+        "home_teaser_en": "A NANESI selection.",
+    },
 }
 
 TRUST_I18N = {
@@ -251,13 +271,13 @@ PAGES_I18N = {
             "<p>Доставка Новой Почтой и Укрпочтой. Бесплатная доставка — "
             "от суммы, заданной в настройках сайта.</p>"
             "<p>Оплата: наложенный платёж, банковский перевод; онлайн-оплата — после "
-            "подключения LiqPay.</p>"
+            "подключения Monobank Acquiring.</p>"
         ),
         "body_en": (
             "<p>Delivery via Nova Poshta and Ukrposhta. Free shipping from the "
             "threshold set in site settings.</p>"
             "<p>Payment: cash on delivery, bank transfer; online card payment after "
-            "LiqPay is connected.</p>"
+            "Monobank Acquiring is connected.</p>"
         ),
     },
     "obmin-ta-povernennya": {

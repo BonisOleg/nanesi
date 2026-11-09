@@ -171,6 +171,15 @@ class Product(TimeStampedModel, SeoFieldsMixin):
         related_name="cross_sold_in",
         blank=True,
     )
+    similar = models.ManyToManyField(
+        "self",
+        verbose_name="Схожі товари",
+        through="catalog.ProductSimilar",
+        through_fields=("from_product", "to_product"),
+        symmetrical=False,
+        related_name="similar_in",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "Товар"
@@ -412,4 +421,54 @@ class ProductCrossSell(models.Model):
         ):
             raise ValidationError({
                 "to_product": "Супутній товар не може збігатися з поточним товаром.",
+            })
+
+
+class ProductSimilar(models.Model):
+    """Ручний блок «Схожі товари»: from_product → to_product, без зворотного зв'язку."""
+
+    from_product = models.ForeignKey(
+        Product,
+        verbose_name="Товар",
+        on_delete=models.CASCADE,
+        related_name="similar_links",
+    )
+    to_product = models.ForeignKey(
+        Product,
+        verbose_name="Схожий товар",
+        on_delete=models.CASCADE,
+        related_name="similar_targets",
+    )
+    position = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        verbose_name = "Схожі товари"
+        verbose_name_plural = "Схожі товари"
+        ordering = ["position", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_product", "to_product"],
+                name="uniq_product_similar_pair",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(from_product=models.F("to_product")),
+                name="product_similar_not_self",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["from_product", "position"], name="product_similar_from_pos"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.from_product} → {self.to_product}"
+
+    def clean(self):
+        super().clean()
+        if (
+            self.from_product_id is not None
+            and self.to_product_id is not None
+            and self.from_product_id == self.to_product_id
+        ):
+            raise ValidationError({
+                "to_product": "Схожий товар не може збігатися з поточним товаром.",
             })

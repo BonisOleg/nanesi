@@ -138,7 +138,7 @@ class SiteSettings(SingletonModel):
     ukrposhta_enabled = models.BooleanField("Укрпошта увімкнена", default=True)
     card_payment_enabled = models.BooleanField(
         "Оплата карткою онлайн увімкнена", default=False,
-        help_text="Автоматично недоступна на вітрині, поки не заповнені ключі LIQPAY_* у .env",
+        help_text="Автоматично недоступна на вітрині, поки не заповнений MONOBANK_TOKEN у .env",
     )
     cash_on_delivery_enabled = models.BooleanField("Післяплата увімкнена", default=True)
     bank_transfer_enabled = models.BooleanField("Оплата за реквізитами увімкнена", default=True)

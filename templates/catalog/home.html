@@ -63,7 +63,7 @@
             <article class="promo-card">
               <div>
                 <h3>{{ collection.name }}</h3>
-                <p>{% if collection.kind == "hit" %}{% trans "Найпопулярніші засоби догляду цього місяця." %}{% elif collection.kind == "new" %}{% trans "Свіжі надходження для щоденного ритуалу." %}{% elif collection.kind == "sale" %}{% trans "Акційні позиції з тестового асортименту." %}{% else %}{% trans "Підбірка від NANESI." %}{% endif %}</p>
+                <p>{{ collection.home_teaser_display }}</p>
                 <a class="btn--ghost" href="{% url 'catalog:collection_detail' slug=collection.slug %}">{% trans "Дивитись" %}</a>
               </div>
               <div class="promo-card__media">

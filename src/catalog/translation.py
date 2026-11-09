@@ -27,7 +27,7 @@ class ProductTranslationOptions(SeoTranslationMixin):
 
 
 class CollectionTranslationOptions(TranslationOptions):
-    fields = ("name",)
+    fields = ("name", "home_teaser")
 
 
 class AttributeTranslationOptions(TranslationOptions):
