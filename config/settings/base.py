@@ -245,7 +245,13 @@ CONTENT_SECURITY_POLICY = {
         "frame-src": ["https://www.googletagmanager.com"],
         "frame-ancestors": ["'none'"],
         "base-uri": ["'self'"],
-        "form-action": ["'self'"],
+        # Monobank Acquiring: на випадок прямого 302 із form-ланцюга (основний флоу —
+        # interstitial HTML на /pay/, бо form-action 'self' блокує зовнішній redirect).
+        "form-action": [
+            "'self'",
+            "https://pay.mbnk.biz",
+            "https://pay.monobank.ua",
+        ],
     },
 }
 

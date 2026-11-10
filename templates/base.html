@@ -7,6 +7,7 @@
   <title>{% block title %}{{ site_settings.site_name }}{% if site_settings.tagline %} — {{ site_settings.tagline }}{% endif %}{% endblock %}</title>
   {% block meta_description %}{% if site_settings.tagline %}<meta name="description" content="{{ site_settings.tagline }}">{% endif %}{% endblock %}
   {% block meta_robots %}{% if seo_noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+  {% block extra_head %}{% endblock %}
   <link rel="canonical" href="{{ seo_canonical }}">
   {% for lang_code, lang_url in seo_hreflangs.items %}
   <link rel="alternate" hreflang="{{ lang_code }}" href="{{ lang_url }}">

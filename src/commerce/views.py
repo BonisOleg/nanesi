@@ -367,7 +367,13 @@ class PaymentInitView(View):
             payment_intent_id=checkout["invoice_id"],
             updated_at=timezone.now(),
         )
-        return redirect(checkout["page_url"])
+        # Не 302 на Monobank у ланцюгу form POST: CSP form-action 'self' блокує
+        # зовнішній редірект після /oformlennya/ → /pay/ (Safari лишається на checkout).
+        return render(
+            request,
+            "commerce/payment_init.html",
+            {"order": order, "checkout": checkout},
+        )
 
 
 @csrf_exempt

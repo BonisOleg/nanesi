@@ -1,13 +1,22 @@
 {% extends "base.html" %}
 {% load i18n shop_extras %}
 {% block title %}{% trans "Оплата замовлення" %} — {{ site_settings.site_name }}{% endblock %}
+{% block extra_head %}
+  {% if checkout.page_url %}
+  <meta http-equiv="refresh" content="0;url={{ checkout.page_url }}">
+  {% endif %}
+{% endblock %}
 {% block content %}
-  {# Fallback UX: основний флоу — редірект на pageUrl Monobank з PaymentInitView. #}
   <div class="card result-card">
     <h1>{% trans "Оплата замовлення" %} <span class="order-number-nowrap">{{ order.number }}</span></h1>
     <p>{% blocktrans with total=order.total|uah %}Сума до оплати: <strong>{{ total }}</strong>{% endblocktrans %}</p>
     {% if checkout.page_url %}
-      <p><a class="btn btn-primary btn-block" href="{{ checkout.page_url }}">{% trans "Оплатити карткою" %}</a></p>
+      <p class="text-muted">{% trans "Переходимо на безпечну сторінку Monobank…" %}</p>
+      <p>
+        <a class="btn btn-primary btn-block" href="{{ checkout.page_url }}" rel="noopener">
+          {% trans "Оплатити карткою" %}
+        </a>
+      </p>
     {% else %}
       <p class="text-muted">{% trans "Сторінка оплати недоступна. Поверніться до замовлення." %}</p>
     {% endif %}
