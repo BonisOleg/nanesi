@@ -20,6 +20,10 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
+
+from src.commerce.models_1 import money
+
 PAYMENT_METHOD_PARAM = {
     "card_online": "tocard",
     "cod": "postpay",
@@ -120,17 +124,89 @@ def ukrposhta_block(payload: dict) -> dict | None:
     return block if idx or addr else None
 
 
+def _as_decimal(value) -> Decimal:
+    try:
+        return Decimal(str(value if value is not None else 0))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal("0")
+
+
+def discounted_unit_prices(items: list[dict], discount_amount) -> list[Decimal]:
+    """Пропорційно розподілити знижку по рядках → кінцева ціна за одиницю.
+
+    Сума (unit * qty) після знижки = subtotal − discount (з корекцією на останній рядок).
+    """
+    rows: list[tuple[Decimal, Decimal, Decimal]] = []
+    for item in items or []:
+        qty = _as_decimal(item.get("qty") or 1)
+        if qty <= 0:
+            qty = Decimal("1")
+        unit = money(_as_decimal(item.get("unit_price")))
+        rows.append((unit, qty, money(unit * qty)))
+
+    if not rows:
+        return []
+
+    subtotal = money(sum((lt for _, _, lt in rows), Decimal("0")))
+    discount = money(_as_decimal(discount_amount))
+    if discount <= 0 or subtotal <= 0:
+        return [unit for unit, _, _ in rows]
+    discount = min(discount, subtotal)
+
+    result: list[Decimal] = []
+    allocated = Decimal("0")
+    discounted_lines: list[Decimal] = []
+    for i, (_unit, _qty, line_total) in enumerate(rows):
+        if i < len(rows) - 1:
+            share = money(discount * line_total / subtotal)
+            allocated += share
+        else:
+            share = money(discount - allocated)
+        discounted_lines.append(money(line_total - share))
+
+    # Ціна/од. з корекцією останнього рядка, щоб Σ(unit×qty) == subtotal−discount.
+    target = money(subtotal - discount)
+    running = Decimal("0")
+    for i, ((_unit, qty, _lt), disc_line) in enumerate(zip(rows, discounted_lines)):
+        if i < len(rows) - 1:
+            unit_disc = money(disc_line / qty)
+            running += money(unit_disc * qty)
+            result.append(unit_disc)
+        else:
+            remaining = money(target - running)
+            result.append(money(remaining / qty))
+    return result
+
+
+def comment_with_promo(payload: dict) -> str:
+    """Додає рядок промокоду/знижки до коментаря заявки (лише якщо є знижка)."""
+    comment = str(payload.get("comment") or "").strip()
+    discount = money(_as_decimal(payload.get("discount_amount")))
+    promo = str(payload.get("promo_code") or "").strip()
+    if discount <= 0:
+        return comment
+    promo_label = promo or "—"
+    promo_line = f"Промокод: {promo_label}, знижка: {discount} грн"
+    if not comment:
+        return promo_line
+    if promo_line in comment:
+        return comment
+    return f"{comment}\n{promo_line}"
+
+
 def build_create_payload(payload: dict) -> dict:
     """payload — снепшот з OrderIntegrationEvent (integrations._order_snapshot)."""
     f_name, l_name = split_full_name(str(payload.get("full_name") or ""))
+    items = list(payload.get("items") or [])
+    unit_prices = discounted_unit_prices(items, payload.get("discount_amount"))
     products = []
-    for item in payload.get("items") or []:
+    for item, unit_price in zip(items, unit_prices):
         sku = str(item.get("sku") or "")
         products.append({
             "id": sku or str(item.get("name") or "item"),
             "name": str(item.get("name") or sku or "Товар"),
             "sku": sku,
-            "costPerItem": float(item.get("unit_price") or 0),
+            "costPerItem": float(unit_price),
             "amount": float(item.get("qty") or 1),
         })
 
@@ -141,7 +217,7 @@ def build_create_payload(payload: dict) -> dict:
         "phone": str(payload.get("phone") or ""),
         "email": str(payload.get("email") or ""),
         "externalId": str(payload.get("number") or ""),
-        "comment": str(payload.get("comment") or ""),
+        "comment": comment_with_promo(payload),
         "products": products,
     }
     pay = PAYMENT_METHOD_PARAM.get(str(payload.get("payment_method") or ""))
