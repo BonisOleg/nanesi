@@ -1,0 +1,12 @@
+{% if poll_purchase %}
+<div
+  id="purchase-poll"
+  hx-get="{% url 'commerce:thank_you_purchase' order.number %}"
+  hx-trigger="every 3s"
+  hx-swap="outerHTML"
+></div>
+{% else %}
+<div id="purchase-poll">
+  {% include "partials/_dl_events.html" %}
+</div>
+{% endif %}

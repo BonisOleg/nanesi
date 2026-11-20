@@ -33,7 +33,7 @@ class ProductVariantInline(TabularInline):
     fields = (
         "sku", "barcode", "shade", "shade_hex", "shade_image", "volume",
         "cost_price", "retail_price", "sale_price",
-        "stock_quantity", "is_active", "sort_order",
+        "stock_quantity", "is_active", "feed_exclude", "sort_order",
     )
 
 

@@ -201,8 +201,12 @@ def get_order_for_thanks(request, order_number: str) -> Order | None:
     """Гість-thanks: доступ лише якщо номер збігається з session['last_order_number']
     (SEC-01, гостьовий варіант) — не голий pk із query-параметра."""
     last_number = request.session.get("last_order_number")
+    qs = Order.objects.prefetch_related(
+        "items__product_variant__product__brand",
+        "items__product_variant__product__category",
+    )
     if last_number and last_number == order_number:
-        return Order.objects.filter(number=order_number).first()
+        return qs.filter(number=order_number).first()
     if request.user.is_authenticated:
-        return Order.objects.filter(number=order_number, user=request.user).first()
+        return qs.filter(number=order_number, user=request.user).first()
     return None

@@ -1,0 +1,30 @@
+{% load i18n %}
+<div class="cookie-banner" data-cookie-banner hidden role="dialog" aria-label="{% trans 'Cookies' %}">
+  <div class="cookie-banner__inner">
+    <p class="cookie-banner__text">
+      {% trans "Ми використовуємо cookies для роботи сайту, аналітики та реклами. Можна прийняти всі або залишити лише необхідні." %}
+    </p>
+    <div class="cookie-banner__controls">
+      <div class="cookie-banner__actions">
+        <button type="button" class="btn btn-primary" data-consent-accept>{% trans "Прийняти все" %}</button>
+        <button type="button" class="btn btn-secondary" data-consent-necessary>{% trans "Лише необхідні" %}</button>
+        <button type="button" class="btn btn-outline" data-consent-customize>{% trans "Налаштувати" %}</button>
+      </div>
+      <div class="cookie-banner__panel" data-consent-panel hidden>
+        <label class="cookie-banner__option">
+          <input type="checkbox" checked disabled>
+          <span>{% trans "Необхідні (завжди увімкнені)" %}</span>
+        </label>
+        <label class="cookie-banner__option">
+          <input type="checkbox" data-consent-analytics>
+          <span>{% trans "Аналітика" %}</span>
+        </label>
+        <label class="cookie-banner__option">
+          <input type="checkbox" data-consent-marketing>
+          <span>{% trans "Маркетинг" %}</span>
+        </label>
+        <button type="button" class="btn btn-primary" data-consent-save>{% trans "Зберегти" %}</button>
+      </div>
+    </div>
+  </div>
+</div>

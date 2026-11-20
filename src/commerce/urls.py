@@ -15,6 +15,11 @@ urlpatterns = [
     path("koshyk/promo/remove/", views.promo_remove, name="promo_remove"),
     path("oformlennya/", views.CheckoutView.as_view(), name="checkout"),
     path("dyakuyemo/<str:order_number>/", views.ThankYouView.as_view(), name="thank_you"),
+    path(
+        "dyakuyemo/<str:order_number>/purchase/",
+        views.thank_you_purchase_fragment,
+        name="thank_you_purchase",
+    ),
     path("oformlennya/<str:order_number>/pay/", views.PaymentInitView.as_view(), name="payment_init"),
     path("oformlennya/<str:order_number>/pay/callback/", views.payment_callback, name="payment_callback"),
     path("payment/webhook/", views.payment_webhook, name="payment_webhook"),

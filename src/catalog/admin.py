@@ -101,8 +101,10 @@ class ProductVariantAdmin(TopFiltersAdminMixin, ModelAdmin):
     list_display = (
         "sku", "product", "shade", "volume",
         "cost_price", "retail_price", "sale_price", "stock_quantity", "is_active",
+        "feed_exclude",
     )
-    list_filter = ("is_active", "product__brand", "product__category")
+    list_filter = ("is_active", "feed_exclude", "product__brand", "product__category")
+    list_editable = ("feed_exclude",)
     search_fields = ("sku", "barcode", "product__name")
     autocomplete_fields = ["product"]
     list_select_related = ("product", "product__brand")

@@ -1,12 +1,15 @@
 /* GTM / GA4 / Meta Pixel / TikTok Pixel — конфіг з data-* атрибутів цього <script>
    (значення з SiteSettings, керовані з адмінки). Дані подій читаються з
    <script type="application/json" data-dl-events> — не інлайн-JS, щоб не порушувати
-   CSP script-src 'self' (без 'unsafe-inline'). */
+   CSP script-src 'self' (без 'unsafe-inline'). Consent default ставить consent.js
+   раніше: події пушимо в dataLayer, потім вантажимо gtm.js. */
 (function () {
   'use strict';
 
   var cfg = (document.currentScript && document.currentScript.dataset) || {};
   window.dataLayer = window.dataLayer || [];
+  var tagsLoaded = false;
+  var pixelsLoaded = false;
 
   function loadScript(src) {
     var s = document.createElement('script');
@@ -15,50 +18,70 @@
     document.head.appendChild(s);
   }
 
-  if (cfg.gtmId) {
-    window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-    loadScript('https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(cfg.gtmId));
+  function readConsent() {
+    var match = document.cookie.match(/(?:^|; )nanesi_consent=([^;]*)/);
+    if (!match) return null;
+    try {
+      return JSON.parse(decodeURIComponent(match[1]));
+    } catch (e) {
+      return null;
+    }
   }
 
-  if (cfg.ga4Id) {
-    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
-    loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(cfg.ga4Id));
-    window.gtag('js', new Date());
-    window.gtag('config', cfg.ga4Id, { send_page_view: true });
+  function loadGoogleTags() {
+    if (tagsLoaded) return;
+    tagsLoaded = true;
+    if (cfg.gtmId) {
+      window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+      loadScript('https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(cfg.gtmId));
+    }
+    if (cfg.ga4Id) {
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(cfg.ga4Id));
+      window.gtag('js', new Date());
+      window.gtag('config', cfg.ga4Id, { send_page_view: true });
+    }
   }
 
-  if (cfg.metaPixelId) {
-    (function (f) {
-      if (f.fbq) return;
-      var n = f.fbq = function () {
-        n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-      };
-      f._fbq = n;
-      n.push = n;
-      n.loaded = true;
-      n.version = '2.0';
-      n.queue = [];
-    })(window);
-    loadScript('https://connect.facebook.net/en_US/fbevents.js');
-    window.fbq('init', cfg.metaPixelId);
-    window.fbq('track', 'PageView');
-  }
+  function loadPixels() {
+    if (pixelsLoaded) return;
+    var consent = readConsent();
+    if (!(consent && consent.marketing)) return;
+    pixelsLoaded = true;
 
-  if (cfg.tiktokPixelId) {
-    (function (w, d, t) {
-      w.TiktokAnalyticsObject = t;
-      var ttq = w[t] = w[t] || [];
-      ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
-      ttq.setAndDefer = function (o, n) {
-        o[n] = function () { o.push([n].concat(Array.prototype.slice.call(arguments, 0))); };
-      };
-      for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]);
-      ttq.load = function (id) {
-        loadScript('https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=' + id + '&lib=' + t);
-      };
-      ttq.load(cfg.tiktokPixelId);
-      ttq.page();
-    })(window, document, 'ttq');
+    if (cfg.metaPixelId) {
+      (function (f) {
+        if (f.fbq) return;
+        var n = f.fbq = function () {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        f._fbq = n;
+        n.push = n;
+        n.loaded = true;
+        n.version = '2.0';
+        n.queue = [];
+      })(window);
+      loadScript('https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', cfg.metaPixelId);
+      window.fbq('track', 'PageView');
+    }
+
+    if (cfg.tiktokPixelId) {
+      (function (w, d, t) {
+        w.TiktokAnalyticsObject = t;
+        var ttq = w[t] = w[t] || [];
+        ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
+        ttq.setAndDefer = function (o, n) {
+          o[n] = function () { o.push([n].concat(Array.prototype.slice.call(arguments, 0))); };
+        };
+        for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]);
+        ttq.load = function (id) {
+          loadScript('https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=' + id + '&lib=' + t);
+        };
+        ttq.load(cfg.tiktokPixelId);
+        ttq.page();
+      })(window, document, 'ttq');
+    }
   }
 
   /* GA4 event -> Meta/TikTok відповідник (основні ecommerce-події, Доповнення §1). */
@@ -128,6 +151,17 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', function () { readEventBlocks(document); });
+  function boot() {
+    readEventBlocks(document);
+    loadGoogleTags();
+    loadPixels();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
   document.addEventListener('htmx:afterSwap', function (event) { readEventBlocks(event.target); });
+  document.addEventListener('nanesi:consent', loadPixels);
 })();

@@ -279,25 +279,6 @@ class ThankYouView(View):
         return redirect("commerce:thank_you", order_number=order.number)
 
     def _context(self, request, order: Order) -> dict:
-        # purchase — після створення замовлення (не після успішної оплати карткою)
-        dl_events_json = analytics.events_json(analytics.build_event(
-            "purchase",
-            value=order.total,
-            items=[
-                analytics.make_item(
-                    item_id=item.sku,
-                    item_name=item.product_name,
-                    price=item.unit_price,
-                    quantity=item.qty,
-                )
-                for item in order.items.all()
-            ],
-            extra={
-                "transaction_id": order.number,
-                "shipping": float(order.shipping_cost) if order.shipping_cost else 0,
-                "coupon": order.promo_code_snapshot or None,
-            },
-        ))
         site = SiteSettings.load()
         show_payment_pending = (
             order.payment_method == Order.PaymentMethod.CARD_ONLINE
@@ -305,7 +286,7 @@ class ThankYouView(View):
         )
         context = {
             "order": order,
-            "dl_events_json": dl_events_json,
+            "dl_events_json": analytics.purchase_events_json(order),
             "thank_you_title": site.thank_you_title_display(),
             "thank_you_number_label": site.thank_you_number_label_display(),
             "thank_you_body": site.thank_you_body_display(order.phone),
@@ -324,6 +305,27 @@ class ThankYouView(View):
                 context.update(requisites)
                 context["show_bank_requisites"] = True
         return context
+
+
+@require_GET
+def thank_you_purchase_fragment(request, order_number: str):
+    """HTMX-опитування: purchase з’являється, коли webhook поставив картку в paid."""
+    order = selectors.get_order_for_thanks(request, order_number)
+    if order is None:
+        return HttpResponse(status=404)
+    pending = (
+        order.payment_method == Order.PaymentMethod.CARD_ONLINE
+        and order.payment_status == Order.PaymentStatus.UNPAID
+    )
+    return render(
+        request,
+        "commerce/partials/_purchase_poll.html",
+        {
+            "order": order,
+            "poll_purchase": pending,
+            "dl_events_json": None if pending else analytics.purchase_events_json(order),
+        },
+    )
 
 
 class PaymentInitView(View):

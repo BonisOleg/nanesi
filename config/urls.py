@@ -6,6 +6,7 @@ from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
 from django.urls import include, path
 
+from src.catalog.google_feed import google_merchant_feed
 from src.content.views import theme_css
 from src.core.views_i18n import set_language
 from src.seo.sitemaps import sitemaps
@@ -26,6 +27,7 @@ urlpatterns = [
     path("i18n/setlang/", set_language, name="set_language"),
     path("robots.txt", robots_txt, name="robots_txt"),
     path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
+    path("feeds/google.xml", google_merchant_feed, name="google_merchant_feed"),
     path("theme.css", theme_css, name="theme_css"),
 ]
 

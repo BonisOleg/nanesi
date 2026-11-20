@@ -267,6 +267,11 @@ class ProductVariant(TimeStampedModel):
 
     stock_quantity = models.PositiveIntegerField("Залишок", default=0)
     is_active = models.BooleanField("Активний", default=True)
+    feed_exclude = models.BooleanField(
+        "Виключити з фідів",
+        default=False,
+        help_text="Варіант не потрапить у XML-фід Google Merchant.",
+    )
     sort_order = models.PositiveIntegerField("Порядок", default=0)
 
     class Meta:

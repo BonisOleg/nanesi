@@ -345,7 +345,8 @@ class ChangeUnpaidCardPaymentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Оплата не пройшла")
         self.assertContains(response, 'name="payment_method"')
-        self.assertContains(response, "purchase")
+        self.assertNotContains(response, '"event": "purchase"')
+        self.assertContains(response, 'id="purchase-poll"')
 
     def test_thank_you_post_switches_method(self):
         session = self.client.session

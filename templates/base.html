@@ -37,13 +37,16 @@
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v=grid-4desk">
   <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=np-city-viewport">
   <link rel="stylesheet" href="{% static 'css/cart-drawer.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'css/consent.css' %}">
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=topbar-smooth" defer></script>
   <script src="{% static 'js/search-suggest.js' %}?v=1" defer></script>
   <script src="{% static 'js/commerce.js' %}?v=cart-drawer2" defer></script>
+  <script src="{% static 'js/consent.js' %}" defer></script>
   {% if site_settings.gtm_id or site_settings.ga4_id or site_settings.meta_pixel_id or site_settings.tiktok_pixel_id %}
     <script src="{% static 'js/analytics.js' %}" defer
+      {% if request.resolver_match.url_name == "thank_you" %}data-gtm-immediate{% endif %}
       {% if site_settings.gtm_id %}data-gtm-id="{{ site_settings.gtm_id }}"{% endif %}
       {% if site_settings.ga4_id %}data-ga4-id="{{ site_settings.ga4_id }}"{% endif %}
       {% if site_settings.meta_pixel_id %}data-meta-pixel-id="{{ site_settings.meta_pixel_id }}"{% endif %}
@@ -247,6 +250,7 @@
     <div class="container footer-bottom">
       <div class="footer-bottom__meta">
         <span class="footer-bottom__copy">© {% now "Y" %} {{ site_settings.site_name }} — {{ site_settings.tagline }}</span>
+        <button type="button" class="footer-cookies" data-consent-reopen>{% trans "Налаштування cookies" %}</button>
         <p class="site-footer__credit">
           {% trans "Зроблено в" %}
           {% if request.resolver_match.url_name == "home" %}
@@ -264,6 +268,7 @@
     </div>
   </footer>
 
+  {% include "partials/_cookie_banner.html" %}
   {% include "commerce/partials/_cart_drawer.html" %}
 
   {% if site_settings.promo_popup_enabled and request.resolver_match.view_name != "commerce:cart" and request.resolver_match.view_name != "commerce:checkout" %}
