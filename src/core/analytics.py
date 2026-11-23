@@ -10,6 +10,8 @@ import re
 
 from django.core.serializers.json import DjangoJSONEncoder
 
+from src.core.validators import escape_json_for_html
+
 SESSION_KEY = "pending_dl_events"
 CARD_ONLINE = "card_online"
 PAID = "paid"
@@ -54,7 +56,7 @@ def build_event(
 def events_json(events: dict | list[dict]) -> str:
     if isinstance(events, dict):
         events = [events]
-    return json.dumps(events, cls=DjangoJSONEncoder, ensure_ascii=False)
+    return escape_json_for_html(json.dumps(events, cls=DjangoJSONEncoder, ensure_ascii=False))
 
 
 def queue_event(request, event: dict) -> None:

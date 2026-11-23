@@ -1,6 +1,9 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from src.accounts.forms import PasswordResetForm
+from src.core.ratelimit import ratelimit
+
 from . import views
 
 app_name = "accounts"
@@ -20,11 +23,14 @@ urlpatterns = [
     # Відновлення пароля — лише для акаунтів з email (SMS-провайдера в проєкті ще немає)
     path(
         "kabinet/vidnovlennya/",
-        auth_views.PasswordResetView.as_view(
-            template_name="accounts/password_reset.html",
-            email_template_name="accounts/password_reset_email.html",
-            subject_template_name="accounts/password_reset_subject.txt",
-            success_url="/kabinet/vidnovlennya/nadislano/",
+        ratelimit(scope="password_reset", limit=5, window=300)(
+            auth_views.PasswordResetView.as_view(
+                template_name="accounts/password_reset.html",
+                email_template_name="accounts/password_reset_email.html",
+                subject_template_name="accounts/password_reset_subject.txt",
+                success_url="/kabinet/vidnovlennya/nadislano/",
+                form_class=PasswordResetForm,
+            ),
         ),
         name="password_reset",
     ),

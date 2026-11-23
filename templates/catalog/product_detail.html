@@ -188,6 +188,7 @@
     <form method="post" action="{% url 'catalog:review_create' product.slug %}" enctype="multipart/form-data" class="review-form" novalidate>
       <h3>{% trans "Залишити відгук" %}</h3>
       {% csrf_token %}
+      {% include "partials/_honeypot.html" with form=review_form %}
 
       <div class="field">
         <label>{{ review_form.rating.label }}</label>

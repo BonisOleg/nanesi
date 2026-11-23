@@ -2,7 +2,9 @@ from django import forms
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
 
+from src.core.forms import HoneypotFormMixin
 from src.core.utils.images import MAX_UPLOAD_BYTES, validate_image
+from src.core.validators import PERSON_NAME_HTML_PATTERN, validate_person_name
 
 MAX_REVIEW_PHOTOS = 5
 MAX_REVIEW_PHOTO_SIZE = MAX_UPLOAD_BYTES
@@ -33,13 +35,19 @@ class MultipleFileField(forms.FileField):
         return [result] if result else []
 
 
-class ReviewForm(forms.Form):
+class ReviewForm(HoneypotFormMixin, forms.Form):
     """Форма відгуку з фото (Підетап 3, Відповіді п.8) — доступна гостям і
     авторизованим; автору без акаунту потрібне ім'я, фото — до 5 штук."""
 
     author_name = forms.CharField(
         label=_("Ваше ім'я"), max_length=255, required=False,
-        widget=forms.TextInput(attrs=_widget(placeholder=_("Як вас підписати у відгуку"))),
+        widget=forms.TextInput(attrs=_widget(
+            placeholder=_("Як вас підписати у відгуку"),
+            minlength="2",
+            maxlength="255",
+            pattern=PERSON_NAME_HTML_PATTERN,
+            autocomplete="name",
+        )),
     )
     rating = forms.ChoiceField(
         label=_("Оцінка"),
@@ -65,6 +73,12 @@ class ReviewForm(forms.Form):
         self.is_authenticated = is_authenticated
         if not is_authenticated:
             self.fields["author_name"].required = True
+
+    def clean_author_name(self):
+        value = (self.cleaned_data.get("author_name") or "").strip()
+        if not value:
+            return value
+        return validate_person_name(value, max_length=255)
 
     def clean_photos(self):
         files = self.cleaned_data.get("photos") or []

@@ -14,6 +14,7 @@
     <div class="auth-panel{% if active_tab != 'login' %} is-hidden{% endif %}" data-auth-panel="login">
       <form method="post" novalidate>
         {% csrf_token %}
+        {% include "partials/_honeypot.html" with form=login_form %}
         <input type="hidden" name="form" value="login">
         <input type="hidden" name="next" value="{{ next }}">
         <input type="hidden" name="wishlist_ids" data-wishlist-ids-field>
@@ -36,6 +37,7 @@
     <div class="auth-panel{% if active_tab != 'register' %} is-hidden{% endif %}" data-auth-panel="register">
       <form method="post" novalidate>
         {% csrf_token %}
+        {% include "partials/_honeypot.html" with form=register_form %}
         <input type="hidden" name="form" value="register">
         <input type="hidden" name="next" value="{{ next }}">
         <input type="hidden" name="wishlist_ids" data-wishlist-ids-field>

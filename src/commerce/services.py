@@ -68,6 +68,77 @@ def get_or_create_cart(request) -> Cart:
 
 
 @transaction.atomic
+def merge_guest_cart(user, guest_session_key: str | None) -> Cart:
+    """Гість → логін: сума qty по SKU, не більше живого залишку. session_key брати ДО auth_login (cycle_key)."""
+    user_cart, _created = Cart.objects.select_for_update().get_or_create(
+        user=user, status=Cart.Status.OPEN,
+    )
+    if not guest_session_key:
+        return user_cart
+    guest_cart = (
+        Cart.objects.select_for_update()
+        .filter(session_key=guest_session_key, status=Cart.Status.OPEN, user__isnull=True)
+        .first()
+    )
+    if guest_cart is None or guest_cart.pk == user_cart.pk:
+        return user_cart
+
+    user_items = {
+        item.product_variant_id: item
+        for item in user_cart.items.select_related("product_variant")
+    }
+    for guest_item in guest_cart.items.select_related("product_variant"):
+        variant = guest_item.product_variant
+        if variant is None or not variant.is_active or not variant.in_stock:
+            continue
+        stock = variant.stock_quantity or 0
+        existing = user_items.get(variant.pk)
+        if existing:
+            new_qty = min(existing.qty + guest_item.qty, stock)
+            if new_qty <= 0:
+                existing.delete()
+                user_items.pop(variant.pk, None)
+            else:
+                existing.qty = new_qty
+                existing.save(update_fields=["qty"])
+        else:
+            qty = min(guest_item.qty, stock)
+            if qty > 0:
+                created = CartItem.objects.create(cart=user_cart, product_variant=variant, qty=qty)
+                user_items[variant.pk] = created
+
+    if not user_cart.promo_code_id and guest_cart.promo_code_id:
+        promo = guest_cart.promo_code
+        if promo:
+            subtotal = cart_subtotal(cart_lines(user_cart))
+            is_valid, _message = promo.is_valid_now(subtotal=subtotal)
+            if is_valid:
+                user_cart.promo_code = promo
+
+    guest_cart.items.all().delete()
+    guest_cart.status = Cart.Status.CONVERTED
+    guest_cart.promo_code = None
+    guest_cart.save(update_fields=["status", "promo_code", "updated_at"])
+    user_cart.save(update_fields=["promo_code", "updated_at"])
+    return user_cart
+
+
+def clamp_cart_to_stock(request) -> Cart:
+    """Після невдалого checkout: qty ≤ live stock, нуль — видалити рядок."""
+    cart = get_or_create_cart(request)
+    for item in cart.items.select_related("product_variant"):
+        variant = item.product_variant
+        if variant is None or not variant.is_active or (variant.stock_quantity or 0) <= 0:
+            item.delete()
+            continue
+        if item.qty > variant.stock_quantity:
+            item.qty = variant.stock_quantity
+            item.save(update_fields=["qty"])
+    cart.save(update_fields=["updated_at"])
+    return cart
+
+
+@transaction.atomic
 def add_item(request, variant_id: int, qty: int = 1) -> Cart:
     variant = ProductVariant.objects.filter(pk=variant_id, is_active=True).select_related("product").first()
     if variant is None:
@@ -139,14 +210,37 @@ def remove_promo_code(request) -> Cart:
 
 
 def save_cart_contacts(request, *, full_name: str = "", phone: str = "", email: str = "") -> Cart:
-    """Гачок під покинутий кошик: пишемо контакти з checkout на Cart до place_order."""
+    """Гачок під покинутий кошик: лише валідні нормалізовані контакти, не сирий POST."""
+    from django.core.exceptions import ValidationError
+    from django.core.validators import validate_email
+
+    from src.core.validators import normalize_ua_phone, validate_person_name
+
     cart = get_or_create_cart(request)
-    cart.contact_full_name = (full_name or "").strip()[:255]
-    cart.contact_phone = (phone or "").strip()[:20]
-    cart.contact_email = (email or "").strip()[:254]
-    cart.save(update_fields=[
-        "contact_full_name", "contact_phone", "contact_email", "updated_at",
-    ])
+    update_fields = ["updated_at"]
+    name = (full_name or "").strip()
+    if name:
+        try:
+            cart.contact_full_name = validate_person_name(name, max_length=255)
+            update_fields.append("contact_full_name")
+        except ValidationError:
+            pass
+    phone_raw = (phone or "").strip()
+    if phone_raw:
+        try:
+            cart.contact_phone = normalize_ua_phone(phone_raw)
+            update_fields.append("contact_phone")
+        except ValidationError:
+            pass
+    email_raw = (email or "").strip().lower()
+    if email_raw:
+        try:
+            validate_email(email_raw)
+            cart.contact_email = email_raw[:254]
+            update_fields.append("contact_email")
+        except ValidationError:
+            pass
+    cart.save(update_fields=update_fields)
     return cart
 
 
@@ -155,14 +249,28 @@ def place_order(request, cleaned_data: dict) -> Order:
     """Гість-checkout (Відповіді п.6): user nullable. Ревалідація ціни/залишку —
     завжди з БД (SEC-02), незалежно від того, що показувалось у кошику раніше."""
     cart = get_or_create_cart(request)
+    cart = Cart.objects.select_for_update().get(pk=cart.pk)
+    if cart.status != Cart.Status.OPEN:
+        raise CartError(_("Кошик порожній"))
     items = list(
         cart.items.select_for_update().select_related("product_variant", "product_variant__product"),
     )
     if not items:
         raise CartError(_("Кошик порожній"))
+    variant_ids = sorted({item.product_variant_id for item in items if item.product_variant_id})
+    locked_variants = {}
+    if variant_ids:
+        locked_variants = {
+            variant.pk: variant
+            for variant in ProductVariant.objects.select_for_update()
+            .select_related("product")
+            .filter(pk__in=variant_ids)
+            .order_by("pk")
+        }
 
     for item in items:
-        variant = item.product_variant
+        variant = locked_variants.get(item.product_variant_id) or item.product_variant
+        item.product_variant = variant
         if not variant.is_active or item.qty > variant.stock_quantity:
             raise CartError(
                 _("«%(name)s» (%(sku)s) — недостатньо на складі (в наявності %(stock)s, у кошику %(qty)s)")
@@ -200,6 +308,15 @@ def place_order(request, cleaned_data: dict) -> Order:
         shipping_cost = Decimal("0")
 
     total = money(subtotal - discount_amount + (shipping_cost or Decimal("0")))
+
+    if promo:
+        promo_qs = PromoCode.objects.filter(pk=promo.pk)
+        if promo.max_uses is not None:
+            promo_qs = promo_qs.filter(used_count__lt=promo.max_uses)
+        if not promo_qs.update(used_count=F("used_count") + 1):
+            promo = None
+            discount_amount = Decimal("0")
+            total = money(subtotal + (shipping_cost or Decimal("0")))
 
     order = Order.objects.create(
         user=request.user if request.user.is_authenticated else None,
@@ -240,9 +357,6 @@ def place_order(request, cleaned_data: dict) -> Order:
         )
         if not updated:
             raise CartError(_("«%(name)s» щойно розкупили — оформіть замовлення ще раз") % {"name": variant.product.name})
-
-    if promo:
-        PromoCode.objects.filter(pk=promo.pk).update(used_count=F("used_count") + 1)
 
     cart.items.all().delete()
     cart.status = Cart.Status.CONVERTED

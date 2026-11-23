@@ -3,6 +3,8 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
+from src.core.ratelimit import ratelimit
+
 from src.seo.models import SeoLandingPage
 from src.seo.views import render_landing
 
@@ -103,12 +105,16 @@ def theme_css(request):
 
 
 @require_POST
+@ratelimit(scope="newsletter", limit=5, window=300)
 def newsletter_subscribe(request):
     """Popup/інлайн-блок (лист Nanesi п.10) — HTMX: outerHTML-заміна форми на успіх/помилку."""
     form = NewsletterSubscribeForm(request.POST)
-    source = request.POST.get("source") or NewsletterLead.Source.POPUP
+    if form.honeypot_triggered():
+        return render(request, "partials/_newsletter_success.html", {"lead": None})
     if not form.is_valid():
+        source = form["source"].value() or NewsletterLead.Source.POPUP
         return render(request, "partials/_newsletter_form.html", {"form": form, "source": source})
 
-    lead = services.subscribe_email(form.cleaned_data["email"], source=form.cleaned_data.get("source") or source)
+    source = form.cleaned_data.get("source") or NewsletterLead.Source.POPUP
+    lead = services.subscribe_email(form.cleaned_data["email"], source=source)
     return render(request, "partials/_newsletter_success.html", {"lead": lead})

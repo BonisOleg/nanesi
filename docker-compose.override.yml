@@ -8,6 +8,12 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.develop
 
+  unpaid-ttl:
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.develop
+
   db:
     env_file:
       - .env

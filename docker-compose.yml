@@ -20,6 +20,7 @@ services:
       dockerfile: ./deploy/backend/Dockerfile
     command: >-
       sh -c "python3 manage.py migrate --noinput
+      && python3 manage.py createcachetable
       && python3 manage.py collectstatic --noinput
       && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 120"
     environment:
@@ -44,6 +45,20 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
+
+  unpaid-ttl:
+    build:
+      context: .
+      dockerfile: ./deploy/backend/Dockerfile
+    command: >-
+      sh -c "while true; do python3 manage.py cancel_stale_card_orders; sleep 300; done"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+    volumes:
+      - media_volume:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16-alpine

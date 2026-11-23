@@ -13,6 +13,9 @@ from django.views.decorators.http import require_GET, require_POST
 from src.accounts import selectors, services
 from src.accounts.forms import LoginForm, ProfileForm, RegisterForm, SavedWarehouseForm
 from src.catalog.models import Product
+from src.commerce.services import merge_guest_cart
+from src.core.http import safe_next
+from src.core.ratelimit import ratelimit
 
 
 def _parse_ids(raw: str) -> list[int]:
@@ -24,12 +27,13 @@ def _parse_ids(raw: str) -> list[int]:
     return ids
 
 
+@ratelimit(scope="auth", limit=20, window=300)
 def auth_view(request):
     """Одна сторінка вхід/реєстрація (Відповіді п.6) — перемикання вкладками, без переходу."""
     if request.user.is_authenticated:
         return redirect("accounts:profile")
 
-    next_url = request.GET.get("next") or request.POST.get("next") or reverse("accounts:profile")
+    next_url = safe_next(request, fallback=reverse("accounts:profile"))
     active_tab = "login"
     login_form = LoginForm(request)
     register_form = RegisterForm()
@@ -40,17 +44,31 @@ def auth_view(request):
 
         if active_tab == "register":
             register_form = RegisterForm(request.POST)
+            if register_form.honeypot_triggered():
+                messages.success(request, _("Вітаємо! Акаунт створено."))
+                return redirect("catalog:home")
             if register_form.is_valid():
                 user = register_form.save()
+                guest_session_key = request.session.session_key
                 auth_login(request, user, backend="src.accounts.backends.PhoneOrEmailBackend")
+                merge_guest_cart(user, guest_session_key)
                 services.sync_guest_wishlist(user, wishlist_ids)
                 messages.success(request, _("Вітаємо! Акаунт створено."))
                 return redirect(next_url)
         else:
             login_form = LoginForm(request, data=request.POST)
+            if login_form.honeypot_triggered():
+                return render(request, "accounts/auth.html", {
+                    "login_form": LoginForm(request),
+                    "register_form": RegisterForm(),
+                    "active_tab": "login",
+                    "next": next_url,
+                })
             if login_form.is_valid():
                 user = login_form.get_user()
+                guest_session_key = request.session.session_key
                 auth_login(request, user)
+                merge_guest_cart(user, guest_session_key)
                 services.sync_guest_wishlist(user, wishlist_ids)
                 messages.success(request, _("Ви увійшли в кабінет."))
                 return redirect(next_url)
@@ -162,4 +180,4 @@ def wishlist_toggle_view(request, product_id: int):
     active = services.toggle_wishlist(request.user, product_id)
     if request.headers.get("X-Requested-With") == "fetch" or "application/json" in (request.headers.get("Accept") or ""):
         return JsonResponse({"active": active, "count": request.user.wishlist_items.count()})
-    return redirect(request.META.get("HTTP_REFERER") or "accounts:wishlist")
+    return redirect(safe_next(request, fallback=reverse("accounts:wishlist")))

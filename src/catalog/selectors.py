@@ -130,15 +130,18 @@ SORT_OPTIONS = [
 ]
 
 
+_SORT_KEYS = {key for key, _label in SORT_OPTIONS}
+_STOCK_NAV_KEYS = {"page", "sort", "q"}
+
+
 def resolve_catalog_sort(explicit: str | None, *, category: Category | None, filters: dict) -> str:
-    """Порожній sort= завжди «manual»: порядок, заданий адміном.
+    """Порожній або невідомий sort= → «manual»: порядок, заданий адміном.
 
     Однаково для категорії, /katalog/, пошуку й сторінки з активними фільтрами.
-    Непорожнє sort= з URL повертається як є. category і filters лишаються
-    в сигнатурі catalog_list і на вибір значення не впливають.
+    Лише ключі з SORT_OPTIONS. category і filters лишаються в сигнатурі catalog_list.
     """
     raw = (explicit or "").strip()
-    if raw:
+    if raw in _SORT_KEYS:
         return raw
     return "manual"
 
@@ -187,6 +190,16 @@ def apply_sort(
     return _popular_order(qs)
 
 
+def _stock_only_from_get(get) -> bool:
+    """Дефолт «в наявності»: порожній GET і навігація page/sort/q. Чекбокс — явний stock=1."""
+    if "stock" in get:
+        return get.get("stock") == "1"
+    if not get:
+        return True
+    extra = set(get.keys()) - _STOCK_NAV_KEYS
+    return not extra
+
+
 def parse_catalog_filters(request) -> dict:
     """GET → dict фільтрів. Атрибути лише з ATTRIBUTE_FILTER_KEYS; об'єм — зі Variant."""
     attr_filters = {
@@ -199,9 +212,9 @@ def parse_catalog_filters(request) -> dict:
         "category_slugs": request.GET.getlist("category"),
         "attr_filters": attr_filters,
         "volume_slugs": [v for v in request.GET.getlist("volume") if v],
-        "stock_only": ("stock" in request.GET) if request.GET else True,
+        "stock_only": _stock_only_from_get(request.GET),
         "sale_only": request.GET.get("sale") == "1",
-        "query": request.GET.get("q", "").strip(),
+        "query": (request.GET.get("q") or "").strip()[:200],
         "price_min": _parse_filter_decimal(request.GET.get("price_min", "")),
         "price_max": _parse_filter_decimal(request.GET.get("price_max", "")),
     }

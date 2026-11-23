@@ -6,6 +6,8 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from src.core.ratelimit import ratelimit
+
 from src.shipping.client import NovaPoshtaError
 from src.shipping.models import NPCity
 from src.shipping.selectors import is_reference_data_available, search_cities, search_warehouses
@@ -13,6 +15,7 @@ from src.shipping.services import ShippingConfigError, ensure_warehouses_synced
 
 
 @require_GET
+@ratelimit(scope="np_cities", limit=60, window=60, methods=("GET",))
 def np_cities(request):
     query = request.GET.get("q", "").strip()
     configured = is_reference_data_available()
@@ -24,6 +27,7 @@ def np_cities(request):
 
 
 @require_GET
+@ratelimit(scope="np_warehouses", limit=60, window=60, methods=("GET",))
 def np_warehouses(request):
     city_id = request.GET.get("city", "").strip()
     city_ref = request.GET.get("city_ref", "").strip()

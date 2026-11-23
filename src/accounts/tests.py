@@ -78,6 +78,23 @@ class RegisterLoginProfileTests(CabinetFixturesMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("accounts:profile"))
 
+    def test_login_by_phone_zero_and_plus(self):
+        User.objects.create_user(
+            username="phone-cab",
+            email="phone.cab@test.test",
+            password=self.password,
+            phone="380671112233",
+        )
+        for raw in ("0671112233", "+380671112233", "380671112233"):
+            self.client.logout()
+            response = self.client.post(reverse("accounts:login"), {
+                "form": "login",
+                "username": raw,
+                "password": self.password,
+            })
+            self.assertEqual(response.status_code, 302, raw)
+            self.assertEqual(response.url, reverse("accounts:profile"), raw)
+
     def test_profile_update(self):
         user = User.objects.create_user(
             username="cab1", email="cab1@test.test", password=self.password, first_name="Оля",

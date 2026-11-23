@@ -9,12 +9,18 @@
     {% else %}<p>{% blocktrans with name=site_settings.site_name %}Залиште email — надішлемо промокод і новини асортименту {{ name }}.{% endblocktrans %}</p>{% endif %}
   </div>
   <form class="subscribe-form" method="post" action="{% url 'content:newsletter_subscribe' %}"
-        hx-post="{% url 'content:newsletter_subscribe' %}" hx-target="closest [data-newsletter-form]" hx-swap="outerHTML">
+        hx-post="{% url 'content:newsletter_subscribe' %}" hx-target="closest [data-newsletter-form]" hx-swap="outerHTML"
+        data-validate-form>
     {% csrf_token %}
+    <div class="hp-field-wrap" aria-hidden="true">
+      <label for="subscribe-website-{{ source|default:'inline' }}">Website</label>
+      <input type="text" name="website" id="subscribe-website-{{ source|default:'inline' }}"
+             class="hp-field" autocomplete="off" tabindex="-1">
+    </div>
     <input type="hidden" name="source" value="{{ source|default:'inline' }}">
     <label class="sr-only" for="subscribe-email-{{ source|default:'inline' }}">{% trans "Email" %}</label>
     <input class="form-control" id="subscribe-email-{{ source|default:'inline' }}" type="email" name="email"
-           placeholder="{% trans 'Ваш email' %}" required autocomplete="email"
+           placeholder="{% trans 'Ваш email' %}" required autocomplete="email" maxlength="254"
            value="{{ form.email.value|default:'' }}">
     <button class="btn--primary" type="submit">{% trans "Підписатись" %}</button>
   </form>

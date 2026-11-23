@@ -5,14 +5,46 @@ from django.utils.translation import gettext_lazy as _
 
 from src.commerce.models import Order
 from src.commerce.selectors import available_delivery_methods, available_payment_methods
+from src.core.forms import HoneypotFormMixin
+from src.core.validators import (
+    PERSON_NAME_HTML_PATTERN,
+    PHONE_HTML_PATTERN,
+    normalize_ua_phone,
+    validate_person_name,
+)
 
 UKRPOSHTA_INDEX_RE = re.compile(r"^\d{5}$")
 
 
-class CheckoutForm(forms.Form):
-    full_name = forms.CharField(label="ПІБ", max_length=255)
-    phone = forms.CharField(label="Телефон", max_length=20)
-    email = forms.EmailField(label="Email", required=False)
+class CheckoutForm(HoneypotFormMixin, forms.Form):
+    full_name = forms.CharField(
+        label="ПІБ",
+        min_length=2,
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            "minlength": "2",
+            "maxlength": "255",
+            "pattern": PERSON_NAME_HTML_PATTERN,
+            "autocomplete": "name",
+        }),
+    )
+    phone = forms.CharField(
+        label="Телефон",
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            "inputmode": "tel",
+            "autocomplete": "tel",
+            "maxlength": "20",
+            "placeholder": "380XXXXXXXXX",
+            "pattern": PHONE_HTML_PATTERN,
+        }),
+    )
+    email = forms.EmailField(
+        label="Email",
+        required=False,
+        max_length=254,
+        widget=forms.EmailInput(attrs={"autocomplete": "email", "maxlength": "254"}),
+    )
 
     delivery_method = forms.ChoiceField(
         label="Спосіб доставки",
@@ -43,7 +75,8 @@ class CheckoutForm(forms.Form):
     )
     comment = forms.CharField(
         label="Коментар",
-        widget=forms.Textarea(attrs={"rows": 5}),
+        max_length=1000,
+        widget=forms.Textarea(attrs={"rows": 5, "maxlength": "1000"}),
         required=False,
     )
     privacy_consent = forms.BooleanField(
@@ -64,6 +97,15 @@ class CheckoutForm(forms.Form):
             self.initial["delivery_method"] = delivery_choices[0][0]
         if payment_choices and not self.is_bound and not self.initial.get("payment_method"):
             self.initial["payment_method"] = payment_choices[0][0]
+
+    def clean_full_name(self):
+        return validate_person_name(self.cleaned_data.get("full_name", ""), max_length=255)
+
+    def clean_phone(self):
+        return normalize_ua_phone(self.cleaned_data.get("phone", ""))
+
+    def clean_email(self):
+        return (self.cleaned_data.get("email") or "").strip().lower()
 
     def clean(self):
         cleaned = super().clean()

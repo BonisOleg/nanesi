@@ -16,6 +16,7 @@ from src.catalog.models import Brand, Category, Product, ProductAttributeValue
 from src.catalog.services import reviews as review_services
 from src.content.models import HeroBanner, SiteSettings, TrustBadge
 from src.core import analytics
+from src.core.ratelimit import ratelimit
 
 REVIEWS_PER_PAGE = 5
 
@@ -197,8 +198,9 @@ def collection_detail(request, slug):
         from django.http import Http404
         raise Http404
     qs = selectors.products_for_collection(collection)
-    sort = (request.GET.get("sort") or "").strip()
-    if sort:
+    raw_sort = (request.GET.get("sort") or "").strip()
+    if raw_sort:
+        sort = selectors.resolve_catalog_sort(raw_sort, category=None, filters={})
         qs = selectors.apply_sort(qs, sort)
     else:
         sort = "popular"
@@ -279,6 +281,7 @@ def product_detail(request, slug):
 
 
 @require_POST
+@ratelimit(scope="review", limit=5, window=300)
 def review_create(request, slug):
     product = get_object_or_404(
         Product.objects.select_related("brand", "category").prefetch_related(
@@ -287,6 +290,10 @@ def review_create(request, slug):
         slug=slug, is_active=True,
     )
     form = ReviewForm(request.POST, request.FILES, is_authenticated=request.user.is_authenticated)
+
+    if form.honeypot_triggered():
+        messages.success(request, _("Дякуємо за відгук! Він з'явиться на сторінці після модерації."))
+        return redirect(f"{product.get_absolute_url()}#reviews")
 
     if form.is_valid():
         review_services.create_review(
@@ -319,6 +326,7 @@ def review_create(request, slug):
 
 
 @require_GET
+@ratelimit(scope="search_suggest", limit=60, window=60, methods=("GET",))
 def search_suggest(request):
     """JSON-підказки для інпута пошуку в хедері."""
     query = request.GET.get("q", "").strip()

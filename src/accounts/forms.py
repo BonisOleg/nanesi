@@ -1,16 +1,21 @@
 """Форми кабінету: одна форма вхід/реєстрація за телефоном або email (Відповіді п.6)."""
-import re
 import uuid
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import PasswordResetForm as DjangoPasswordResetForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from src.accounts.models import User
-
-PHONE_RE = re.compile(r"^380\d{9}$")
+from src.core.forms import HoneypotFormMixin
+from src.core.validators import (
+    PERSON_NAME_HTML_PATTERN,
+    PHONE_HTML_PATTERN,
+    normalize_ua_phone,
+    validate_person_name,
+)
 
 
 def _widget(**attrs):
@@ -18,10 +23,13 @@ def _widget(**attrs):
     return attrs
 
 
-class LoginForm(AuthenticationForm):
+class LoginForm(HoneypotFormMixin, AuthenticationForm):
     username = forms.CharField(
         label=_("Телефон або email"),
-        widget=forms.TextInput(attrs=_widget(autofocus=True, autocomplete="username")),
+        max_length=254,
+        widget=forms.TextInput(attrs=_widget(
+            autofocus=True, autocomplete="username", maxlength="254",
+        )),
     )
     password = forms.CharField(
         label=_("Пароль"),
@@ -35,13 +43,36 @@ class LoginForm(AuthenticationForm):
     }
 
 
-class RegisterForm(forms.Form):
-    full_name = forms.CharField(label=_("Ім'я"), max_length=150, widget=forms.TextInput(attrs=_widget()))
-    phone = forms.CharField(
-        label=_("Телефон"), max_length=20, required=False,
-        widget=forms.TextInput(attrs=_widget(placeholder="380XXXXXXXXX")),
+class RegisterForm(HoneypotFormMixin, forms.Form):
+    full_name = forms.CharField(
+        label=_("Ім'я"),
+        min_length=2,
+        max_length=150,
+        widget=forms.TextInput(attrs=_widget(
+            minlength="2",
+            maxlength="150",
+            pattern=PERSON_NAME_HTML_PATTERN,
+            autocomplete="name",
+        )),
     )
-    email = forms.EmailField(label=_("Email"), required=False, widget=forms.EmailInput(attrs=_widget()))
+    phone = forms.CharField(
+        label=_("Телефон"),
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs=_widget(
+            placeholder="380XXXXXXXXX",
+            inputmode="tel",
+            autocomplete="tel",
+            maxlength="20",
+            pattern=PHONE_HTML_PATTERN,
+        )),
+    )
+    email = forms.EmailField(
+        label=_("Email"),
+        required=False,
+        max_length=254,
+        widget=forms.EmailInput(attrs=_widget(autocomplete="email", maxlength="254")),
+    )
     password1 = forms.CharField(
         label=_("Пароль"), strip=False,
         widget=forms.PasswordInput(attrs=_widget(autocomplete="new-password")),
@@ -51,12 +82,14 @@ class RegisterForm(forms.Form):
         widget=forms.PasswordInput(attrs=_widget(autocomplete="new-password")),
     )
 
+    def clean_full_name(self):
+        return validate_person_name(self.cleaned_data.get("full_name", ""), max_length=150)
+
     def clean_phone(self):
         phone = self.cleaned_data.get("phone", "").strip()
         if not phone:
             return phone
-        if not PHONE_RE.match(phone):
-            raise ValidationError(_("Формат телефону: 380XXXXXXXXX"))
+        phone = normalize_ua_phone(phone)
         if User.objects.filter(phone=phone).exists():
             raise ValidationError(_("Користувач з цим телефоном вже зареєстрований"))
         return phone
@@ -101,18 +134,36 @@ class ProfileForm(forms.ModelForm):
         fields = ["first_name", "last_name", "phone", "email"]
         labels = {"first_name": _("Ім'я"), "last_name": _("Прізвище"), "phone": _("Телефон"), "email": _("Email")}
         widgets = {
-            "first_name": forms.TextInput(attrs=_widget()),
-            "last_name": forms.TextInput(attrs=_widget()),
-            "phone": forms.TextInput(attrs=_widget(placeholder="380XXXXXXXXX")),
-            "email": forms.EmailInput(attrs=_widget()),
+            "first_name": forms.TextInput(attrs=_widget(
+                minlength="2", maxlength="150", pattern=PERSON_NAME_HTML_PATTERN, autocomplete="given-name",
+            )),
+            "last_name": forms.TextInput(attrs=_widget(
+                minlength="2", maxlength="150", pattern=PERSON_NAME_HTML_PATTERN, autocomplete="family-name",
+            )),
+            "phone": forms.TextInput(attrs=_widget(
+                placeholder="380XXXXXXXXX", inputmode="tel", autocomplete="tel",
+                maxlength="20", pattern=PHONE_HTML_PATTERN,
+            )),
+            "email": forms.EmailInput(attrs=_widget(autocomplete="email", maxlength="254")),
         }
+
+    def clean_first_name(self):
+        value = (self.cleaned_data.get("first_name") or "").strip()
+        if not value:
+            return value
+        return validate_person_name(value, max_length=150)
+
+    def clean_last_name(self):
+        value = (self.cleaned_data.get("last_name") or "").strip()
+        if not value:
+            return value
+        return validate_person_name(value, max_length=150)
 
     def clean_phone(self):
         phone = (self.cleaned_data.get("phone") or "").strip()
         if not phone:
             return None
-        if not PHONE_RE.match(phone):
-            raise ValidationError(_("Формат телефону: 380XXXXXXXXX"))
+        phone = normalize_ua_phone(phone)
         if User.objects.filter(phone=phone).exclude(pk=self.instance.pk).exists():
             raise ValidationError(_("Цей телефон вже використовується іншим акаунтом"))
         return phone
@@ -164,3 +215,10 @@ class SavedWarehouseForm(forms.ModelForm):
                 autocomplete="street-address",
             )),
         }
+
+
+class PasswordResetForm(HoneypotFormMixin, DjangoPasswordResetForm):
+    def save(self, *args, **kwargs):
+        if self.honeypot_triggered():
+            return
+        return super().save(*args, **kwargs)

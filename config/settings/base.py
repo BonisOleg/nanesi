@@ -1,4 +1,5 @@
 """Базові налаштування Django, спільні для всіх середовищ."""
+from datetime import timedelta
 from pathlib import Path
 
 from csp.constants import NONCE
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sitemaps",
     # 4. Сторонні пакети
+    "axes",
     "tinymce",
     "django_htmx",
     "csp",
@@ -55,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "axes.middleware.AxesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
@@ -101,6 +104,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 # --- Кабінет (Підетап 2, Відповіді п.6): вхід за телефоном або email, одна форма ---
 AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
     "src.accounts.backends.PhoneOrEmailBackend",
     "django.contrib.auth.backends.ModelBackend",  # для createsuperuser / входу в адмінку за username
 ]
@@ -114,6 +118,34 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+]
+
+X_FRAME_OPTIONS = "DENY"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "malyar-default",
+    }
+}
+
+RATELIMIT_ENABLED = True
+
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = timedelta(minutes=5)
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_HTTP_RESPONSE_CODE = 429
+AXES_USERNAME_FORM_FIELD = "username"
+AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_FORWARDED_FOR", "REMOTE_ADDR")
 
 # --- i18n: uk основна, ru/en увімкнені на старті (тумблер у SiteSettings — Етап D) ---
 LANGUAGE_CODE = "uk"

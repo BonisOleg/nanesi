@@ -1,4 +1,26 @@
 document.addEventListener('DOMContentLoaded', function () {
+  var checkoutForm = document.querySelector('.checkout-form');
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', function (event) {
+      var btn = checkoutForm.querySelector('[data-checkout-submit]');
+      if (!btn || btn.disabled) return;
+      if (event.defaultPrevented) {
+        return;
+      }
+      if (checkoutForm.dataset.checkoutBusy === '1') {
+        event.preventDefault();
+        return;
+      }
+      checkoutForm.dataset.checkoutBusy = '1';
+      checkoutForm.classList.add('is-busy');
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      btn.style.pointerEvents = 'none';
+      var label = btn.getAttribute('data-busy-label') || 'Оформлюємо…';
+      btn.textContent = label;
+    });
+  }
+
   var deliveryInputs = document.querySelectorAll('input[name="delivery_method"]');
   var npFields = document.getElementById('np-fields');
   var ukrposhtaFields = document.getElementById('ukrposhta-fields');

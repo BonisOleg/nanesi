@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 API_BASE = "https://api.monobank.ua"
 CCY_UAH = 980
+INVOICE_VALIDITY_SECONDS = 3600
 
 
 class MonobankError(Exception):
@@ -57,6 +58,7 @@ class MonobankService:
                 "destination": description[:200],
             },
             "redirectUrl": redirect_url,
+            "validity": INVOICE_VALIDITY_SECONDS,
         }
         hook = (webhook_url if webhook_url is not None else self.webhook_url).strip()
         if hook:

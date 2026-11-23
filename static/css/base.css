@@ -241,6 +241,21 @@ main {
   font-size: 0.8125rem;
 }
 
+/* Honeypot: не display:none (боти пропускають). Патерн як .sr-only — без скролу iOS. */
+.hp-field-wrap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  pointer-events: none;
+}
+
 .messages {
   list-style: none;
   margin: 0 0 var(--space-4);

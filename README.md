@@ -18,6 +18,8 @@ docker compose exec backend python3 manage.py createsuperuser
 
 Адмінка: http://localhost:8000/admin/
 
+Сервіс `unpaid-ttl` раз на 5 хв викликає `python3 manage.py cancel_stale_card_orders` — скасовує неоплачені карткові замовлення старші за 60 хв і повертає склад.
+
 ## Локальний запуск без Docker
 
 ```bash

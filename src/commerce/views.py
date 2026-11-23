@@ -1,19 +1,16 @@
 """Thin views: parse → selector/service → render (ecommerce_business_logic_skill, rule 3)."""
-import hmac
-import json
 import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.db import transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from src.catalog.models import ProductVariant
@@ -21,13 +18,11 @@ from src.commerce import selectors, services
 from src.commerce.forms import CheckoutForm
 from src.commerce.models import Order
 from src.commerce.models_1 import money
-from src.commerce.payments.monobank import (
-    MonobankError,
-    get_monobank_service,
-    webhook_idempotency_key,
-)
+from src.commerce.payments.monobank import MonobankError, get_monobank_service
+from src.commerce.views_1 import payment_callback, payment_webhook, salesdrive_webhook
 from src.content.models import SiteSettings
 from src.core import analytics
+from src.core.ratelimit import ratelimit
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +55,10 @@ def _cart_context(request):
     # Поріг безкоштовної доставки — від суми товарів ДО промокоду (п.9 UX).
     progress = selectors.free_shipping_progress(subtotal)
     cart_items_count = sum(line.qty for line in lines)
+    checkout_blocked = any(
+        (not line.in_stock) or line.qty > line.stock_quantity
+        for line in lines
+    )
     return {
         "cart": cart,
         "lines": lines,
@@ -69,6 +68,7 @@ def _cart_context(request):
         "discount_amount": discount_amount,
         "total": money(subtotal - (discount_amount or 0)),
         "cart_items_count": cart_items_count,
+        "checkout_blocked": checkout_blocked,
     }
 
 
@@ -103,9 +103,28 @@ def _cart_qty_total(cart) -> int:
     return sum(cart.items.values_list("qty", flat=True))
 
 
+def _parse_qty(raw, default: int = 1) -> int | None:
+    if raw in (None, ""):
+        return default
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _invalid_qty_response(request):
+    message = _("Некоректна кількість")
+    if _wants_json(request):
+        return JsonResponse({"ok": False, "error": str(message)}, status=400)
+    messages.error(request, message)
+    return redirect("commerce:cart")
+
+
 @require_POST
 def cart_add(request, variant_id: int):
-    qty = int(request.POST.get("qty") or 1)
+    qty = _parse_qty(request.POST.get("qty"), default=1)
+    if qty is None:
+        return _invalid_qty_response(request)
     cart = None
     product_id = None
     try:
@@ -142,8 +161,11 @@ def cart_add(request, variant_id: int):
 
 @require_POST
 def cart_update(request, item_id: int):
+    qty = _parse_qty(request.POST.get("qty"), default=0)
+    if qty is None:
+        return _invalid_qty_response(request)
     try:
-        services.update_item_qty(request, item_id, qty=int(request.POST.get("qty") or 0))
+        services.update_item_qty(request, item_id, qty=qty)
     except services.CartError as exc:
         messages.error(request, str(exc))
     if request.headers.get("HX-Request"):
@@ -160,6 +182,7 @@ def cart_remove(request, item_id: int):
 
 
 @require_POST
+@ratelimit(scope="promo", limit=10, window=300)
 def promo_apply(request):
     code = request.POST.get("code", "")
     is_hx = bool(request.headers.get("HX-Request"))
@@ -190,6 +213,7 @@ def promo_remove(request):
     return redirect("commerce:cart")
 
 
+@method_decorator(ratelimit(scope="checkout", limit=40, window=300), name="post")
 class CheckoutView(View):
     def get(self, request):
         context = _cart_context(request)
@@ -225,18 +249,21 @@ class CheckoutView(View):
         return render(request, "commerce/checkout.html", context)
 
     def post(self, request):
-        # Гачок під покинутий кошик: контакти пишемо одразу, навіть якщо форма з помилками.
+        form = CheckoutForm(request.POST)
+        context = _cart_context(request)
+        if not context["lines"]:
+            messages.info(request, _("Кошик порожній"))
+            return redirect("commerce:cart")
+        if form.honeypot_triggered():
+            context["form"] = CheckoutForm()
+            return render(request, "commerce/checkout.html", context)
+        # Гачок під покинутий кошик: лише валідні контакти, навіть якщо форма з помилками.
         services.save_cart_contacts(
             request,
             full_name=request.POST.get("full_name", ""),
             phone=request.POST.get("phone", ""),
             email=request.POST.get("email", ""),
         )
-        form = CheckoutForm(request.POST)
-        context = _cart_context(request)
-        if not context["lines"]:
-            messages.info(request, _("Кошик порожній"))
-            return redirect("commerce:cart")
         if not form.is_valid():
             context["form"] = form
             return render(request, "commerce/checkout.html", context)
@@ -244,6 +271,10 @@ class CheckoutView(View):
             order = services.place_order(request, form.cleaned_data)
         except services.CartError as exc:
             messages.error(request, str(exc))
+            services.clamp_cart_to_stock(request)
+            context = _cart_context(request)
+            if not context["lines"]:
+                return redirect("commerce:cart")
             context["form"] = form
             return render(request, "commerce/checkout.html", context)
 
@@ -376,103 +407,3 @@ class PaymentInitView(View):
             "commerce/payment_init.html",
             {"order": order, "checkout": checkout},
         )
-
-
-@csrf_exempt
-@require_POST
-def payment_webhook(request):
-    """SEC-07: єдине джерело істини — webhook Monobank з X-Sign (ECDSA)."""
-    mono = get_monobank_service()
-    if mono is None:
-        return HttpResponse("Monobank not configured", status=503)
-
-    x_sign = request.headers.get("X-Sign") or request.META.get("HTTP_X_SIGN", "")
-    body = request.body or b""
-    if not x_sign or not mono.verify_webhook(body, x_sign):
-        return HttpResponse("Invalid signature", status=403)
-
-    try:
-        payload = json.loads(body.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError, TypeError):
-        return HttpResponse("Invalid JSON", status=400)
-
-    if not isinstance(payload, dict):
-        return HttpResponse("Invalid payload", status=400)
-
-    invoice_id = str(payload.get("invoiceId") or "")
-    status = str(payload.get("status") or "")
-    reference = str(payload.get("reference") or "")
-    if not reference:
-        paym_info = payload.get("merchantPaymInfo")
-        if isinstance(paym_info, dict):
-            reference = str(paym_info.get("reference") or "")
-    if not invoice_id and not reference:
-        return HttpResponse("Missing invoice/reference", status=400)
-
-    with transaction.atomic():
-        order_qs = Order.objects.select_for_update()
-        order = None
-        if invoice_id:
-            order = order_qs.filter(payment_intent_id=invoice_id).first()
-        if order is None and reference:
-            order = order_qs.filter(number=reference).first()
-        if order is None:
-            return HttpResponse("Order not found", status=404)
-
-        idem_key = webhook_idempotency_key(payload)
-        if order.payment_idempotency_key == idem_key:
-            return HttpResponse("OK (idempotent)", status=200)
-
-        if status == "success":
-            order.payment_status = Order.PaymentStatus.PAID
-            order.payment_intent_id = invoice_id or order.payment_intent_id
-            order.payment_idempotency_key = idem_key
-            order.paid_at = timezone.now()
-            order.save()
-            try:
-                services.change_order_status(order, Order.Status.PAID)
-            except services.OrderStatusError:
-                pass
-        elif status in ("failure", "reversed", "expired"):
-            order.payment_idempotency_key = idem_key
-            if invoice_id and not order.payment_intent_id:
-                order.payment_intent_id = invoice_id
-                order.save(update_fields=["payment_idempotency_key", "payment_intent_id", "updated_at"])
-            else:
-                order.save(update_fields=["payment_idempotency_key", "updated_at"])
-
-    return HttpResponse("OK", status=200)
-
-
-@csrf_exempt
-def payment_callback(request, order_number: str):
-    """result_url — лише UX-редирект, статус нею НЕ встановлюється (SEC-07)."""
-    order = get_object_or_404(Order, number=order_number)
-    return redirect("commerce:thank_you", order_number=order.number)
-
-
-@csrf_exempt
-@require_POST
-def salesdrive_webhook(request, token: str):
-    """SalesDrive → сайт: лише status_change. Секрет у шляху (SALESDRIVE_WEBHOOK_SECRET)."""
-    from src.commerce.salesdrive_webhook import SalesDriveWebhookError, handle_salesdrive_webhook
-
-    expected = getattr(settings, "SALESDRIVE_WEBHOOK_SECRET", "") or ""
-    if not expected or not hmac.compare_digest(token, expected):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
-
-    try:
-        body = json.loads(request.body.decode("utf-8") or "{}")
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        return JsonResponse({"ok": False, "error": "invalid json"}, status=400)
-    if not isinstance(body, dict):
-        return JsonResponse({"ok": False, "error": "invalid body"}, status=400)
-
-    try:
-        result = handle_salesdrive_webhook(body)
-    except SalesDriveWebhookError as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=exc.http_status)
-    except Exception:
-        logger.exception("SalesDrive webhook failed")
-        return JsonResponse({"ok": False, "error": "internal"}, status=500)
-    return JsonResponse(result, status=200)

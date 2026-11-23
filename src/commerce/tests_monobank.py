@@ -29,6 +29,7 @@ class MonobankServiceTests(TestCase):
         self.assertEqual(body["amount"], 1050)
         self.assertEqual(body["merchantPaymInfo"]["reference"], "N-1")
         self.assertEqual(body["webHookUrl"], "https://example.com/hook")
+        self.assertEqual(body["validity"], 3600)
 
 
 @override_settings(MONOBANK_TOKEN="test-token")
@@ -50,7 +51,7 @@ class MonobankWebhookTests(TestCase):
         Order.objects.filter(pk=self.order.pk).update(number="ORD-MONO-1")
         self.order.refresh_from_db()
 
-    @patch("src.commerce.views.get_monobank_service")
+    @patch("src.commerce.views_1.get_monobank_service")
     def test_success_webhook_marks_paid(self, mock_get):
         mono = MagicMock()
         mono.verify_webhook.return_value = True
@@ -74,7 +75,7 @@ class MonobankWebhookTests(TestCase):
         self.assertEqual(self.order.payment_idempotency_key, webhook_idempotency_key(payload))
         self.assertIsNotNone(self.order.paid_at)
 
-    @patch("src.commerce.views.get_monobank_service")
+    @patch("src.commerce.views_1.get_monobank_service")
     def test_invalid_sign_rejected(self, mock_get):
         mono = MagicMock()
         mono.verify_webhook.return_value = False

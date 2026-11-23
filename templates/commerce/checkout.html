@@ -8,6 +8,7 @@
   <div class="checkout-layout">
     <form method="post" class="checkout-form" novalidate>
       {% csrf_token %}
+      {% include "partials/_honeypot.html" %}
 
       <div class="card checkout-section">
         <h2>{% trans "Контактні дані" %}</h2>
@@ -106,7 +107,12 @@
         </div>
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block">{% trans "Підтвердити замовлення" %} — {{ total|uah }}</button>
+      {% if checkout_blocked %}
+        <p class="field-error">{% trans "У кошику є товари без залишку — оновіть кількість перед оформленням." %}</p>
+        <button type="submit" class="btn btn-primary btn-block" disabled>{% trans "Підтвердити замовлення" %} — {{ total|uah }}</button>
+      {% else %}
+        <button type="submit" class="btn btn-primary btn-block" data-checkout-submit data-busy-label="{% trans 'Оформлюємо…' %}">{% trans "Підтвердити замовлення" %} — {{ total|uah }}</button>
+      {% endif %}
     </form>
 
     <aside class="card checkout-sidebar">
@@ -138,5 +144,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/checkout.js' %}?v=np-city-viewport" defer></script>
+<script src="{% static 'js/checkout.js' %}?v=checkout-busy" defer></script>
 {% endblock %}

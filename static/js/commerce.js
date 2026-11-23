@@ -215,21 +215,46 @@ document.addEventListener("DOMContentLoaded", function () {
   ensureCartDrawerInBody();
 });
 
+function cartSummaryRoot(node) {
+  if (!node) return null;
+  if (node.id === "cart-summary") return node;
+  return node.closest ? node.closest("#cart-summary") : null;
+}
+
+document.addEventListener("htmx:beforeRequest", function (event) {
+  var elt = event.detail && event.detail.elt;
+  var summary = cartSummaryRoot(elt);
+  if (!summary) return;
+  if (summary.getAttribute("data-cart-busy") === "1") {
+    event.preventDefault();
+    return;
+  }
+  summary.setAttribute("data-cart-busy", "1");
+});
+
 document.addEventListener("htmx:afterSwap", function (event) {
   applyShippingFill(event.target);
   var summary =
     (event.target && event.target.id === "cart-summary" && event.target) ||
     (event.target && event.target.querySelector && event.target.querySelector("#cart-summary"));
   if (summary) {
+    summary.removeAttribute("data-cart-busy");
     var raw = summary.getAttribute("data-cart-items-count");
     if (raw !== null) setCartCount(parseInt(raw, 10) || 0);
   }
+});
+
+document.addEventListener("htmx:responseError", function (event) {
+  var summary = cartSummaryRoot(event.detail && event.detail.elt);
+  if (summary) summary.removeAttribute("data-cart-busy");
 });
 
 /* Делеговані обробники подій замість onchange="" у HTML (CSP script-src 'self' —
    без 'unsafe-inline' інлайн event-атрибути заблоковані). */
 document.addEventListener("change", function (event) {
   if (event.target.matches('[data-js="qty-autosubmit"]')) {
+    var summary = cartSummaryRoot(event.target);
+    if (summary && summary.getAttribute("data-cart-busy") === "1") return;
     event.target.form.requestSubmit();
   }
 });
@@ -240,6 +265,11 @@ document.addEventListener("click", function (event) {
   if (!minus && !plus) return;
   var root = event.target.closest("[data-cart-qty]");
   if (!root) return;
+  var summary = cartSummaryRoot(root);
+  if (summary && summary.getAttribute("data-cart-busy") === "1") {
+    event.preventDefault();
+    return;
+  }
   event.preventDefault();
   var input = root.querySelector("[data-qty-value]");
   if (!input || !input.form) return;

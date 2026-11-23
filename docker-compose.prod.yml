@@ -5,6 +5,10 @@ services:
     restart: always
     env_file:
       - .env
+  unpaid-ttl:
+    restart: always
+    env_file:
+      - .env
   db:
     restart: always
     env_file:

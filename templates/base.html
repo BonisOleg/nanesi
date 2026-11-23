@@ -32,7 +32,7 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap"></noscript>
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% url 'theme_css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=m321">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=hp1">
   <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=footer-row600">
   <link rel="stylesheet" href="{% static 'css/components.css' %}?v=grid-4desk">
   <link rel="stylesheet" href="{% static 'css/commerce.css' %}?v=np-city-viewport">
@@ -41,8 +41,9 @@
   {% block extra_css %}{% endblock %}
   <script src="{% static 'js/htmx.min.js' %}" defer></script>
   <script src="{% static 'js/nanesi-ui.js' %}?v=topbar-smooth" defer></script>
+  <script src="{% static 'js/form-validate.js' %}?v=1" defer></script>
   <script src="{% static 'js/search-suggest.js' %}?v=1" defer></script>
-  <script src="{% static 'js/commerce.js' %}?v=cart-drawer2" defer></script>
+  <script src="{% static 'js/commerce.js' %}?v=cart-busy" defer></script>
   <script src="{% static 'js/consent.js' %}" defer></script>
   {% if site_settings.gtm_id or site_settings.ga4_id or site_settings.meta_pixel_id or site_settings.tiktok_pixel_id %}
     <script src="{% static 'js/analytics.js' %}" defer
