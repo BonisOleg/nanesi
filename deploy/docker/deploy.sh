@@ -11,7 +11,7 @@ COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
 if [[ -f /etc/letsencrypt/live/nanesi.com.ua/fullchain.pem ]]; then
   COMPOSE+=(-f docker-compose.https.yml)
 fi
-SERVICES=(db backend nginx)
+SERVICES=(db backend unpaid-ttl nginx)
 
 free_host_ports() {
   if command -v systemctl >/dev/null 2>&1; then
@@ -66,8 +66,8 @@ if [[ "$ok" -ne 1 ]]; then
   exit 1
 fi
 
-echo "==> start nginx"
-"${COMPOSE[@]}" up -d --remove-orphans nginx || true
+echo "==> start unpaid-ttl + nginx"
+"${COMPOSE[@]}" up -d --build --remove-orphans unpaid-ttl nginx || true
 
 if curl -sf http://127.0.0.1/healthz/ >/dev/null; then
   echo "HTTP /healthz/ OK"
