@@ -273,6 +273,8 @@ CONTENT_SECURITY_POLICY = {
             "https://www.googletagmanager.com",
             "https://ad.doubleclick.net",
             "https://googleads.g.doubleclick.net",
+            "https://stats.g.doubleclick.net",
+            "https://www.google.com.ua",
             "https://analytics.tiktok.com",
         ],
         "connect-src": [
@@ -286,6 +288,8 @@ CONTENT_SECURITY_POLICY = {
             "https://www.googleadservices.com",
             "https://ad.doubleclick.net",
             "https://googleads.g.doubleclick.net",
+            "https://stats.g.doubleclick.net",
+            "https://www.google.com.ua",
             "https://www.facebook.com",
             "https://analytics.tiktok.com",
         ],
